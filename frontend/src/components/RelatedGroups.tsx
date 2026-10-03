@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { enc, type Related } from "@/lib/api";
 
+// HPO association types in plain words. "Mendelian" = inherited through one gene.
+const ASSOCIATION: Record<string, string> = {
+  mendelian: "single-gene (Mendelian) link",
+  polygenic: "one of several contributing genes",
+  unknown: "link type not stated in the source",
+};
+
 /** Entries connected to one entry in the pinned files, one block per source. */
 export function RelatedGroups({ related }: { related: Related }) {
   return (
@@ -24,7 +31,7 @@ export function RelatedGroups({ related }: { related: Related }) {
                     <span className="col-span-2 text-xs text-muted">
                       {it.score != null && <>symptom overlap {it.score.toFixed(2)}</>}
                       {it.shared && it.shared.length > 0 && <> · shares {it.shared.map((s) => s.replace(/^HP:\d+\s*/, "")).join(", ")}</>}
-                      {it.association && <>{it.association} association · {it.source_id}</>}
+                      {it.association && <>{ASSOCIATION[it.association] ?? `${it.association} association`} · record {it.source_id}</>}
                     </span>
                   )}
                 </Link>

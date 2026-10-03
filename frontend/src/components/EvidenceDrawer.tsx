@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { api, enc } from "@/lib/api";
 import { ReviewBadge, SourceBadge, StatusMark } from "./Badges";
@@ -13,22 +14,110 @@ export function useOpenClaim() {
   return useContext(Ctx);
 }
 
-/** A citation chip. Every statement in the UI links to its claim through one of these. */
+// One fetch per claim per page, shared by the hover preview and the drawer.
+const claimCache = new Map<string, Promise<ClaimData>>();
+function loadClaim(id: string): Promise<ClaimData> {
+  if (!claimCache.has(id)) claimCache.set(id, api.claim(id));
+  return claimCache.get(id)!;
+}
+
+/** Plain-language reading of each relationship. Wording never claims more than the predicate does. */
+export const PREDICATE_PLAIN: Record<string, string> = {
+  AFFECTS_TRANSCRIPT: "affects the RNA transcript",
+  ASSOCIATED_WITH_PHENOTYPE: "is reported with the symptom",
+  HAS_OBSERVED_RNA_EFFECT: "has an observed RNA effect on",
+  HAS_PREDICTED_RNA_EFFECT: "is predicted (not observed) to have an RNA effect on",
+  PERTURBS_MECHANISM: "disrupts the biological process",
+  SUPPORTED_BY: "is supported by",
+  CONTRADICTED_BY: "is contradicted by",
+  INVESTIGATED_IN: "was studied in",
+  ASSET_RELEVANT_TO: "lists as a condition",
+  SIMULATES_WORKFLOW_FOR: "simulates a lab workflow (engineering only) for",
+  GENE_ASSOCIATED_WITH_DISEASE: "is linked to",
+  ACCUMULATES_IN_COMPARTMENT: "shows build-up in",
+  SHARES_PATHOGENIC_PATHWAY_WITH: "may share a disease process with",
+  CANDIDATE_THERAPY_FOR: "is a treatment idea (not a recommendation) for",
+};
+
+/** What a reader should take from a claim, before any detail. */
+function meaning(c: ClaimData["claim"]): string[] {
+  const out = [{
+    database_record: "Copied from a public reference database; the record is quoted below.",
+    published: "Quoted from a published paper.",
+    lab_reported: "Reported by a lab; not peer reviewed.",
+    synthetic_fixture: "Made-up demo data. Not a real finding.",
+  }[c.source_type]];
+  if (c.predicate === "GENE_ASSOCIATED_WITH_DISEASE") out.push("A link between a gene and a disease is an association; on its own it does not show the gene causes it.");
+  if (c.predicate === "ASSET_RELEVANT_TO" && c.subject_id.startsWith("NCT:")) out.push("The study's registry record names this condition. That alone says nothing about what the study found.");
+  if (c.status === "computational_prediction") out.push("This is a computer prediction, not an observation.");
+  if (c.status === "inference") out.push("This is an inference, not something directly observed.");
+  if (["SHARES_PATHOGENIC_PATHWAY_WITH", "CANDIDATE_THERAPY_FOR"].includes(c.predicate)) out.push("Recorded as a hypothesis only, never as a finding.");
+  out.push(c.review_state === "reviewed" ? "Checked by a reviewer." : c.review_state === "disputed" ? "Disputed: a reviewer disagrees." : "Not yet checked by an expert.");
+  return out;
+}
+
+const NumCtx = createContext<{ number: (id: string) => number }>({ number: () => 0 });
+
+/** Numbers citations in the order they first appear on the page, like footnotes. */
+export function CitationNumbers({ children }: { children: React.ReactNode }) {
+  const seen = useRef(new Map<string, number>());
+  const number = useCallback((id: string) => {
+    if (!seen.current.has(id)) seen.current.set(id, seen.current.size + 1);
+    return seen.current.get(id)!;
+  }, []);
+  return <NumCtx.Provider value={{ number }}>{children}</NumCtx.Provider>;
+}
+
+/** A citation: a numbered superscript. Hover (or focus) previews the quote; click opens the evidence. */
 export function ClaimRef({ id, n, className = "" }: { id: string; n?: number; className?: string }) {
   const open = useOpenClaim();
+  const numbers = useContext(NumCtx);
+  const num = n ?? numbers.number(id);
+  const [preview, setPreview] = useState<ClaimData | null>(null);
+  const [show, setShow] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const enter = () => {
+    timer.current = setTimeout(() => {
+      setShow(true);
+      loadClaim(id).then(setPreview).catch(() => setShow(false));
+    }, 250);
+  };
+  const leave = () => { clearTimeout(timer.current); setShow(false); };
   return (
-    <button
-      type="button"
-      onClick={() => open(id)}
-      title={`Open evidence for ${id}`}
-      className={`mx-0.5 inline-flex items-center rounded bg-link-soft px-1 align-baseline text-[0.75em] font-semibold text-link hover:bg-link hover:text-white ${className}`}
-    >
-      {n !== undefined ? n : id.replace("CLAIM:", "")}
-    </button>
+    <span className="relative inline-block" onMouseEnter={enter} onMouseLeave={leave}>
+      <button
+        type="button"
+        onClick={() => open(id)}
+        onFocus={enter}
+        onBlur={leave}
+        aria-label={`Citation ${num}: open the evidence`}
+        className={`mx-px align-super text-[0.7em] leading-none font-semibold text-link tabular-nums hover:underline ${className}`}
+      >
+        [{num}]
+      </button>
+      {show && (
+        <span role="tooltip" className="absolute bottom-full left-1/2 z-50 mb-1.5 block w-[300px] -translate-x-1/2 rounded-lg border border-rule bg-sheet p-3 text-left text-xs leading-relaxed font-normal text-ink shadow-[0_8px_24px_rgba(17,24,39,0.1)]">
+          {preview ? (
+            <>
+              <span className="block text-muted">
+                {preview.subject_label ?? preview.claim.subject_id} {PREDICATE_PLAIN[preview.claim.predicate] ?? preview.claim.predicate.toLowerCase()} {preview.object_label ?? preview.claim.object_id}
+              </span>
+              <span className="mt-1.5 block border-l-2 border-ink/60 pl-2 font-mono text-[11px] break-words">
+                {preview.claim.source_span.length > 180 ? `${preview.claim.source_span.slice(0, 180)}…` : preview.claim.source_span.replaceAll("\t", " · ")}
+              </span>
+              <span className="mt-1.5 block text-muted">{meaning(preview.claim).at(-1)} Click for the full evidence.</span>
+            </>
+          ) : (
+            <span className="text-muted">Loading…</span>
+          )}
+        </span>
+      )}
+    </span>
   );
 }
 
 export function EvidenceDrawerProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [claimId, setClaimId] = useState<string | null>(null);
   const [data, setData] = useState<ClaimData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +127,7 @@ export function EvidenceDrawerProvider({ children }: { children: React.ReactNode
   useEffect(() => {
     if (!claimId) return;
     closeRef.current?.focus();
-    api.claim(claimId).then(setData).catch(() => setError(`Could not load ${claimId}. Check that the API is running.`));
+    loadClaim(claimId).then(setData).catch(() => setError(`Could not load ${claimId}. Check that the API is running.`));
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setClaimId(null);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -46,17 +135,18 @@ export function EvidenceDrawerProvider({ children }: { children: React.ReactNode
 
   return (
     <Ctx.Provider value={open}>
-      {children}
+      {/* Keyed by page so footnote numbers restart at [1] on every page. */}
+      <CitationNumbers key={pathname}>{children}</CitationNumbers>
       {claimId && (
         <aside
           role="dialog"
           aria-modal="false"
           aria-label={`Evidence for ${claimId}`}
-          className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[440px] flex-col border-l border-rule bg-white shadow-2xl animate-[slidein_.18s_ease-out]"
+          className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[460px] flex-col border-l border-rule bg-sheet shadow-[-8px_0_24px_rgba(17,24,39,0.06)] animate-[slidein_.18s_ease-out]"
         >
           <div className="flex items-center justify-between border-b border-rule px-5 py-3">
-            <h2 className="text-lg font-semibold">Evidence</h2>
-            <button ref={closeRef} onClick={() => setClaimId(null)} className="rounded px-2 py-1 text-sm text-muted hover:bg-page">
+            <h2 className="text-base font-semibold">Evidence</h2>
+            <button ref={closeRef} onClick={() => setClaimId(null)} className="rounded px-2 py-1 text-sm text-muted hover:bg-subtle">
               Close
             </button>
           </div>
@@ -73,10 +163,11 @@ export function EvidenceDrawerProvider({ children }: { children: React.ReactNode
 
 function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
   const c = d.claim;
-  const predicate = c.predicate.toLowerCase().replaceAll("_", " ");
+  const predicate = PREDICATE_PLAIN[c.predicate] ?? c.predicate.toLowerCase().replaceAll("_", " ");
+  const tabular = c.source_span.includes("\t");
   return (
     <div className="space-y-5 text-[15px]">
-      <p className="text-lg leading-snug">
+      <p className="text-[17px] leading-snug">
         <EntityLink id={c.subject_id} label={d.subject_label} onClose={onClose} />{" "}
         <span className="text-muted">{predicate}</span>{" "}
         <EntityLink id={c.object_id} label={d.object_label} onClose={onClose} />
@@ -87,8 +178,16 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
         <StatusMark status={c.status} />
       </div>
 
-      <figure className="border-l-4 border-ink/80 pl-4">
-        <blockquote className="text-[17px] leading-relaxed">{c.source_span}</blockquote>
+      <section className="rounded-md bg-subtle px-4 py-3 text-sm">
+        <h3 className="mb-1 font-semibold">What this means</h3>
+        <ul className="list-disc space-y-0.5 pl-4">{meaning(c).map((m) => <li key={m}>{m}</li>)}</ul>
+      </section>
+
+      <figure className="border-l-2 border-ink/70 pl-4">
+        <figcaption className="mb-1 text-xs text-muted">{tabular ? "The source record, verbatim" : "The source, quoted verbatim"}</figcaption>
+        <blockquote className={tabular ? "font-mono text-[13px] break-words" : "text-[16px] leading-relaxed"}>
+          {tabular ? c.source_span.split("\t").join("  ·  ") : c.source_span}
+        </blockquote>
         <figcaption className="mt-2 text-sm text-muted">
           <a className="ref" href={c.source_url} target="_blank" rel="noreferrer">Open source</a>
           {c.published_at && <> · published {c.published_at}</>}
@@ -101,7 +200,7 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
             {Object.entries(c.context).map(([k, v]) => (
               <div key={k} className="contents">
-                <dt className="text-muted">{k}</dt>
+                <dt className="text-muted">{CONTEXT_LABEL[k] ?? k.replaceAll("_", " ")}</dt>
                 <dd>{String(v).replaceAll("_", " ")}</dd>
               </div>
             ))}
@@ -123,16 +222,18 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
         </Section>
       )}
 
-      <Section title="Lineage">
+      <Section title={c.lineage_id.startsWith("STUDY:") ? "Lineage" : "Where it comes from"}>
         <p className="text-sm">
-          Experiment group <b>{c.lineage_id.replace("STUDY:", "")}</b>.{" "}
+          {c.lineage_id.startsWith("STUDY:")
+            ? <>Experiment group <b>{c.lineage_id.replace("STUDY:", "")}</b>.{" "}</>
+            : <>Record <b>{c.lineage_id.replace(/^SOURCE:/, "")}</b>.{" "}</>}
           {d.lineage_siblings.length > 0 ? (
             <>
               Other claims from the same experiment group. They are not independent confirmation:{" "}
               {d.lineage_siblings.map((id) => <ClaimRef key={id} id={id} />)}
             </>
           ) : (
-            "No other claim from this experiment group is indexed."
+            c.lineage_id.startsWith("STUDY:") ? "No other claim from this experiment group is indexed." : "Claims from the same record count as one source, not several."
           )}
         </p>
       </Section>
@@ -149,6 +250,14 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
     </div>
   );
 }
+
+const CONTEXT_LABEL: Record<string, string> = {
+  association_type: "Association type",
+  via: "Through record",
+  upstream: "Upstream source",
+  listed_conditions: "All listed conditions",
+  study_title: "Study",
+};
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

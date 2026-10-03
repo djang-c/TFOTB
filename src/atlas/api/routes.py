@@ -281,7 +281,8 @@ def claim(request: Request, claim_id: str) -> Any:
     ix = _index(request)
     real = ix.claim(claim_id) if ix is not None else None
     if real is not None:
-        return _wrap_real(claim=real, subject_label=ix.r.label_of(real["subject_id"]) or real["subject_id"],
+        subject = ix.r.label_of(real["subject_id"]) or real["context"].get("study_title") or real["subject_id"]
+        return _wrap_real(claim=real, subject_label=subject,
                           object_label=ix.r.label_of(real["object_id"]), lineage_siblings=[], contradicting_claims=[])
     d = _demo(request)
     c = next((c for c in d["claims"] if c["claim_id"] == claim_id), None)
