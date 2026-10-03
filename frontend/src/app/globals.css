@@ -1,26 +1,49 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* TFOTB atlas: a reference database, not a landing page.
+   Cool white page, blue-black ink, cobalt links. Evidence colours follow docs/implementation/08 §2
+   and always pair with text or shape (never colour alone). */
+@theme {
+  --color-page: #f5f7f8;
+  --color-sheet: #ffffff;
+  --color-ink: #17212e;
+  --color-muted: #566273;
+  --color-rule: #d9dee3;
+  --color-link: #1c56a3;
+  --color-link-soft: #e6eef8;
+
+  --color-ev-reviewed: #0d7266;   /* reviewed mechanistic lead */
+  --color-ev-symptom: #55667a;    /* symptom-level lead */
+  --color-ev-hypo: #6a46b0;       /* hypothesis only */
+  --color-ev-conflict: #9a5b00;   /* conflicting evidence */
+  --color-ev-gap: #7d848c;        /* insufficient coverage */
+  --color-synthetic: #f3d34a;
+  --color-lab: #fff4c2;
+  --color-fail: #b3261e;
+  --color-pass: #0d7266;
+
+  --font-serif: var(--font-source-serif), Georgia, serif;
+  --font-sans: var(--font-public-sans), system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html { background: var(--color-page); color: var(--color-ink); }
+body { font-family: var(--font-sans); font-feature-settings: "tnum" 1; }
+
+:focus-visible { outline: 2px solid var(--color-link); outline-offset: 2px; border-radius: 2px; }
+
+a.ref { color: var(--color-link); text-decoration: none; }
+a.ref:hover { text-decoration: underline; }
+
+/* The hatched "no data" well: missing is visibly empty, never zero. */
+.well-missing {
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, #c9d0d7 4px 5px);
+}
+.tape {
+  background-image: repeating-linear-gradient(135deg, var(--color-synthetic) 0 8px, #17212e 8px 10px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+@keyframes slidein { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }

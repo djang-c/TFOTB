@@ -1,0 +1,7455 @@
+{
+ "_synthetic": "SYNTHETIC demo dataset for UI/contract development. Placeholder entities and quotes; makes NO biological claim.",
+ "as_of": "2026-10-03",
+ "assets": {
+  "SYN:disease-a": [
+   {
+    "access_conditions": "data-access committee",
+    "asset_id": "ASSET:syn-registry-b",
+    "asset_kind": "registry",
+    "contact": {
+     "label": "Disease B patient group contact page (synthetic)",
+     "source_url": "https://example.invalid/synthetic",
+     "url": "https://example.invalid/org-b/contact",
+     "verified_at": "2026-10-03"
+    },
+    "label": "Natural-history registry for Disease B (synthetic)",
+    "needs_expert_review": [
+     "whether shared phenotype fields are comparable"
+    ],
+    "ranking_reasons": [
+     "active",
+     "public contact route",
+     "phenotype fields overlap"
+    ],
+    "relevance_claim_ids": [
+     "CLAIM:syn-24"
+    ],
+    "reuse_limits": [
+     "records P1, P2, P5 only; P3-P4 not captured",
+     "Disease B cohort; eligibility rules for Disease A unknown"
+    ],
+    "source_url": "https://example.invalid/synthetic",
+    "status": "enrolling (synthetic)",
+    "status_checked_at": "2026-10-03",
+    "status_source_url": "https://example.invalid/synthetic"
+   },
+   {
+    "access_conditions": "material transfer agreement",
+    "asset_id": "ASSET:syn-cellmodel-b",
+    "asset_kind": "cell_model",
+    "contact": null,
+    "label": "Cell model for Disease B (synthetic)",
+    "needs_expert_review": [
+     "whether the M1 assay transfers to Disease A cells"
+    ],
+    "ranking_reasons": [
+     "validated M1 assay"
+    ],
+    "relevance_claim_ids": [
+     "CLAIM:syn-25"
+    ],
+    "reuse_limits": [
+     "different gene (G2 vs G1)",
+     "fibroblast only"
+    ],
+    "source_url": "https://example.invalid/synthetic",
+    "status": null,
+    "status_checked_at": null,
+    "status_source_url": null
+   }
+  ]
+ },
+ "cards": {
+  "SYN:disease-a": [
+   {
+    "asset_ids": [],
+    "audience": "science",
+    "body_markdown": "**Disease A and Disease B both show decreased M1 activity** in fibroblasts [^c:CLAIM:syn-12] [^c:CLAIM:syn-14]. One lab-reported result disagrees [^c:CLAIM:syn-23]. Phenotype overlap is partial [^c:CLAIM:syn-1]. No RNA-level findings are indexed for Disease A.",
+    "cached": false,
+    "card_id": "CARD:syn-brief-a",
+    "claim_ids": [
+     "CLAIM:syn-1",
+     "CLAIM:syn-12",
+     "CLAIM:syn-14",
+     "CLAIM:syn-23"
+    ],
+    "contact": null,
+    "coverage_manifest_id": "COV:syn-a",
+    "created_at": null,
+    "entity_id": "SYN:disease-a",
+    "generated_by": "template",
+    "kind": "evidence_brief",
+    "limitations": [
+     "SYNTHETIC demo data",
+     "two descriptions share one experiment (S1)",
+     "not a diagnosis or treatment recommendation"
+    ],
+    "responsible_human": "domain expert (reviewer)",
+    "reuse_limits": [],
+    "schema_version": "0.2.0",
+    "this_week": "Ask a domain expert to review the shared M1 finding with Disease B."
+   },
+   {
+    "asset_ids": [
+     "ASSET:syn-registry-b"
+    ],
+    "audience": "family",
+    "body_markdown": "Hello, we are a Disease A family group. Your registry records phenotypes we also see [^c:CLAIM:syn-24], and both diseases show a similar change in M1 [^c:CLAIM:syn-14]. Could we talk about whether your registry design could be reused?",
+    "cached": false,
+    "card_id": "CARD:syn-outreach-b",
+    "claim_ids": [
+     "CLAIM:syn-14",
+     "CLAIM:syn-24"
+    ],
+    "contact": {
+     "label": "Disease B patient group contact page (synthetic)",
+     "source_url": "https://example.invalid/synthetic",
+     "url": "https://example.invalid/org-b/contact",
+     "verified_at": "2026-10-03"
+    },
+    "coverage_manifest_id": null,
+    "created_at": null,
+    "entity_id": "SYN:disease-a",
+    "generated_by": "template",
+    "kind": "outreach_note",
+    "limitations": [
+     "SYNTHETIC demo data",
+     "registry fit needs expert review"
+    ],
+    "responsible_human": "family advocate (sends the note)",
+    "reuse_limits": [
+     "registry covers Disease B only"
+    ],
+    "schema_version": "0.2.0",
+    "this_week": "Send the Disease B patient group a short note about their registry."
+   },
+   {
+    "asset_ids": [],
+    "audience": "science",
+    "body_markdown": "An illustrative liquid-transfer workflow for the M1 assay was checked in simulation [^c:CLAIM:syn-25]. It checks the robot's motion and volume bookkeeping only.",
+    "cached": false,
+    "card_id": "CARD:syn-sim-a",
+    "claim_ids": [
+     "CLAIM:syn-25"
+    ],
+    "contact": null,
+    "coverage_manifest_id": null,
+    "created_at": null,
+    "entity_id": "SYN:disease-a",
+    "generated_by": "template",
+    "kind": "simulation_report",
+    "limitations": [
+     "Workflow simulation only; not wet-lab validated",
+     "biology and hardware not modeled"
+    ],
+    "responsible_human": "lab lead",
+    "reuse_limits": [],
+    "schema_version": "0.2.0",
+    "this_week": "Review the simulated plate layout for an M1 assay before booking lab time."
+   }
+  ]
+ },
+ "claims": [
+  {
+   "agent_type": "manual_agent",
+   "claim_id": "CLAIM:syn-1",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "observation",
+   "lineage_id": "STUDY:syn-s1",
+   "object_id": "SYN:pheno-1",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "reviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Patients with Disease A presented with Phenotype P1.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-a"
+  },
+  {
+   "agent_type": "manual_agent",
+   "claim_id": "CLAIM:syn-2",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "observation",
+   "lineage_id": "STUDY:syn-s1",
+   "object_id": "SYN:pheno-2",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "reviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Patients with Disease A presented with Phenotype P2.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-a"
+  },
+  {
+   "agent_type": "manual_agent",
+   "claim_id": "CLAIM:syn-3",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "observation",
+   "lineage_id": "STUDY:syn-s1",
+   "object_id": "SYN:pheno-3",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "reviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Patients with Disease A presented with Phenotype P3.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-a"
+  },
+  {
+   "agent_type": "manual_agent",
+   "claim_id": "CLAIM:syn-4",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "observation",
+   "lineage_id": "STUDY:syn-s1",
+   "object_id": "SYN:pheno-4",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "reviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Patients with Disease A presented with Phenotype P4.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-a"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-5",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s2",
+   "object_id": "SYN:pheno-1",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Phenotype P1 was reported in the Disease B cohort.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-b"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-6",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s2",
+   "object_id": "SYN:pheno-2",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Phenotype P2 was reported in the Disease B cohort.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-b"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-7",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s2",
+   "object_id": "SYN:pheno-5",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Phenotype P5 was reported in the Disease B cohort.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-b"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-8",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s3",
+   "object_id": "SYN:pheno-1",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Disease C cases showed Phenotype P1.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-c"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-9",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s3",
+   "object_id": "SYN:pheno-2",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Disease C cases showed Phenotype P2.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-c"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-10",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s3",
+   "object_id": "SYN:pheno-3",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Disease C cases showed Phenotype P3.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-c"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-11",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s3",
+   "object_id": "SYN:pheno-4",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Disease C cases showed Phenotype P4.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-c"
+  },
+  {
+   "agent_type": "manual_agent",
+   "claim_id": "CLAIM:syn-12",
+   "context": {
+    "direction": "decreases",
+    "organism": "human",
+    "tissue": "fibroblast (synthetic)"
+   },
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "observation",
+   "lineage_id": "STUDY:syn-s1",
+   "object_id": "SYN:mech-1",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "reviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Loss of G1 function reduced M1 activity in patient-derived cells.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-a"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-13",
+   "context": {
+    "direction": "decreases",
+    "tissue": "fibroblast (synthetic)"
+   },
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [
+    "CLAIM:syn-12"
+   ],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s1",
+   "object_id": "SYN:mech-1",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Reduced M1 activity, as described in the S1 cell experiment.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-a"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-14",
+   "context": {
+    "direction": "decreases",
+    "organism": "human",
+    "tissue": "fibroblast (synthetic)"
+   },
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s2",
+   "object_id": "SYN:mech-1",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "reviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Disease B cells showed decreased M1 activity.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-b"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-15",
+   "context": {
+    "direction": "decreases"
+   },
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s1",
+   "object_id": "SYN:mech-1",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"G1 knockdown lowered M1 activity.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:gene-1"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-16",
+   "context": {
+    "direction": "decreases"
+   },
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s2",
+   "object_id": "SYN:mech-1",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"G2 variants lowered M1 activity.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:gene-2"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-17",
+   "context": {
+    "direction": "decreases"
+   },
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s1",
+   "object_id": "SYN:mech-2",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"M2 output was reduced in Disease A.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-a"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-18",
+   "context": {
+    "direction": "increases"
+   },
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s3",
+   "object_id": "SYN:mech-2",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Disease D samples showed increased M2 output.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-d"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-19",
+   "context": {
+    "direction": "increases"
+   },
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s3",
+   "object_id": "SYN:mech-2",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"G3 gain of function raised M2 output.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:gene-3"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-20",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s3",
+   "object_id": "SYN:pheno-6",
+   "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Phenotype P6 noted in one Disease E case.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-e"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-21",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s3",
+   "object_id": "SYN:mech-1",
+   "predicate": "SUPPORTED_BY",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Authors speculate M1 may be involved in Disease E.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "inference",
+   "subject_id": "SYN:disease-e"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-22",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s2",
+   "object_id": "SYN:mech-1",
+   "predicate": "HAS_PREDICTED_RNA_EFFECT",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": 0.71,
+   "score_definition": "synthetic splice-predictor delta score, v0 (not a probability)",
+   "source_reported_classification": null,
+   "source_span": "\"Splice predictor flags a possible exon skip.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "computational_prediction",
+   "subject_id": "SYN:gene-2"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-23",
+   "context": {
+    "direction": "no_change"
+   },
+   "contradicts": [
+    "CLAIM:syn-14"
+   ],
+   "contributor": "Synthetic Lab (demo)",
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-lab1",
+   "object_id": "SYN:mech-1",
+   "predicate": "PERTURBS_MECHANISM",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [
+    "awaiting reviewer"
+   ],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Our lab saw no change in M1 in a small Disease B sample.\" (synthetic quote)",
+   "source_type": "lab_reported",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-b"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-24",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-reg",
+   "object_id": "SYN:disease-b",
+   "predicate": "ASSET_RELEVANT_TO",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"The registry enrols people with Disease B and records phenotypes P1, P2, P5.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:registry-b"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-25",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-cell",
+   "object_id": "SYN:disease-b",
+   "predicate": "ASSET_RELEVANT_TO",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Cell line derived from a Disease B donor; M1 assay validated.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:cellmodel-b"
+  },
+  {
+   "agent_type": "not_provided",
+   "claim_id": "CLAIM:syn-26",
+   "context": {},
+   "contradicts": [],
+   "contributor": null,
+   "derived_from": [],
+   "extraction_method": "structured_field (synthetic)",
+   "knowledge_level": "not_provided",
+   "lineage_id": "STUDY:syn-s2",
+   "object_id": "SYN:study-2",
+   "predicate": "INVESTIGATED_IN",
+   "primary_knowledge_source": null,
+   "published_at": "2025-01-15",
+   "retrieved_at": "2026-10-03",
+   "review_notes": [],
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "score": null,
+   "score_definition": null,
+   "source_reported_classification": null,
+   "source_span": "\"Disease B natural-history study S2.\" (synthetic quote)",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "status": "reported_observation",
+   "subject_id": "SYN:disease-b"
+  }
+ ],
+ "connections": {
+  "SYN:disease-a": [
+   {
+    "candidate_id": "SYN:disease-b",
+    "category": "reviewed mechanistic lead",
+    "comparisons": [
+     {
+      "availability": "available",
+      "candidate_id": "SYN:disease-b",
+      "channel_id": "phenotype",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": 0.4,
+      "score_definition": "phenotype Jaccard overlap over indexed phenotypes (0-1), synthetic-0",
+      "supporting_claim_ids": [
+       "CLAIM:syn-1",
+       "CLAIM:syn-2",
+       "CLAIM:syn-5",
+       "CLAIM:syn-6"
+      ]
+     },
+     {
+      "availability": "available",
+      "candidate_id": "SYN:disease-b",
+      "channel_id": "dna",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [
+       "gene-level only; no shared variant"
+      ],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": [
+       "CLAIM:syn-15",
+       "CLAIM:syn-16"
+      ]
+     },
+     {
+      "availability": "missing",
+      "candidate_id": "SYN:disease-b",
+      "channel_id": "rna",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [
+       "only a computational prediction exists for Disease B"
+      ],
+      "missing_fields": [
+       "RNA findings for Disease A"
+      ],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "available",
+      "candidate_id": "SYN:disease-b",
+      "channel_id": "mechanism",
+      "channel_version": "synthetic-0",
+      "context_matches": [
+       "tissue",
+       "direction"
+      ],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [
+       "CLAIM:syn-23"
+      ],
+      "limitations": [],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": [
+       "CLAIM:syn-12",
+       "CLAIM:syn-14"
+      ]
+     }
+    ],
+    "compatibility_flags": [
+     "same tissue (fibroblast, synthetic)",
+     "same direction (decreases)"
+    ],
+    "coverage_manifest_id": "COV:syn-a",
+    "path_claim_ids": [
+     "CLAIM:syn-12",
+     "CLAIM:syn-14"
+    ],
+    "query_id": "SYN:disease-a",
+    "scope_note": "Research-support lead. Not a diagnosis or treatment recommendation.",
+    "shared_treatment_inference_allowed": false
+   },
+   {
+    "candidate_id": "SYN:disease-c",
+    "category": "symptom-level lead",
+    "comparisons": [
+     {
+      "availability": "available",
+      "candidate_id": "SYN:disease-c",
+      "channel_id": "phenotype",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": 1.0,
+      "score_definition": "phenotype Jaccard overlap over indexed phenotypes (0-1), synthetic-0",
+      "supporting_claim_ids": [
+       "CLAIM:syn-1",
+       "CLAIM:syn-2",
+       "CLAIM:syn-3",
+       "CLAIM:syn-4",
+       "CLAIM:syn-8",
+       "CLAIM:syn-9",
+       "CLAIM:syn-10",
+       "CLAIM:syn-11"
+      ]
+     },
+     {
+      "availability": "missing",
+      "candidate_id": "SYN:disease-c",
+      "channel_id": "dna",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [
+       "gene findings for Disease C"
+      ],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "missing",
+      "candidate_id": "SYN:disease-c",
+      "channel_id": "rna",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [
+       "RNA findings"
+      ],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "missing",
+      "candidate_id": "SYN:disease-c",
+      "channel_id": "mechanism",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [
+       "mechanism findings for Disease C"
+      ],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": []
+     }
+    ],
+    "compatibility_flags": [
+     "symptoms overlap; biology not shown to match"
+    ],
+    "coverage_manifest_id": "COV:syn-a",
+    "path_claim_ids": [
+     "CLAIM:syn-1",
+     "CLAIM:syn-2"
+    ],
+    "query_id": "SYN:disease-a",
+    "scope_note": "Research-support lead. Not a diagnosis or treatment recommendation.",
+    "shared_treatment_inference_allowed": false
+   },
+   {
+    "candidate_id": "SYN:disease-d",
+    "category": "conflicting evidence",
+    "comparisons": [
+     {
+      "availability": "available",
+      "candidate_id": "SYN:disease-d",
+      "channel_id": "phenotype",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [
+       "no indexed phenotype overlap"
+      ],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": 0.0,
+      "score_definition": "phenotype Jaccard overlap over indexed phenotypes (0-1), synthetic-0",
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "failed",
+      "candidate_id": "SYN:disease-d",
+      "channel_id": "dna",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [
+       "gene source timed out (synthetic)"
+      ],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "missing",
+      "candidate_id": "SYN:disease-d",
+      "channel_id": "rna",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [
+       "RNA findings"
+      ],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "available",
+      "candidate_id": "SYN:disease-d",
+      "channel_id": "mechanism",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [
+       "direction: decreases vs increases"
+      ],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": [
+       "CLAIM:syn-17",
+       "CLAIM:syn-18"
+      ]
+     }
+    ],
+    "compatibility_flags": [
+     "Opposite effect direction - shared treatment not supported; research connection still shown"
+    ],
+    "coverage_manifest_id": "COV:syn-a",
+    "path_claim_ids": [
+     "CLAIM:syn-17",
+     "CLAIM:syn-18"
+    ],
+    "query_id": "SYN:disease-a",
+    "scope_note": "Research-support lead. Not a diagnosis or treatment recommendation.",
+    "shared_treatment_inference_allowed": false
+   },
+   {
+    "candidate_id": "SYN:disease-e",
+    "category": "hypothesis only",
+    "comparisons": [
+     {
+      "availability": "available",
+      "candidate_id": "SYN:disease-e",
+      "channel_id": "phenotype",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": 0.0,
+      "score_definition": "phenotype Jaccard overlap over indexed phenotypes (0-1), synthetic-0",
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "missing",
+      "candidate_id": "SYN:disease-e",
+      "channel_id": "dna",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [
+       "gene findings"
+      ],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "missing",
+      "candidate_id": "SYN:disease-e",
+      "channel_id": "rna",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [],
+      "missing_fields": [
+       "RNA findings"
+      ],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": []
+     },
+     {
+      "availability": "incompatible",
+      "candidate_id": "SYN:disease-e",
+      "channel_id": "mechanism",
+      "channel_version": "synthetic-0",
+      "context_matches": [],
+      "context_mismatches": [],
+      "contradicting_claim_ids": [],
+      "limitations": [
+       "only an author inference; no observation"
+      ],
+      "missing_fields": [],
+      "query_id": "SYN:disease-a",
+      "score": null,
+      "score_definition": null,
+      "supporting_claim_ids": [
+       "CLAIM:syn-21"
+      ]
+     }
+    ],
+    "compatibility_flags": [],
+    "coverage_manifest_id": "COV:syn-a",
+    "path_claim_ids": [
+     "CLAIM:syn-21"
+    ],
+    "query_id": "SYN:disease-a",
+    "scope_note": "Research-support lead. Not a diagnosis or treatment recommendation.",
+    "shared_treatment_inference_allowed": false
+   }
+  ]
+ },
+ "dataset_version": "synthetic-0",
+ "entities": [
+  {
+   "attributes": {
+    "summary_known": "Linked to reduced activity of mechanism M1 in two synthetic reports.",
+    "summary_missing": "No RNA-level findings are indexed."
+   },
+   "candidate_ids": [],
+   "id": "SYN:disease-a",
+   "identity_status": "resolved",
+   "label": "Disease A (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [
+    "Syndrome A",
+    "DA type 1"
+   ],
+   "type": "disease",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:disease-b",
+   "identity_status": "resolved",
+   "label": "Disease B (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [
+    "Syndrome B"
+   ],
+   "type": "disease",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:disease-c",
+   "identity_status": "resolved",
+   "label": "Disease C (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "disease",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:disease-d",
+   "identity_status": "resolved",
+   "label": "Disease D (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "disease",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:disease-e",
+   "identity_status": "resolved",
+   "label": "Disease E (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "disease",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:gene-1",
+   "identity_status": "resolved",
+   "label": "Gene G1 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "gene",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:gene-2",
+   "identity_status": "resolved",
+   "label": "Gene G2 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "gene",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:gene-3",
+   "identity_status": "resolved",
+   "label": "Gene G3 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "gene",
+   "xrefs": []
+  },
+  {
+   "attributes": {
+    "assembly": "SYNTHETIC",
+    "hgvs": "NM_000000.1:c.0A>G",
+    "is_synthetic": true,
+    "source_reported_classification": "uncertain significance (synthetic)"
+   },
+   "candidate_ids": [],
+   "id": "SYN:variant-vus-1",
+   "identity_status": "resolved",
+   "label": "Uncertain variant in G1 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "variant",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:mech-1",
+   "identity_status": "resolved",
+   "label": "Mechanism M1 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "mechanism",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:mech-2",
+   "identity_status": "resolved",
+   "label": "Mechanism M2 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "mechanism",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:pheno-1",
+   "identity_status": "resolved",
+   "label": "Phenotype P1 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "phenotype",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:pheno-2",
+   "identity_status": "resolved",
+   "label": "Phenotype P2 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "phenotype",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:pheno-3",
+   "identity_status": "resolved",
+   "label": "Phenotype P3 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "phenotype",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:pheno-4",
+   "identity_status": "resolved",
+   "label": "Phenotype P4 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "phenotype",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:pheno-5",
+   "identity_status": "resolved",
+   "label": "Phenotype P5 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "phenotype",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:pheno-6",
+   "identity_status": "resolved",
+   "label": "Phenotype P6 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "phenotype",
+   "xrefs": []
+  },
+  {
+   "attributes": {
+    "asset_kind": "registry"
+   },
+   "candidate_ids": [],
+   "id": "SYN:registry-b",
+   "identity_status": "resolved",
+   "label": "Natural-history registry for Disease B (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "asset",
+   "xrefs": []
+  },
+  {
+   "attributes": {
+    "asset_kind": "cell_model"
+   },
+   "candidate_ids": [],
+   "id": "SYN:cellmodel-b",
+   "identity_status": "resolved",
+   "label": "Cell model for Disease B (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "asset",
+   "xrefs": []
+  },
+  {
+   "attributes": {
+    "website": "https://example.invalid/org-b"
+   },
+   "candidate_ids": [],
+   "id": "SYN:org-b",
+   "identity_status": "resolved",
+   "label": "Disease B patient group (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "organization",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:study-1",
+   "identity_status": "resolved",
+   "label": "Study S1 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "study",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:study-2",
+   "identity_status": "resolved",
+   "label": "Study S2 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "study",
+   "xrefs": []
+  },
+  {
+   "attributes": {},
+   "candidate_ids": [],
+   "id": "SYN:study-3",
+   "identity_status": "resolved",
+   "label": "Study S3 (synthetic)",
+   "retrieved_at": "2026-10-03",
+   "review_state": "unreviewed",
+   "schema_version": "0.2.0",
+   "source_type": "synthetic_fixture",
+   "source_url": "https://example.invalid/synthetic",
+   "source_version": "synthetic-0",
+   "synonyms": [],
+   "type": "study",
+   "xrefs": []
+  }
+ ],
+ "gaps": {
+  "SYN:disease-e": {
+   "as_of": "2026-10-03",
+   "coverage_manifest_id": "COV:syn-a",
+   "entity_id": "SYN:disease-e",
+   "failed_sources": [],
+   "kind": "hypothesis_only",
+   "known_claim_ids": [
+    "CLAIM:syn-21"
+   ],
+   "missing_information": [
+    "A direct observation of M1 in Disease E"
+   ],
+   "reviewer_role": "domain expert",
+   "scope_note": "Research-support gap report. Absence is scoped to the indexed evidence.",
+   "statement": "Only a hypothesis links Disease E to M1 in the indexed evidence as of 2026-10-03."
+  },
+  "SYN:variant-vus-1": {
+   "as_of": "2026-10-03",
+   "coverage_manifest_id": "COV:syn-vus",
+   "entity_id": "SYN:variant-vus-1",
+   "failed_sources": [
+    "synthetic functional assays (unavailable)"
+   ],
+   "kind": "insufficient_coverage",
+   "known_claim_ids": [],
+   "missing_information": [
+    "A functional or RNA-level study of this variant",
+    "Segregation data from additional families"
+   ],
+   "reviewer_role": "clinical geneticist or variant curator",
+   "scope_note": "Research-support gap report. Absence is scoped to the indexed evidence.",
+   "statement": "No supported route found in the indexed evidence as of 2026-10-03."
+  }
+ },
+ "graphs": {
+  "SYN:cellmodel-b": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-25",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:cellmodel-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-7",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-5"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-24",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:registry-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-26",
+     "predicate": "INVESTIGATED_IN",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:study-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:cellmodel-b",
+     "label": "Cell model for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-5",
+     "label": "Phenotype P5 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:registry-b",
+     "label": "Natural-history registry for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:study-2",
+     "label": "Study S2 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:disease-a": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-3",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-4",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-8",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-9",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-10",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-11",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-15",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-1",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-16",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-18",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-d",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-19",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-3",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-21",
+     "predicate": "SUPPORTED_BY",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "inference",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-22",
+     "predicate": "HAS_PREDICTED_RNA_EFFECT",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "computational_prediction",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-c",
+     "label": "Disease C (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-d",
+     "label": "Disease D (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-e",
+     "label": "Disease E (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-1",
+     "label": "Gene G1 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:gene-2",
+     "label": "Gene G2 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:gene-3",
+     "label": "Gene G3 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-3",
+     "label": "Phenotype P3 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-4",
+     "label": "Phenotype P4 (synthetic)",
+     "type": "phenotype"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:disease-b": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-7",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-5"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-24",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:registry-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-25",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:cellmodel-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-26",
+     "predicate": "INVESTIGATED_IN",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:study-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-8",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-9",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-15",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-1",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-16",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-21",
+     "predicate": "SUPPORTED_BY",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "inference",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-22",
+     "predicate": "HAS_PREDICTED_RNA_EFFECT",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "computational_prediction",
+     "target": "SYN:mech-1"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:cellmodel-b",
+     "label": "Cell model for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-c",
+     "label": "Disease C (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-e",
+     "label": "Disease E (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-1",
+     "label": "Gene G1 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:gene-2",
+     "label": "Gene G2 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-5",
+     "label": "Phenotype P5 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:registry-b",
+     "label": "Natural-history registry for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:study-2",
+     "label": "Study S2 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:disease-c": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-8",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-9",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-10",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-11",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-3",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-4",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-c",
+     "label": "Disease C (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-3",
+     "label": "Phenotype P3 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-4",
+     "label": "Phenotype P4 (synthetic)",
+     "type": "phenotype"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:disease-d": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-18",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-d",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-19",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-3",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-d",
+     "label": "Disease D (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-3",
+     "label": "Gene G3 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:disease-e": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-20",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "reported_observation",
+     "target": "SYN:pheno-6"
+    },
+    {
+     "claim_id": "CLAIM:syn-21",
+     "predicate": "SUPPORTED_BY",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "inference",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-15",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-1",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-16",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-22",
+     "predicate": "HAS_PREDICTED_RNA_EFFECT",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "computational_prediction",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-e",
+     "label": "Disease E (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-1",
+     "label": "Gene G1 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:gene-2",
+     "label": "Gene G2 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-6",
+     "label": "Phenotype P6 (synthetic)",
+     "type": "phenotype"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:gene-1": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-15",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-1",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-16",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-21",
+     "predicate": "SUPPORTED_BY",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "inference",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-22",
+     "predicate": "HAS_PREDICTED_RNA_EFFECT",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "computational_prediction",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-e",
+     "label": "Disease E (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-1",
+     "label": "Gene G1 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:gene-2",
+     "label": "Gene G2 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:gene-2": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-16",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-22",
+     "predicate": "HAS_PREDICTED_RNA_EFFECT",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "computational_prediction",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-15",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-1",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-21",
+     "predicate": "SUPPORTED_BY",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "inference",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-e",
+     "label": "Disease E (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-1",
+     "label": "Gene G1 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:gene-2",
+     "label": "Gene G2 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:gene-3": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-19",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-3",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-18",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-d",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-d",
+     "label": "Disease D (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-3",
+     "label": "Gene G3 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:mech-1": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-15",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-1",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-16",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-21",
+     "predicate": "SUPPORTED_BY",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "inference",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-22",
+     "predicate": "HAS_PREDICTED_RNA_EFFECT",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-2",
+     "status": "computational_prediction",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-3",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-4",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-7",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-5"
+    },
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-20",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "reported_observation",
+     "target": "SYN:pheno-6"
+    },
+    {
+     "claim_id": "CLAIM:syn-24",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:registry-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-25",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:cellmodel-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-26",
+     "predicate": "INVESTIGATED_IN",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:study-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:cellmodel-b",
+     "label": "Cell model for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-e",
+     "label": "Disease E (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-1",
+     "label": "Gene G1 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:gene-2",
+     "label": "Gene G2 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-3",
+     "label": "Phenotype P3 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-4",
+     "label": "Phenotype P4 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-5",
+     "label": "Phenotype P5 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-6",
+     "label": "Phenotype P6 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:registry-b",
+     "label": "Natural-history registry for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:study-2",
+     "label": "Study S2 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:mech-2": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-18",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-d",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-19",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:gene-3",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-3",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-4",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-d",
+     "label": "Disease D (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:gene-3",
+     "label": "Gene G3 (synthetic)",
+     "type": "gene"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-3",
+     "label": "Phenotype P3 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-4",
+     "label": "Phenotype P4 (synthetic)",
+     "type": "phenotype"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:org-b": {
+   "edges": [],
+   "nodes": [
+    {
+     "id": "SYN:org-b",
+     "label": "Disease B patient group (synthetic)",
+     "type": "organization"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:pheno-1": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-8",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-3",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-4",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-7",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-5"
+    },
+    {
+     "claim_id": "CLAIM:syn-9",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-10",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-11",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-24",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:registry-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-25",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:cellmodel-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-26",
+     "predicate": "INVESTIGATED_IN",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:study-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:cellmodel-b",
+     "label": "Cell model for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-c",
+     "label": "Disease C (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-3",
+     "label": "Phenotype P3 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-4",
+     "label": "Phenotype P4 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-5",
+     "label": "Phenotype P5 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:registry-b",
+     "label": "Natural-history registry for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:study-2",
+     "label": "Study S2 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:pheno-2": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-9",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-3",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-4",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-7",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-5"
+    },
+    {
+     "claim_id": "CLAIM:syn-8",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-10",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-11",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-24",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:registry-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-25",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:cellmodel-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-26",
+     "predicate": "INVESTIGATED_IN",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:study-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:cellmodel-b",
+     "label": "Cell model for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-c",
+     "label": "Disease C (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-3",
+     "label": "Phenotype P3 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-4",
+     "label": "Phenotype P4 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-5",
+     "label": "Phenotype P5 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:registry-b",
+     "label": "Natural-history registry for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:study-2",
+     "label": "Study S2 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:pheno-3": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-3",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-10",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-4",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-8",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-9",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-11",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-c",
+     "label": "Disease C (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-3",
+     "label": "Phenotype P3 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-4",
+     "label": "Phenotype P4 (synthetic)",
+     "type": "phenotype"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:pheno-4": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-4",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-11",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-4"
+    },
+    {
+     "claim_id": "CLAIM:syn-1",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-2",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-3",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-8",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-9",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-10",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-c",
+     "status": "reported_observation",
+     "target": "SYN:pheno-3"
+    },
+    {
+     "claim_id": "CLAIM:syn-12",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-13",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-17",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-a",
+     "status": "reported_observation",
+     "target": "SYN:mech-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-a",
+     "label": "Disease A (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:disease-c",
+     "label": "Disease C (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:mech-2",
+     "label": "Mechanism M2 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-3",
+     "label": "Phenotype P3 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-4",
+     "label": "Phenotype P4 (synthetic)",
+     "type": "phenotype"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:pheno-5": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-7",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-5"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-24",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:registry-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-25",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:cellmodel-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-26",
+     "predicate": "INVESTIGATED_IN",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:study-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:cellmodel-b",
+     "label": "Cell model for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-5",
+     "label": "Phenotype P5 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:registry-b",
+     "label": "Natural-history registry for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:study-2",
+     "label": "Study S2 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:pheno-6": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-20",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "reported_observation",
+     "target": "SYN:pheno-6"
+    },
+    {
+     "claim_id": "CLAIM:syn-21",
+     "predicate": "SUPPORTED_BY",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-e",
+     "status": "inference",
+     "target": "SYN:mech-1"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:disease-e",
+     "label": "Disease E (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-6",
+     "label": "Phenotype P6 (synthetic)",
+     "type": "phenotype"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:registry-b": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-24",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:registry-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-7",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-5"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-25",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:cellmodel-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-26",
+     "predicate": "INVESTIGATED_IN",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:study-2"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:cellmodel-b",
+     "label": "Cell model for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-5",
+     "label": "Phenotype P5 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:registry-b",
+     "label": "Natural-history registry for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:study-2",
+     "label": "Study S2 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:study-1": {
+   "edges": [],
+   "nodes": [
+    {
+     "id": "SYN:study-1",
+     "label": "Study S1 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:study-2": {
+   "edges": [
+    {
+     "claim_id": "CLAIM:syn-26",
+     "predicate": "INVESTIGATED_IN",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:study-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-5",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-6",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-2"
+    },
+    {
+     "claim_id": "CLAIM:syn-7",
+     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:pheno-5"
+    },
+    {
+     "claim_id": "CLAIM:syn-14",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "reviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-23",
+     "predicate": "PERTURBS_MECHANISM",
+     "review_state": "unreviewed",
+     "source": "SYN:disease-b",
+     "status": "reported_observation",
+     "target": "SYN:mech-1"
+    },
+    {
+     "claim_id": "CLAIM:syn-24",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:registry-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    },
+    {
+     "claim_id": "CLAIM:syn-25",
+     "predicate": "ASSET_RELEVANT_TO",
+     "review_state": "unreviewed",
+     "source": "SYN:cellmodel-b",
+     "status": "reported_observation",
+     "target": "SYN:disease-b"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "SYN:cellmodel-b",
+     "label": "Cell model for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:disease-b",
+     "label": "Disease B (synthetic)",
+     "type": "disease"
+    },
+    {
+     "id": "SYN:mech-1",
+     "label": "Mechanism M1 (synthetic)",
+     "type": "mechanism"
+    },
+    {
+     "id": "SYN:pheno-1",
+     "label": "Phenotype P1 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-2",
+     "label": "Phenotype P2 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:pheno-5",
+     "label": "Phenotype P5 (synthetic)",
+     "type": "phenotype"
+    },
+    {
+     "id": "SYN:registry-b",
+     "label": "Natural-history registry for Disease B (synthetic)",
+     "type": "asset"
+    },
+    {
+     "id": "SYN:study-2",
+     "label": "Study S2 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:study-3": {
+   "edges": [],
+   "nodes": [
+    {
+     "id": "SYN:study-3",
+     "label": "Study S3 (synthetic)",
+     "type": "study"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  },
+  "SYN:variant-vus-1": {
+   "edges": [],
+   "nodes": [
+    {
+     "id": "SYN:variant-vus-1",
+     "label": "Uncertain variant in G1 (synthetic)",
+     "type": "variant"
+    }
+   ],
+   "omitted": 0,
+   "truncated": false
+  }
+ },
+ "manifests": [
+  {
+   "dataset_version": "synthetic-0",
+   "filters": {},
+   "generated_by": "scripts/build_demo.py@0",
+   "manifest_id": "COV:syn-a",
+   "per_channel": [
+    {
+     "availability": "available",
+     "channel_id": "phenotype",
+     "note": null
+    },
+    {
+     "availability": "available",
+     "channel_id": "dna",
+     "note": null
+    },
+    {
+     "availability": "missing",
+     "channel_id": "rna",
+     "note": null
+    },
+    {
+     "availability": "available",
+     "channel_id": "mechanism",
+     "note": null
+    }
+   ],
+   "per_source": [
+    {
+     "error": null,
+     "fetched": 14,
+     "screened": 9,
+     "source": "synthetic literature",
+     "status": "ok",
+     "version": "0"
+    },
+    {
+     "error": null,
+     "fetched": 3,
+     "screened": 3,
+     "source": "synthetic variant db",
+     "status": "ok",
+     "version": "0"
+    },
+    {
+     "error": "timeout (synthetic)",
+     "fetched": null,
+     "screened": null,
+     "source": "synthetic gene db",
+     "status": "failed",
+     "version": null
+    },
+    {
+     "error": null,
+     "fetched": null,
+     "screened": null,
+     "source": "synthetic RNA atlas",
+     "status": "not_queried",
+     "version": null
+    }
+   ],
+   "query": "Disease A (synthetic)",
+   "retrieved_at": "2026-10-03T00:00:00Z",
+   "schema_version": "0.2.0",
+   "source_versions": {
+    "synthetic": "0"
+   }
+  },
+  {
+   "dataset_version": "synthetic-0",
+   "filters": {},
+   "generated_by": "scripts/build_demo.py@0",
+   "manifest_id": "COV:syn-vus",
+   "per_channel": [
+    {
+     "availability": "available",
+     "channel_id": "dna",
+     "note": null
+    },
+    {
+     "availability": "missing",
+     "channel_id": "rna",
+     "note": null
+    },
+    {
+     "availability": "missing",
+     "channel_id": "mechanism",
+     "note": null
+    }
+   ],
+   "per_source": [
+    {
+     "error": null,
+     "fetched": 1,
+     "screened": 1,
+     "source": "synthetic variant db",
+     "status": "ok",
+     "version": "0"
+    },
+    {
+     "error": null,
+     "fetched": null,
+     "screened": null,
+     "source": "synthetic functional assays",
+     "status": "unavailable",
+     "version": null
+    },
+    {
+     "error": null,
+     "fetched": null,
+     "screened": null,
+     "source": "synthetic RNA atlas",
+     "status": "not_queried",
+     "version": null
+    }
+   ],
+   "query": "Uncertain variant in G1 (synthetic)",
+   "retrieved_at": "2026-10-03T00:00:00Z",
+   "schema_version": "0.2.0",
+   "source_versions": {}
+  }
+ ],
+ "simulations": {
+  "runs": {
+   "SIM:syn-fail": {
+    "label": "recorded run (not live)",
+    "report": {
+     "adapter_version": "0.1.0",
+     "checks": [
+      {
+       "check_name": "spec_schema",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "operation_order",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "pipette_capacity",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "source_volume",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "tip_availability",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "declared_bounds",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "joint_limits",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "modeled_collision",
+       "reason": "unexpected contact ['pipette', 'tower'] at [89.2, 109.7, 20.0] mm",
+       "status": "fail"
+      },
+      {
+       "check_name": "biology",
+       "reason": "efficacy, rescue, safety and assay outcomes are not simulated",
+       "status": "not_modeled"
+      },
+      {
+       "check_name": "physical_execution",
+       "reason": "no hardware, calibration or real-liquid validation",
+       "status": "not_modeled"
+      }
+     ],
+     "experiment_spec_hash": "d1ea033b5608b33e90132aedfe3fb38d8cd2b5cf22c7a368bffd1e552e479b7d",
+     "failures": [
+      {
+       "check": "modeled_collision",
+       "op_index": 2,
+       "reason": "unexpected contact ['pipette', 'tower'] at [89.2, 109.7, 20.0] mm"
+      }
+     ],
+     "finished_at": "2026-10-03T21:05:43.229958+00:00",
+     "ledger_after": {
+      "held_ul": 0.0,
+      "source_ul": 850.0,
+      "tip_attached": false,
+      "tips_available": 1,
+      "wells_ul": {
+       "A1": 50.0,
+       "A2": 50.0,
+       "A3": 50.0
+      }
+     },
+     "ledger_before": {
+      "held_ul": 0.0,
+      "source_ul": 1000.0,
+      "tip_attached": false,
+      "tips_available": 4,
+      "wells_ul": {}
+     },
+     "modeled_collision_events": [
+      {
+       "at_mm": [
+        89.23,
+        109.72,
+        20.0
+       ],
+       "geoms": [
+        "pipette",
+        "tower"
+       ],
+       "op_index": 2
+      }
+     ],
+     "operation_trace": [
+      {
+       "end_mm": [
+        40,
+        40,
+        15
+       ],
+       "op": "pick_tip",
+       "op_index": 0,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        150,
+        10
+       ],
+       "op": "aspirate",
+       "op_index": 1,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        150,
+        20.0
+       ],
+       "op": "dispense",
+       "op_index": 2,
+       "status": "fail"
+      }
+     ],
+     "overall": "fail",
+     "path_length_mm": 196.57,
+     "random_seed": 0,
+     "review_state": "generic_fixture_unreviewed",
+     "run_id": "run-de7f1eeecd5d",
+     "scene_hash": "528b76b145f10a1116d5ef2f8cf448a15da4e79443a619a56c1beb15d45c13d3",
+     "scope_label": "Workflow simulation only; not wet-lab validated",
+     "simulation_steps": 261,
+     "simulation_time_note": "kinematic samples at 1 mm; not physical time",
+     "simulator_name": "mujoco",
+     "simulator_version": "3.14.0",
+     "started_at": "2026-10-03T21:05:43.222573+00:00",
+     "wall_clock_time_s": 0.0073
+    },
+    "run_id": "SIM:syn-fail",
+    "spec": "blocked_path",
+    "trajectory": {
+     "points": [
+      [
+       3.51,
+       3.51,
+       20.0
+      ],
+      [
+       7.02,
+       7.02,
+       20.0
+      ],
+      [
+       10.53,
+       10.53,
+       20.0
+      ],
+      [
+       14.04,
+       14.04,
+       20.0
+      ],
+      [
+       17.54,
+       17.54,
+       20.0
+      ],
+      [
+       21.05,
+       21.05,
+       20.0
+      ],
+      [
+       24.56,
+       24.56,
+       20.0
+      ],
+      [
+       28.07,
+       28.07,
+       20.0
+      ],
+      [
+       31.58,
+       31.58,
+       20.0
+      ],
+      [
+       35.09,
+       35.09,
+       20.0
+      ],
+      [
+       38.6,
+       38.6,
+       20.0
+      ],
+      [
+       40.0,
+       40.0,
+       17.0
+      ],
+      [
+       40.0,
+       40.0,
+       18.0
+      ],
+      [
+       40.0,
+       43.0,
+       20.0
+      ],
+      [
+       40.0,
+       48.0,
+       20.0
+      ],
+      [
+       40.0,
+       53.0,
+       20.0
+      ],
+      [
+       40.0,
+       58.0,
+       20.0
+      ],
+      [
+       40.0,
+       63.0,
+       20.0
+      ],
+      [
+       40.0,
+       68.0,
+       20.0
+      ],
+      [
+       40.0,
+       73.0,
+       20.0
+      ],
+      [
+       40.0,
+       78.0,
+       20.0
+      ],
+      [
+       40.0,
+       83.0,
+       20.0
+      ],
+      [
+       40.0,
+       88.0,
+       20.0
+      ],
+      [
+       40.0,
+       93.0,
+       20.0
+      ],
+      [
+       40.0,
+       98.0,
+       20.0
+      ],
+      [
+       40.0,
+       103.0,
+       20.0
+      ],
+      [
+       40.0,
+       108.0,
+       20.0
+      ],
+      [
+       40.0,
+       113.0,
+       20.0
+      ],
+      [
+       40.0,
+       118.0,
+       20.0
+      ],
+      [
+       40.0,
+       123.0,
+       20.0
+      ],
+      [
+       40.0,
+       128.0,
+       20.0
+      ],
+      [
+       40.0,
+       133.0,
+       20.0
+      ],
+      [
+       40.0,
+       138.0,
+       20.0
+      ],
+      [
+       40.0,
+       143.0,
+       20.0
+      ],
+      [
+       40.0,
+       148.0,
+       20.0
+      ],
+      [
+       40.0,
+       150.0,
+       17.0
+      ],
+      [
+       40.0,
+       150.0,
+       12.0
+      ],
+      [
+       40.0,
+       150.0,
+       13.0
+      ],
+      [
+       40.0,
+       150.0,
+       18.0
+      ],
+      [
+       42.31,
+       148.11,
+       20.0
+      ],
+      [
+       46.15,
+       144.97,
+       20.0
+      ],
+      [
+       50.0,
+       141.82,
+       20.0
+      ],
+      [
+       53.85,
+       138.67,
+       20.0
+      ],
+      [
+       57.69,
+       135.52,
+       20.0
+      ],
+      [
+       61.54,
+       132.38,
+       20.0
+      ],
+      [
+       65.38,
+       129.23,
+       20.0
+      ],
+      [
+       69.23,
+       126.08,
+       20.0
+      ],
+      [
+       73.08,
+       122.94,
+       20.0
+      ],
+      [
+       76.92,
+       119.79,
+       20.0
+      ],
+      [
+       80.77,
+       116.64,
+       20.0
+      ],
+      [
+       84.62,
+       113.5,
+       20.0
+      ],
+      [
+       88.46,
+       110.35,
+       20.0
+      ]
+     ],
+     "scope_label": "Workflow simulation only; not wet-lab validated",
+     "units": "mm"
+    }
+   },
+   "SIM:syn-pass": {
+    "label": "recorded run (not live)",
+    "report": {
+     "adapter_version": "0.1.0",
+     "checks": [
+      {
+       "check_name": "spec_schema",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "operation_order",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "pipette_capacity",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "source_volume",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "tip_availability",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "declared_bounds",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "joint_limits",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "modeled_collision",
+       "reason": "",
+       "status": "pass"
+      },
+      {
+       "check_name": "biology",
+       "reason": "efficacy, rescue, safety and assay outcomes are not simulated",
+       "status": "not_modeled"
+      },
+      {
+       "check_name": "physical_execution",
+       "reason": "no hardware, calibration or real-liquid validation",
+       "status": "not_modeled"
+      }
+     ],
+     "experiment_spec_hash": "ad9555682bf0d52fee3fd7fab3fa461aa8d7722e0774839b2d662386104a73c8",
+     "failures": [],
+     "finished_at": "2026-10-03T21:05:43.137256+00:00",
+     "ledger_after": {
+      "held_ul": 0.0,
+      "source_ul": 850.0,
+      "tip_attached": false,
+      "tips_available": 1,
+      "wells_ul": {
+       "A1": 50.0,
+       "A2": 50.0,
+       "A3": 50.0
+      }
+     },
+     "ledger_before": {
+      "held_ul": 0.0,
+      "source_ul": 1000.0,
+      "tip_attached": false,
+      "tips_available": 4,
+      "wells_ul": {}
+     },
+     "modeled_collision_events": [],
+     "operation_trace": [
+      {
+       "end_mm": [
+        40,
+        40,
+        15
+       ],
+       "op": "pick_tip",
+       "op_index": 0,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        150,
+        10
+       ],
+       "op": "aspirate",
+       "op_index": 1,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        150,
+        60,
+        25
+       ],
+       "op": "dispense",
+       "op_index": 2,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        100,
+        30
+       ],
+       "op": "drop_tip",
+       "op_index": 3,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        40,
+        15
+       ],
+       "op": "pick_tip",
+       "op_index": 4,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        150,
+        10
+       ],
+       "op": "aspirate",
+       "op_index": 5,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        159,
+        60,
+        25
+       ],
+       "op": "dispense",
+       "op_index": 6,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        100,
+        30
+       ],
+       "op": "drop_tip",
+       "op_index": 7,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        40,
+        15
+       ],
+       "op": "pick_tip",
+       "op_index": 8,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        150,
+        10
+       ],
+       "op": "aspirate",
+       "op_index": 9,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        168,
+        60,
+        25
+       ],
+       "op": "dispense",
+       "op_index": 10,
+       "status": "ok"
+      },
+      {
+       "end_mm": [
+        40,
+        100,
+        30
+       ],
+       "op": "drop_tip",
+       "op_index": 11,
+       "status": "ok"
+      }
+     ],
+     "overall": "pass",
+     "path_length_mm": 2261.06,
+     "random_seed": 0,
+     "review_state": "generic_fixture_unreviewed",
+     "run_id": "run-0e58a507930e",
+     "scene_hash": "528b76b145f10a1116d5ef2f8cf448a15da4e79443a619a56c1beb15d45c13d3",
+     "scope_label": "Workflow simulation only; not wet-lab validated",
+     "simulation_steps": 2266,
+     "simulation_time_note": "kinematic samples at 1 mm; not physical time",
+     "simulator_name": "mujoco",
+     "simulator_version": "3.14.0",
+     "started_at": "2026-10-03T21:05:43.114419+00:00",
+     "wall_clock_time_s": 0.0227
+    },
+    "run_id": "SIM:syn-pass",
+    "spec": "valid_transfer",
+    "trajectory": {
+     "points": [
+      [
+       3.51,
+       3.51,
+       60.0
+      ],
+      [
+       7.02,
+       7.02,
+       60.0
+      ],
+      [
+       10.53,
+       10.53,
+       60.0
+      ],
+      [
+       14.04,
+       14.04,
+       60.0
+      ],
+      [
+       17.54,
+       17.54,
+       60.0
+      ],
+      [
+       21.05,
+       21.05,
+       60.0
+      ],
+      [
+       24.56,
+       24.56,
+       60.0
+      ],
+      [
+       28.07,
+       28.07,
+       60.0
+      ],
+      [
+       31.58,
+       31.58,
+       60.0
+      ],
+      [
+       35.09,
+       35.09,
+       60.0
+      ],
+      [
+       38.6,
+       38.6,
+       60.0
+      ],
+      [
+       40.0,
+       40.0,
+       57.0
+      ],
+      [
+       40.0,
+       40.0,
+       52.0
+      ],
+      [
+       40.0,
+       40.0,
+       47.0
+      ],
+      [
+       40.0,
+       40.0,
+       42.0
+      ],
+      [
+       40.0,
+       40.0,
+       37.0
+      ],
+      [
+       40.0,
+       40.0,
+       32.0
+      ],
+      [
+       40.0,
+       40.0,
+       27.0
+      ],
+      [
+       40.0,
+       40.0,
+       22.0
+      ],
+      [
+       40.0,
+       40.0,
+       17.0
+      ],
+      [
+       40.0,
+       40.0,
+       18.0
+      ],
+      [
+       40.0,
+       40.0,
+       23.0
+      ],
+      [
+       40.0,
+       40.0,
+       28.0
+      ],
+      [
+       40.0,
+       40.0,
+       33.0
+      ],
+      [
+       40.0,
+       40.0,
+       38.0
+      ],
+      [
+       40.0,
+       40.0,
+       43.0
+      ],
+      [
+       40.0,
+       40.0,
+       48.0
+      ],
+      [
+       40.0,
+       40.0,
+       53.0
+      ],
+      [
+       40.0,
+       40.0,
+       58.0
+      ],
+      [
+       40.0,
+       43.0,
+       60.0
+      ],
+      [
+       40.0,
+       48.0,
+       60.0
+      ],
+      [
+       40.0,
+       53.0,
+       60.0
+      ],
+      [
+       40.0,
+       58.0,
+       60.0
+      ],
+      [
+       40.0,
+       63.0,
+       60.0
+      ],
+      [
+       40.0,
+       68.0,
+       60.0
+      ],
+      [
+       40.0,
+       73.0,
+       60.0
+      ],
+      [
+       40.0,
+       78.0,
+       60.0
+      ],
+      [
+       40.0,
+       83.0,
+       60.0
+      ],
+      [
+       40.0,
+       88.0,
+       60.0
+      ],
+      [
+       40.0,
+       93.0,
+       60.0
+      ],
+      [
+       40.0,
+       98.0,
+       60.0
+      ],
+      [
+       40.0,
+       103.0,
+       60.0
+      ],
+      [
+       40.0,
+       108.0,
+       60.0
+      ],
+      [
+       40.0,
+       113.0,
+       60.0
+      ],
+      [
+       40.0,
+       118.0,
+       60.0
+      ],
+      [
+       40.0,
+       123.0,
+       60.0
+      ],
+      [
+       40.0,
+       128.0,
+       60.0
+      ],
+      [
+       40.0,
+       133.0,
+       60.0
+      ],
+      [
+       40.0,
+       138.0,
+       60.0
+      ],
+      [
+       40.0,
+       143.0,
+       60.0
+      ],
+      [
+       40.0,
+       148.0,
+       60.0
+      ],
+      [
+       40.0,
+       150.0,
+       57.0
+      ],
+      [
+       40.0,
+       150.0,
+       52.0
+      ],
+      [
+       40.0,
+       150.0,
+       47.0
+      ],
+      [
+       40.0,
+       150.0,
+       42.0
+      ],
+      [
+       40.0,
+       150.0,
+       37.0
+      ],
+      [
+       40.0,
+       150.0,
+       32.0
+      ],
+      [
+       40.0,
+       150.0,
+       27.0
+      ],
+      [
+       40.0,
+       150.0,
+       22.0
+      ],
+      [
+       40.0,
+       150.0,
+       17.0
+      ],
+      [
+       40.0,
+       150.0,
+       12.0
+      ],
+      [
+       40.0,
+       150.0,
+       13.0
+      ],
+      [
+       40.0,
+       150.0,
+       18.0
+      ],
+      [
+       40.0,
+       150.0,
+       23.0
+      ],
+      [
+       40.0,
+       150.0,
+       28.0
+      ],
+      [
+       40.0,
+       150.0,
+       33.0
+      ],
+      [
+       40.0,
+       150.0,
+       38.0
+      ],
+      [
+       40.0,
+       150.0,
+       43.0
+      ],
+      [
+       40.0,
+       150.0,
+       48.0
+      ],
+      [
+       40.0,
+       150.0,
+       53.0
+      ],
+      [
+       40.0,
+       150.0,
+       58.0
+      ],
+      [
+       42.31,
+       148.11,
+       60.0
+      ],
+      [
+       46.15,
+       144.97,
+       60.0
+      ],
+      [
+       50.0,
+       141.82,
+       60.0
+      ],
+      [
+       53.85,
+       138.67,
+       60.0
+      ],
+      [
+       57.69,
+       135.52,
+       60.0
+      ],
+      [
+       61.54,
+       132.38,
+       60.0
+      ],
+      [
+       65.38,
+       129.23,
+       60.0
+      ],
+      [
+       69.23,
+       126.08,
+       60.0
+      ],
+      [
+       73.08,
+       122.94,
+       60.0
+      ],
+      [
+       76.92,
+       119.79,
+       60.0
+      ],
+      [
+       80.77,
+       116.64,
+       60.0
+      ],
+      [
+       84.62,
+       113.5,
+       60.0
+      ],
+      [
+       88.46,
+       110.35,
+       60.0
+      ],
+      [
+       92.31,
+       107.2,
+       60.0
+      ],
+      [
+       96.15,
+       104.06,
+       60.0
+      ],
+      [
+       100.0,
+       100.91,
+       60.0
+      ],
+      [
+       103.85,
+       97.76,
+       60.0
+      ],
+      [
+       107.69,
+       94.62,
+       60.0
+      ],
+      [
+       111.54,
+       91.47,
+       60.0
+      ],
+      [
+       115.38,
+       88.32,
+       60.0
+      ],
+      [
+       119.23,
+       85.17,
+       60.0
+      ],
+      [
+       123.08,
+       82.03,
+       60.0
+      ],
+      [
+       126.92,
+       78.88,
+       60.0
+      ],
+      [
+       130.77,
+       75.73,
+       60.0
+      ],
+      [
+       134.62,
+       72.59,
+       60.0
+      ],
+      [
+       138.46,
+       69.44,
+       60.0
+      ],
+      [
+       142.31,
+       66.29,
+       60.0
+      ],
+      [
+       146.15,
+       63.15,
+       60.0
+      ],
+      [
+       150.0,
+       60.0,
+       60.0
+      ],
+      [
+       150.0,
+       60.0,
+       55.0
+      ],
+      [
+       150.0,
+       60.0,
+       50.0
+      ],
+      [
+       150.0,
+       60.0,
+       45.0
+      ],
+      [
+       150.0,
+       60.0,
+       40.0
+      ],
+      [
+       150.0,
+       60.0,
+       35.0
+      ],
+      [
+       150.0,
+       60.0,
+       30.0
+      ],
+      [
+       150.0,
+       60.0,
+       25.0
+      ],
+      [
+       150.0,
+       60.0,
+       30.0
+      ],
+      [
+       150.0,
+       60.0,
+       35.0
+      ],
+      [
+       150.0,
+       60.0,
+       40.0
+      ],
+      [
+       150.0,
+       60.0,
+       45.0
+      ],
+      [
+       150.0,
+       60.0,
+       50.0
+      ],
+      [
+       150.0,
+       60.0,
+       55.0
+      ],
+      [
+       150.0,
+       60.0,
+       60.0
+      ],
+      [
+       145.34,
+       61.69,
+       60.0
+      ],
+      [
+       140.68,
+       63.39,
+       60.0
+      ],
+      [
+       136.02,
+       65.08,
+       60.0
+      ],
+      [
+       131.36,
+       66.78,
+       60.0
+      ],
+      [
+       126.69,
+       68.47,
+       60.0
+      ],
+      [
+       122.03,
+       70.17,
+       60.0
+      ],
+      [
+       117.37,
+       71.86,
+       60.0
+      ],
+      [
+       112.71,
+       73.56,
+       60.0
+      ],
+      [
+       108.05,
+       75.25,
+       60.0
+      ],
+      [
+       103.39,
+       76.95,
+       60.0
+      ],
+      [
+       98.73,
+       78.64,
+       60.0
+      ],
+      [
+       94.07,
+       80.34,
+       60.0
+      ],
+      [
+       89.41,
+       82.03,
+       60.0
+      ],
+      [
+       84.75,
+       83.73,
+       60.0
+      ],
+      [
+       80.08,
+       85.42,
+       60.0
+      ],
+      [
+       75.42,
+       87.12,
+       60.0
+      ],
+      [
+       70.76,
+       88.81,
+       60.0
+      ],
+      [
+       66.1,
+       90.51,
+       60.0
+      ],
+      [
+       61.44,
+       92.2,
+       60.0
+      ],
+      [
+       56.78,
+       93.9,
+       60.0
+      ],
+      [
+       52.12,
+       95.59,
+       60.0
+      ],
+      [
+       47.46,
+       97.29,
+       60.0
+      ],
+      [
+       42.8,
+       98.98,
+       60.0
+      ],
+      [
+       40.0,
+       100.0,
+       58.0
+      ],
+      [
+       40.0,
+       100.0,
+       53.0
+      ],
+      [
+       40.0,
+       100.0,
+       48.0
+      ],
+      [
+       40.0,
+       100.0,
+       43.0
+      ],
+      [
+       40.0,
+       100.0,
+       38.0
+      ],
+      [
+       40.0,
+       100.0,
+       33.0
+      ],
+      [
+       40.0,
+       100.0,
+       32.0
+      ],
+      [
+       40.0,
+       100.0,
+       37.0
+      ],
+      [
+       40.0,
+       100.0,
+       42.0
+      ],
+      [
+       40.0,
+       100.0,
+       47.0
+      ],
+      [
+       40.0,
+       100.0,
+       52.0
+      ],
+      [
+       40.0,
+       100.0,
+       57.0
+      ],
+      [
+       40.0,
+       98.0,
+       60.0
+      ],
+      [
+       40.0,
+       93.0,
+       60.0
+      ],
+      [
+       40.0,
+       88.0,
+       60.0
+      ],
+      [
+       40.0,
+       83.0,
+       60.0
+      ],
+      [
+       40.0,
+       78.0,
+       60.0
+      ],
+      [
+       40.0,
+       73.0,
+       60.0
+      ],
+      [
+       40.0,
+       68.0,
+       60.0
+      ],
+      [
+       40.0,
+       63.0,
+       60.0
+      ],
+      [
+       40.0,
+       58.0,
+       60.0
+      ],
+      [
+       40.0,
+       53.0,
+       60.0
+      ],
+      [
+       40.0,
+       48.0,
+       60.0
+      ],
+      [
+       40.0,
+       43.0,
+       60.0
+      ],
+      [
+       40.0,
+       40.0,
+       58.0
+      ],
+      [
+       40.0,
+       40.0,
+       53.0
+      ],
+      [
+       40.0,
+       40.0,
+       48.0
+      ],
+      [
+       40.0,
+       40.0,
+       43.0
+      ],
+      [
+       40.0,
+       40.0,
+       38.0
+      ],
+      [
+       40.0,
+       40.0,
+       33.0
+      ],
+      [
+       40.0,
+       40.0,
+       28.0
+      ],
+      [
+       40.0,
+       40.0,
+       23.0
+      ],
+      [
+       40.0,
+       40.0,
+       18.0
+      ],
+      [
+       40.0,
+       40.0,
+       17.0
+      ],
+      [
+       40.0,
+       40.0,
+       22.0
+      ],
+      [
+       40.0,
+       40.0,
+       27.0
+      ],
+      [
+       40.0,
+       40.0,
+       32.0
+      ],
+      [
+       40.0,
+       40.0,
+       37.0
+      ],
+      [
+       40.0,
+       40.0,
+       42.0
+      ],
+      [
+       40.0,
+       40.0,
+       47.0
+      ],
+      [
+       40.0,
+       40.0,
+       52.0
+      ],
+      [
+       40.0,
+       40.0,
+       57.0
+      ],
+      [
+       40.0,
+       42.0,
+       60.0
+      ],
+      [
+       40.0,
+       47.0,
+       60.0
+      ],
+      [
+       40.0,
+       52.0,
+       60.0
+      ],
+      [
+       40.0,
+       57.0,
+       60.0
+      ],
+      [
+       40.0,
+       62.0,
+       60.0
+      ],
+      [
+       40.0,
+       67.0,
+       60.0
+      ],
+      [
+       40.0,
+       72.0,
+       60.0
+      ],
+      [
+       40.0,
+       77.0,
+       60.0
+      ],
+      [
+       40.0,
+       82.0,
+       60.0
+      ],
+      [
+       40.0,
+       87.0,
+       60.0
+      ],
+      [
+       40.0,
+       92.0,
+       60.0
+      ],
+      [
+       40.0,
+       97.0,
+       60.0
+      ],
+      [
+       40.0,
+       102.0,
+       60.0
+      ],
+      [
+       40.0,
+       107.0,
+       60.0
+      ],
+      [
+       40.0,
+       112.0,
+       60.0
+      ],
+      [
+       40.0,
+       117.0,
+       60.0
+      ],
+      [
+       40.0,
+       122.0,
+       60.0
+      ],
+      [
+       40.0,
+       127.0,
+       60.0
+      ],
+      [
+       40.0,
+       132.0,
+       60.0
+      ],
+      [
+       40.0,
+       137.0,
+       60.0
+      ],
+      [
+       40.0,
+       142.0,
+       60.0
+      ],
+      [
+       40.0,
+       147.0,
+       60.0
+      ],
+      [
+       40.0,
+       150.0,
+       58.0
+      ],
+      [
+       40.0,
+       150.0,
+       53.0
+      ],
+      [
+       40.0,
+       150.0,
+       48.0
+      ],
+      [
+       40.0,
+       150.0,
+       43.0
+      ],
+      [
+       40.0,
+       150.0,
+       38.0
+      ],
+      [
+       40.0,
+       150.0,
+       33.0
+      ],
+      [
+       40.0,
+       150.0,
+       28.0
+      ],
+      [
+       40.0,
+       150.0,
+       23.0
+      ],
+      [
+       40.0,
+       150.0,
+       18.0
+      ],
+      [
+       40.0,
+       150.0,
+       13.0
+      ],
+      [
+       40.0,
+       150.0,
+       12.0
+      ],
+      [
+       40.0,
+       150.0,
+       17.0
+      ],
+      [
+       40.0,
+       150.0,
+       22.0
+      ],
+      [
+       40.0,
+       150.0,
+       27.0
+      ],
+      [
+       40.0,
+       150.0,
+       32.0
+      ],
+      [
+       40.0,
+       150.0,
+       37.0
+      ],
+      [
+       40.0,
+       150.0,
+       42.0
+      ],
+      [
+       40.0,
+       150.0,
+       47.0
+      ],
+      [
+       40.0,
+       150.0,
+       52.0
+      ],
+      [
+       40.0,
+       150.0,
+       57.0
+      ],
+      [
+       41.59,
+       148.8,
+       60.0
+      ],
+      [
+       45.55,
+       145.8,
+       60.0
+      ],
+      [
+       49.52,
+       142.8,
+       60.0
+      ],
+      [
+       53.49,
+       139.8,
+       60.0
+      ],
+      [
+       57.45,
+       136.8,
+       60.0
+      ],
+      [
+       61.42,
+       133.8,
+       60.0
+      ],
+      [
+       65.39,
+       130.8,
+       60.0
+      ],
+      [
+       69.35,
+       127.8,
+       60.0
+      ],
+      [
+       73.32,
+       124.8,
+       60.0
+      ],
+      [
+       77.29,
+       121.8,
+       60.0
+      ],
+      [
+       81.25,
+       118.8,
+       60.0
+      ],
+      [
+       85.22,
+       115.8,
+       60.0
+      ],
+      [
+       89.19,
+       112.8,
+       60.0
+      ],
+      [
+       93.15,
+       109.8,
+       60.0
+      ],
+      [
+       97.12,
+       106.8,
+       60.0
+      ],
+      [
+       101.09,
+       103.8,
+       60.0
+      ],
+      [
+       105.05,
+       100.8,
+       60.0
+      ],
+      [
+       109.02,
+       97.8,
+       60.0
+      ],
+      [
+       112.99,
+       94.8,
+       60.0
+      ],
+      [
+       116.95,
+       91.8,
+       60.0
+      ],
+      [
+       120.92,
+       88.8,
+       60.0
+      ],
+      [
+       124.89,
+       85.8,
+       60.0
+      ],
+      [
+       128.85,
+       82.8,
+       60.0
+      ],
+      [
+       132.82,
+       79.8,
+       60.0
+      ],
+      [
+       136.79,
+       76.8,
+       60.0
+      ],
+      [
+       140.75,
+       73.8,
+       60.0
+      ],
+      [
+       144.72,
+       70.8,
+       60.0
+      ],
+      [
+       148.69,
+       67.8,
+       60.0
+      ],
+      [
+       152.65,
+       64.8,
+       60.0
+      ],
+      [
+       156.62,
+       61.8,
+       60.0
+      ],
+      [
+       159.0,
+       60.0,
+       58.0
+      ],
+      [
+       159.0,
+       60.0,
+       53.0
+      ],
+      [
+       159.0,
+       60.0,
+       48.0
+      ],
+      [
+       159.0,
+       60.0,
+       43.0
+      ],
+      [
+       159.0,
+       60.0,
+       38.0
+      ],
+      [
+       159.0,
+       60.0,
+       33.0
+      ],
+      [
+       159.0,
+       60.0,
+       28.0
+      ],
+      [
+       159.0,
+       60.0,
+       27.0
+      ],
+      [
+       159.0,
+       60.0,
+       32.0
+      ],
+      [
+       159.0,
+       60.0,
+       37.0
+      ],
+      [
+       159.0,
+       60.0,
+       42.0
+      ],
+      [
+       159.0,
+       60.0,
+       47.0
+      ],
+      [
+       159.0,
+       60.0,
+       52.0
+      ],
+      [
+       159.0,
+       60.0,
+       57.0
+      ],
+      [
+       157.11,
+       60.63,
+       60.0
+      ],
+      [
+       152.39,
+       62.22,
+       60.0
+      ],
+      [
+       147.67,
+       63.81,
+       60.0
+      ],
+      [
+       142.94,
+       65.4,
+       60.0
+      ],
+      [
+       138.22,
+       66.98,
+       60.0
+      ],
+      [
+       133.5,
+       68.57,
+       60.0
+      ],
+      [
+       128.78,
+       70.16,
+       60.0
+      ],
+      [
+       124.06,
+       71.75,
+       60.0
+      ],
+      [
+       119.33,
+       73.33,
+       60.0
+      ],
+      [
+       114.61,
+       74.92,
+       60.0
+      ],
+      [
+       109.89,
+       76.51,
+       60.0
+      ],
+      [
+       105.17,
+       78.1,
+       60.0
+      ],
+      [
+       100.44,
+       79.68,
+       60.0
+      ],
+      [
+       95.72,
+       81.27,
+       60.0
+      ],
+      [
+       91.0,
+       82.86,
+       60.0
+      ],
+      [
+       86.28,
+       84.44,
+       60.0
+      ],
+      [
+       81.56,
+       86.03,
+       60.0
+      ],
+      [
+       76.83,
+       87.62,
+       60.0
+      ],
+      [
+       72.11,
+       89.21,
+       60.0
+      ],
+      [
+       67.39,
+       90.79,
+       60.0
+      ],
+      [
+       62.67,
+       92.38,
+       60.0
+      ],
+      [
+       57.94,
+       93.97,
+       60.0
+      ],
+      [
+       53.22,
+       95.56,
+       60.0
+      ],
+      [
+       48.5,
+       97.14,
+       60.0
+      ],
+      [
+       43.78,
+       98.73,
+       60.0
+      ],
+      [
+       40.0,
+       100.0,
+       59.0
+      ],
+      [
+       40.0,
+       100.0,
+       54.0
+      ],
+      [
+       40.0,
+       100.0,
+       49.0
+      ],
+      [
+       40.0,
+       100.0,
+       44.0
+      ],
+      [
+       40.0,
+       100.0,
+       39.0
+      ],
+      [
+       40.0,
+       100.0,
+       34.0
+      ],
+      [
+       40.0,
+       100.0,
+       31.0
+      ],
+      [
+       40.0,
+       100.0,
+       36.0
+      ],
+      [
+       40.0,
+       100.0,
+       41.0
+      ],
+      [
+       40.0,
+       100.0,
+       46.0
+      ],
+      [
+       40.0,
+       100.0,
+       51.0
+      ],
+      [
+       40.0,
+       100.0,
+       56.0
+      ],
+      [
+       40.0,
+       99.0,
+       60.0
+      ],
+      [
+       40.0,
+       94.0,
+       60.0
+      ],
+      [
+       40.0,
+       89.0,
+       60.0
+      ],
+      [
+       40.0,
+       84.0,
+       60.0
+      ],
+      [
+       40.0,
+       79.0,
+       60.0
+      ],
+      [
+       40.0,
+       74.0,
+       60.0
+      ],
+      [
+       40.0,
+       69.0,
+       60.0
+      ],
+      [
+       40.0,
+       64.0,
+       60.0
+      ],
+      [
+       40.0,
+       59.0,
+       60.0
+      ],
+      [
+       40.0,
+       54.0,
+       60.0
+      ],
+      [
+       40.0,
+       49.0,
+       60.0
+      ],
+      [
+       40.0,
+       44.0,
+       60.0
+      ],
+      [
+       40.0,
+       40.0,
+       59.0
+      ],
+      [
+       40.0,
+       40.0,
+       54.0
+      ],
+      [
+       40.0,
+       40.0,
+       49.0
+      ],
+      [
+       40.0,
+       40.0,
+       44.0
+      ],
+      [
+       40.0,
+       40.0,
+       39.0
+      ],
+      [
+       40.0,
+       40.0,
+       34.0
+      ],
+      [
+       40.0,
+       40.0,
+       29.0
+      ],
+      [
+       40.0,
+       40.0,
+       24.0
+      ],
+      [
+       40.0,
+       40.0,
+       19.0
+      ],
+      [
+       40.0,
+       40.0,
+       16.0
+      ],
+      [
+       40.0,
+       40.0,
+       21.0
+      ],
+      [
+       40.0,
+       40.0,
+       26.0
+      ],
+      [
+       40.0,
+       40.0,
+       31.0
+      ],
+      [
+       40.0,
+       40.0,
+       36.0
+      ],
+      [
+       40.0,
+       40.0,
+       41.0
+      ],
+      [
+       40.0,
+       40.0,
+       46.0
+      ],
+      [
+       40.0,
+       40.0,
+       51.0
+      ],
+      [
+       40.0,
+       40.0,
+       56.0
+      ],
+      [
+       40.0,
+       41.0,
+       60.0
+      ],
+      [
+       40.0,
+       46.0,
+       60.0
+      ],
+      [
+       40.0,
+       51.0,
+       60.0
+      ],
+      [
+       40.0,
+       56.0,
+       60.0
+      ],
+      [
+       40.0,
+       61.0,
+       60.0
+      ],
+      [
+       40.0,
+       66.0,
+       60.0
+      ],
+      [
+       40.0,
+       71.0,
+       60.0
+      ],
+      [
+       40.0,
+       76.0,
+       60.0
+      ],
+      [
+       40.0,
+       81.0,
+       60.0
+      ],
+      [
+       40.0,
+       86.0,
+       60.0
+      ],
+      [
+       40.0,
+       91.0,
+       60.0
+      ],
+      [
+       40.0,
+       96.0,
+       60.0
+      ],
+      [
+       40.0,
+       101.0,
+       60.0
+      ],
+      [
+       40.0,
+       106.0,
+       60.0
+      ],
+      [
+       40.0,
+       111.0,
+       60.0
+      ],
+      [
+       40.0,
+       116.0,
+       60.0
+      ],
+      [
+       40.0,
+       121.0,
+       60.0
+      ],
+      [
+       40.0,
+       126.0,
+       60.0
+      ],
+      [
+       40.0,
+       131.0,
+       60.0
+      ],
+      [
+       40.0,
+       136.0,
+       60.0
+      ],
+      [
+       40.0,
+       141.0,
+       60.0
+      ],
+      [
+       40.0,
+       146.0,
+       60.0
+      ],
+      [
+       40.0,
+       150.0,
+       59.0
+      ],
+      [
+       40.0,
+       150.0,
+       54.0
+      ],
+      [
+       40.0,
+       150.0,
+       49.0
+      ],
+      [
+       40.0,
+       150.0,
+       44.0
+      ],
+      [
+       40.0,
+       150.0,
+       39.0
+      ],
+      [
+       40.0,
+       150.0,
+       34.0
+      ],
+      [
+       40.0,
+       150.0,
+       29.0
+      ],
+      [
+       40.0,
+       150.0,
+       24.0
+      ],
+      [
+       40.0,
+       150.0,
+       19.0
+      ],
+      [
+       40.0,
+       150.0,
+       14.0
+      ],
+      [
+       40.0,
+       150.0,
+       11.0
+      ],
+      [
+       40.0,
+       150.0,
+       16.0
+      ],
+      [
+       40.0,
+       150.0,
+       21.0
+      ],
+      [
+       40.0,
+       150.0,
+       26.0
+      ],
+      [
+       40.0,
+       150.0,
+       31.0
+      ],
+      [
+       40.0,
+       150.0,
+       36.0
+      ],
+      [
+       40.0,
+       150.0,
+       41.0
+      ],
+      [
+       40.0,
+       150.0,
+       46.0
+      ],
+      [
+       40.0,
+       150.0,
+       51.0
+      ],
+      [
+       40.0,
+       150.0,
+       56.0
+      ],
+      [
+       40.82,
+       149.43,
+       60.0
+      ],
+      [
+       44.89,
+       146.56,
+       60.0
+      ],
+      [
+       48.97,
+       143.69,
+       60.0
+      ],
+      [
+       53.04,
+       140.83,
+       60.0
+      ],
+      [
+       57.12,
+       137.96,
+       60.0
+      ],
+      [
+       61.2,
+       135.1,
+       60.0
+      ],
+      [
+       65.27,
+       132.23,
+       60.0
+      ],
+      [
+       69.35,
+       129.36,
+       60.0
+      ],
+      [
+       73.43,
+       126.5,
+       60.0
+      ],
+      [
+       77.5,
+       123.63,
+       60.0
+      ],
+      [
+       81.58,
+       120.76,
+       60.0
+      ],
+      [
+       85.66,
+       117.9,
+       60.0
+      ],
+      [
+       89.73,
+       115.03,
+       60.0
+      ],
+      [
+       93.81,
+       112.17,
+       60.0
+      ],
+      [
+       97.89,
+       109.3,
+       60.0
+      ],
+      [
+       101.96,
+       106.43,
+       60.0
+      ],
+      [
+       106.04,
+       103.57,
+       60.0
+      ],
+      [
+       110.11,
+       100.7,
+       60.0
+      ],
+      [
+       114.19,
+       97.83,
+       60.0
+      ],
+      [
+       118.27,
+       94.97,
+       60.0
+      ],
+      [
+       122.34,
+       92.1,
+       60.0
+      ],
+      [
+       126.42,
+       89.24,
+       60.0
+      ],
+      [
+       130.5,
+       86.37,
+       60.0
+      ],
+      [
+       134.57,
+       83.5,
+       60.0
+      ],
+      [
+       138.65,
+       80.64,
+       60.0
+      ],
+      [
+       142.73,
+       77.77,
+       60.0
+      ],
+      [
+       146.8,
+       74.9,
+       60.0
+      ],
+      [
+       150.88,
+       72.04,
+       60.0
+      ],
+      [
+       154.96,
+       69.17,
+       60.0
+      ],
+      [
+       159.03,
+       66.31,
+       60.0
+      ],
+      [
+       163.11,
+       63.44,
+       60.0
+      ],
+      [
+       167.18,
+       60.57,
+       60.0
+      ],
+      [
+       168.0,
+       60.0,
+       56.0
+      ],
+      [
+       168.0,
+       60.0,
+       51.0
+      ],
+      [
+       168.0,
+       60.0,
+       46.0
+      ],
+      [
+       168.0,
+       60.0,
+       41.0
+      ],
+      [
+       168.0,
+       60.0,
+       36.0
+      ],
+      [
+       168.0,
+       60.0,
+       31.0
+      ],
+      [
+       168.0,
+       60.0,
+       26.0
+      ],
+      [
+       168.0,
+       60.0,
+       29.0
+      ],
+      [
+       168.0,
+       60.0,
+       34.0
+      ],
+      [
+       168.0,
+       60.0,
+       39.0
+      ],
+      [
+       168.0,
+       60.0,
+       44.0
+      ],
+      [
+       168.0,
+       60.0,
+       49.0
+      ],
+      [
+       168.0,
+       60.0,
+       54.0
+      ],
+      [
+       168.0,
+       60.0,
+       59.0
+      ],
+      [
+       164.21,
+       61.19,
+       60.0
+      ],
+      [
+       159.47,
+       62.67,
+       60.0
+      ],
+      [
+       154.73,
+       64.15,
+       60.0
+      ],
+      [
+       149.99,
+       65.63,
+       60.0
+      ],
+      [
+       145.24,
+       67.11,
+       60.0
+      ],
+      [
+       140.5,
+       68.59,
+       60.0
+      ],
+      [
+       135.76,
+       70.07,
+       60.0
+      ],
+      [
+       131.02,
+       71.56,
+       60.0
+      ],
+      [
+       126.28,
+       73.04,
+       60.0
+      ],
+      [
+       121.54,
+       74.52,
+       60.0
+      ],
+      [
+       116.8,
+       76.0,
+       60.0
+      ],
+      [
+       112.06,
+       77.48,
+       60.0
+      ],
+      [
+       107.32,
+       78.96,
+       60.0
+      ],
+      [
+       102.58,
+       80.44,
+       60.0
+      ],
+      [
+       97.84,
+       81.93,
+       60.0
+      ],
+      [
+       93.1,
+       83.41,
+       60.0
+      ],
+      [
+       88.36,
+       84.89,
+       60.0
+      ],
+      [
+       83.61,
+       86.37,
+       60.0
+      ],
+      [
+       78.87,
+       87.85,
+       60.0
+      ],
+      [
+       74.13,
+       89.33,
+       60.0
+      ],
+      [
+       69.39,
+       90.81,
+       60.0
+      ],
+      [
+       64.65,
+       92.3,
+       60.0
+      ],
+      [
+       59.91,
+       93.78,
+       60.0
+      ],
+      [
+       55.17,
+       95.26,
+       60.0
+      ],
+      [
+       50.43,
+       96.74,
+       60.0
+      ],
+      [
+       45.69,
+       98.22,
+       60.0
+      ],
+      [
+       40.95,
+       99.7,
+       60.0
+      ],
+      [
+       40.0,
+       100.0,
+       56.0
+      ],
+      [
+       40.0,
+       100.0,
+       51.0
+      ],
+      [
+       40.0,
+       100.0,
+       46.0
+      ],
+      [
+       40.0,
+       100.0,
+       41.0
+      ],
+      [
+       40.0,
+       100.0,
+       36.0
+      ],
+      [
+       40.0,
+       100.0,
+       31.0
+      ]
+     ],
+     "scope_label": "Workflow simulation only; not wet-lab validated",
+     "units": "mm"
+    }
+   }
+  },
+  "scene": [
+   {
+    "collides": false,
+    "name": "deck",
+    "pos": [
+     150.0,
+     100.0,
+     -5.0
+    ],
+    "size": [
+     300.0,
+     200.0,
+     10.0
+    ]
+   },
+   {
+    "collides": false,
+    "name": "tiprack",
+    "pos": [
+     40.0,
+     40.0,
+     6.0
+    ],
+    "size": [
+     36.0,
+     36.0,
+     12.0
+    ]
+   },
+   {
+    "collides": false,
+    "name": "source",
+    "pos": [
+     40.0,
+     150.0,
+     10.0
+    ],
+    "size": [
+     36.0,
+     36.0,
+     20.0
+    ]
+   },
+   {
+    "collides": false,
+    "name": "waste",
+    "pos": [
+     40.0,
+     100.0,
+     8.0
+    ],
+    "size": [
+     36.0,
+     36.0,
+     16.0
+    ]
+   },
+   {
+    "collides": false,
+    "name": "plate",
+    "pos": [
+     180.0,
+     80.0,
+     7.0
+    ],
+    "size": [
+     120.0,
+     80.0,
+     14.0
+    ]
+   },
+   {
+    "collides": true,
+    "name": "tower",
+    "pos": [
+     100.0,
+     105.0,
+     20.0
+    ],
+    "size": [
+     20.0,
+     80.0,
+     40.0
+    ]
+   }
+  ]
+ },
+ "summaries": {
+  "SYN:disease-a": [
+   {
+    "claim_ids": [
+     "CLAIM:syn-1",
+     "CLAIM:syn-2",
+     "CLAIM:syn-3",
+     "CLAIM:syn-4"
+    ],
+    "text": "Disease A is associated with phenotypes P1 to P4 in one reviewed study."
+   },
+   {
+    "claim_ids": [
+     "CLAIM:syn-12",
+     "CLAIM:syn-13"
+    ],
+    "text": "Two descriptions of one experiment report reduced M1 activity."
+   },
+   {
+    "claim_ids": [],
+    "text": "No RNA-level findings are indexed, so that channel shows no data."
+   }
+  ]
+ }
+}

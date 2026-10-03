@@ -1,11 +1,13 @@
-"""P0 stub routes: every endpoint in docs/implementation/03 §4, serving SYNTHETIC fixtures.
-
-Path parameters are accepted but ignored until the real services land (T02-T12).
+"""Stub routes: every endpoint in docs/implementation/03 §4, serving the SYNTHETIC demo dataset
+(data/fixtures/demo.json, built by scripts/build_demo.py) looked up by ID. Real services replace
+these once T03/T04/T09 land. Every response carries the `_synthetic` label.
 """
 
-from typing import Any
+from functools import lru_cache
+from pathlib import Path
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Body, HTTPException, Request
 
 from atlas.api.fixtures import load_fixture
 
@@ -16,6 +18,26 @@ def _fx(request: Request, name: str) -> Any:
     return load_fixture(request.app.state.settings.fixtures_dir, name)
 
 
+@lru_cache(maxsize=4)
+def _demo_cached(fixtures_dir: Path) -> dict[str, Any]:
+    return load_fixture(fixtures_dir, "demo")
+
+
+def _demo(request: Request) -> dict[str, Any]:
+    return _demo_cached(request.app.state.settings.fixtures_dir)
+
+
+def _wrap(request: Request, **payload: Any) -> dict[str, Any]:
+    return {"_synthetic": _demo(request)["_synthetic"], **payload}
+
+
+def _entity(request: Request, entity_id: str) -> dict[str, Any]:
+    for e in _demo(request)["entities"]:
+        if e["id"] == entity_id:
+            return e
+    raise HTTPException(status_code=404, detail=f"no indexed entity {entity_id}")
+
+
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -23,57 +45,129 @@ def health() -> dict[str, str]:
 
 @router.get("/meta")
 def meta(request: Request) -> Any:
-    return _fx(request, "meta")
+    d = _demo(request)
+    counts: dict[str, dict[str, int]] = {"source_type": {}, "review_state": {}}
+    for c in d["claims"]:
+        for key, tally in counts.items():
+            tally[c[key]] = tally.get(c[key], 0) + 1
+    by_type: dict[str, int] = {}
+    for e in d["entities"]:
+        by_type[e["type"]] = by_type.get(e["type"], 0) + 1
+    return _wrap(
+        request, dataset_version=d["dataset_version"], as_of=d["as_of"],
+        schema_version=d["claims"][0]["schema_version"], entities_by_type=by_type,
+        claims=len(d["claims"]), counts_by_source_type=counts["source_type"],
+        counts_by_review_state=counts["review_state"], cached_outputs=True,
+    )
 
 
 @router.get("/search")
-def search(request: Request, q: str) -> Any:
-    return _fx(request, "search")
+def search(request: Request, q: str = "") -> Any:
+    t = q.strip().lower()
+    hits = [
+        {"id": e["id"], "label": e["label"], "type": e["type"], "synonyms": e["synonyms"],
+         "matched": next((s for s in e["synonyms"] if t and t in s.lower()), None)}
+        for e in _demo(request)["entities"]
+        if not t or t in e["label"].lower() or t in e["id"].lower()
+        or any(t in s.lower() for s in e["synonyms"])
+    ]
+    return _wrap(request, query=q, results=hits[:20], ambiguous=len(hits) > 1 and bool(t))
+
+
+@router.get("/entities")
+def entities(request: Request, type: str | None = None) -> Any:
+    items = [e for e in _demo(request)["entities"] if type is None or e["type"] == type]
+    return _wrap(request, items=items)
 
 
 @router.get("/entities/{entity_id}")
 def entity(request: Request, entity_id: str) -> Any:
-    return _fx(request, "entity")
+    e = _entity(request, entity_id)
+    d = _demo(request)
+    claims = [c for c in d["claims"] if entity_id in (c["subject_id"], c["object_id"])]
+    by_pred: dict[str, int] = {}
+    for c in claims:
+        by_pred[c["predicate"]] = by_pred.get(c["predicate"], 0) + 1
+    return _wrap(
+        request, entity=e, claims=claims, claim_counts_by_predicate=by_pred,
+        reviewed_claims=sum(c["review_state"] == "reviewed" for c in claims),
+        summary=d["summaries"].get(entity_id, []),
+    )
 
 
 @router.get("/entities/{entity_id}/connections")
 def connections(request: Request, entity_id: str) -> Any:
-    return _fx(request, "connections")
+    _entity(request, entity_id)
+    d = _demo(request)
+    results = d["connections"].get(entity_id, [])
+    cov_ids = {r["coverage_manifest_id"] for r in results}
+    coverage = next((m for m in d["manifests"] if m["manifest_id"] in cov_ids), None)
+    return _wrap(request, results=results, coverage=coverage)
 
 
 @router.get("/entities/{entity_id}/assets")
 def assets(request: Request, entity_id: str) -> Any:
-    return _fx(request, "assets")
+    _entity(request, entity_id)
+    return _wrap(request, assets=_demo(request)["assets"].get(entity_id, []))
 
 
 @router.get("/entities/{entity_id}/collaborators")
 def collaborators(request: Request, entity_id: str) -> Any:
-    return _fx(request, "collaborators")
+    _entity(request, entity_id)
+    return _wrap(request, items=[])
 
 
 @router.get("/entities/{entity_id}/graph")
 def graph(request: Request, entity_id: str, max_nodes: int = 40) -> Any:
-    return _fx(request, "graph")
+    _entity(request, entity_id)
+    g = _demo(request)["graphs"][entity_id]
+    return _wrap(request, **g)
 
 
 @router.get("/entities/{entity_id}/gap")
 def gap(request: Request, entity_id: str) -> Any:
-    return _fx(request, "gap")
+    _entity(request, entity_id)
+    d = _demo(request)
+    g = d["gaps"].get(entity_id)
+    coverage = None
+    if g:
+        coverage = next(m for m in d["manifests"] if m["manifest_id"] == g["coverage_manifest_id"])
+    return _wrap(request, gap=g, coverage=coverage)
+
+
+@router.get("/entities/{entity_id}/actions")
+def entity_actions(request: Request, entity_id: str) -> Any:
+    _entity(request, entity_id)
+    return _wrap(request, cards=_demo(request)["cards"].get(entity_id, []))
 
 
 @router.get("/claims/{claim_id}")
 def claim(request: Request, claim_id: str) -> Any:
-    return _fx(request, "claim")
+    d = _demo(request)
+    c = next((c for c in d["claims"] if c["claim_id"] == claim_id), None)
+    if c is None:
+        raise HTTPException(status_code=404, detail=f"no claim {claim_id}")
+    labels = {e["id"]: e["label"] for e in d["entities"]}
+    siblings = [x["claim_id"] for x in d["claims"]
+                if x["lineage_id"] == c["lineage_id"] and x["claim_id"] != claim_id]
+    contradicting = [x["claim_id"] for x in d["claims"]
+                     if claim_id in x["contradicts"] or x["claim_id"] in c["contradicts"]]
+    return _wrap(
+        request, claim=c, subject_label=labels.get(c["subject_id"]),
+        object_label=labels.get(c["object_id"]), lineage_siblings=siblings,
+        contradicting_claims=contradicting,
+    )
 
 
 @router.post("/explain")
-def explain(request: Request) -> Any:
-    return _fx(request, "explain")
+def explain(request: Request, body: Annotated[dict[str, Any] | None, Body()] = None) -> Any:
+    sentences = _demo(request)["summaries"].get((body or {}).get("entity_id", ""), [])
+    return _wrap(request, sentences=sentences, dropped=0, cached=True)
 
 
 @router.post("/actions")
-def actions(request: Request) -> Any:
-    return _fx(request, "action")
+def actions(request: Request, body: Annotated[dict[str, Any] | None, Body()] = None) -> Any:
+    return _wrap(request, cards=_demo(request)["cards"].get((body or {}).get("entity_id", ""), []))
 
 
 @router.post("/uploads")
@@ -83,4 +177,8 @@ def uploads(request: Request) -> Any:
 
 @router.get("/simulations/{run_id}")
 def simulation(request: Request, run_id: str) -> Any:
-    return _fx(request, "simulation")
+    sims = _demo(request)["simulations"]
+    run = sims["runs"].get(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"no simulation {run_id}")
+    return _wrap(request, scene=sims["scene"], **run)

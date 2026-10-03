@@ -1,0 +1,41 @@
+# Deploys the API to a Hugging Face Docker Space on every push to main.
+# Needs: repo secret HF_TOKEN (HF write token), repo variable HF_SPACE (e.g. "user/tfotb-api").
+# CORS_ORIGINS (the Vercel URL) is set as a variable in the Space settings, not here.
+name: deploy-api
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "data/fixtures/**", "deploy/**", "requirements.lock",
+            ".github/workflows/deploy-api.yml"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ vars.HF_SPACE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble Space folder
+        run: |
+          mkdir space
+          cp -r src space/src
+          mkdir -p space/data && cp -r data/fixtures space/data/fixtures
+          cp requirements.lock space/
+          cp deploy/api.Dockerfile space/Dockerfile
+          cp deploy/hf-space-README.md space/README.md
+          find space -name __pycache__ -prune -exec rm -rf {} +
+
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+        run: |
+          cd space
+          git init -q -b main
+          git config user.email "actions@github.com"
+          git config user.name "deploy-api"
+          git add -A
+          git commit -q -m "Deploy ${GITHUB_SHA::7}"
+          git push --force "https://user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" main
