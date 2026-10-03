@@ -83,3 +83,12 @@ def test_hypothesis_only_claim_never_makes_a_reviewed_mechanistic_lead(mk):
     c1 = mk(pred="SHARES_PATHOGENIC_PATHWAY_WITH", status="inference", review_state="reviewed")
     comps = [comp("molecular_mechanisms", supporting_claim_ids=[c1.claim_id])]
     assert categorize(comps, {c1.claim_id: c1}) is EvidenceCategory.hypothesis_only
+
+
+def test_gene_data_without_a_shared_gene_does_not_demote_a_symptom_lead():
+    # Found on real HPO data: CLN1 vs CLN3 (different genes) fell to "hypothesis only" while
+    # candidates with no gene data at all stayed "symptom-level lead".
+    no_shared_gene = comp("dna_variants", limitations=["both diseases have claims here but share no feature"])
+    pheno = comp("phenotype", score=0.66, score_definition="BMA-Lin")
+    assert categorize([pheno, no_shared_gene], {}) is EvidenceCategory.symptom_level_lead
+    assert categorize([no_shared_gene], {}) is EvidenceCategory.hypothesis_only
