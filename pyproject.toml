@@ -1,0 +1,23 @@
+[project]
+name = "tfotb"
+version = "0.1.0"
+description = "Hackathon MVP: evidence-backed rare-disease connection explorer + bounded robotics workflow simulation. Research-support only; not a clinical system."
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2", "networkx", "fastapi", "numpy", "mujoco", "jsonschema"]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx", "ruff"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "robotics/tests"]
+pythonpath = ["src", "robotics"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "robotics"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["C408"]

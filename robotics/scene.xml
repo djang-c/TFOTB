@@ -1,0 +1,22 @@
+<!-- Generic gantry workcell. NOT a model of any real robot. Units: metres. Kinematic checks only. -->
+<mujoco model="generic_workcell_v0">
+  <option gravity="0 0 0"/>
+  <worldbody>
+    <light pos="0.15 0.1 0.5" dir="0 0 -1"/>
+    <geom name="deck" type="box" pos="0.15 0.1 -0.005" size="0.15 0.1 0.005" contype="0" conaffinity="0" rgba="0.8 0.8 0.8 1"/>
+    <!-- visual-only labware: modeled approach regions, no contact -->
+    <geom name="tiprack"  type="box" pos="0.04 0.04 0.006" size="0.018 0.018 0.006" contype="0" conaffinity="0" rgba="0.3 0.6 0.9 1"/>
+    <geom name="source"   type="box" pos="0.04 0.15 0.01"  size="0.018 0.018 0.01"  contype="0" conaffinity="0" rgba="0.3 0.8 0.4 1"/>
+    <geom name="waste"    type="box" pos="0.04 0.10 0.008" size="0.018 0.018 0.008" contype="0" conaffinity="0" rgba="0.6 0.6 0.6 1"/>
+    <geom name="plate"    type="box" pos="0.18 0.08 0.007" size="0.06 0.04 0.007"   contype="0" conaffinity="0" rgba="0.9 0.9 0.6 1"/>
+    <!-- colliding fixture (e.g. a reagent tower) between source and plate -->
+    <geom name="tower" type="box" pos="0.10 0.105 0.02" size="0.01 0.04 0.02" contype="1" conaffinity="1" rgba="0.8 0.3 0.3 1"/>
+    <body name="carriage" pos="0 0 0">
+      <joint name="x" type="slide" axis="1 0 0" range="0 0.3"/>
+      <joint name="y" type="slide" axis="0 1 0" range="0 0.2"/>
+      <joint name="z" type="slide" axis="0 0 1" range="0 0.1"/>
+      <!-- tip at body origin; barrel extends upward -->
+      <geom name="pipette" type="capsule" fromto="0 0 0.0 0 0 0.05" size="0.001" contype="1" conaffinity="1" mass="0.01" rgba="0.1 0.1 0.1 1"/>
+    </body>
+  </worldbody>
+</mujoco>

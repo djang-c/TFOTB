@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExperimentSpec",
+  "type": "object",
+  "required": ["spec_version", "proposal_ref", "robot", "labware", "inventory", "operations"],
+  "additionalProperties": false,
+  "properties": {
+    "spec_version": {"const": "0.1.0"},
+    "proposal_ref": {
+      "type": "object", "required": ["proposal_id", "source_claim_ids", "review_state"],
+      "properties": {
+        "proposal_id": {"type": "string"},
+        "source_claim_ids": {"type": "array", "items": {"type": "string"}},
+        "review_state": {"enum": ["generic_fixture_unreviewed", "unreviewed", "reviewed"]}
+      }
+    },
+    "robot": {
+      "type": "object", "required": ["model", "version", "pipette_capacity_ul", "travel_height_mm", "bounds_mm"],
+      "properties": {
+        "model": {"type": "string"}, "version": {"type": "string"},
+        "pipette_capacity_ul": {"type": "number", "exclusiveMinimum": 0},
+        "travel_height_mm": {"type": "number"},
+        "bounds_mm": {"type": "object", "required": ["x", "y", "z"],
+          "properties": {"x": {"$ref": "#/$defs/range"}, "y": {"$ref": "#/$defs/range"}, "z": {"$ref": "#/$defs/range"}}}
+      }
+    },
+    "labware": {
+      "type": "object", "required": ["tiprack", "source", "waste", "plate"],
+      "properties": {
+        "tiprack": {"$ref": "#/$defs/point"}, "source": {"$ref": "#/$defs/point"}, "waste": {"$ref": "#/$defs/point"},
+        "plate": {"type": "object", "required": ["a1", "pitch_mm"],
+          "properties": {"a1": {"$ref": "#/$defs/point"}, "pitch_mm": {"type": "number", "exclusiveMinimum": 0}}},
+        "work_z_mm": {"type": "object", "properties": {"pick_tip": {"type": "number"}, "aspirate": {"type": "number"}, "dispense": {"type": "number"}, "drop_tip": {"type": "number"}}}
+      }
+    },
+    "inventory": {
+      "type": "object", "required": ["source_volume_ul", "tips"],
+      "properties": {"source_volume_ul": {"type": "number", "minimum": 0}, "tips": {"type": "integer", "minimum": 0}}
+    },
+    "operations": {
+      "type": "array", "minItems": 1,
+      "items": {"oneOf": [
+        {"type": "object", "required": ["op"], "properties": {"op": {"enum": ["pick_tip", "drop_tip"]}}, "additionalProperties": false},
+        {"type": "object", "required": ["op", "volume_ul"], "properties": {"op": {"const": "aspirate"}, "volume_ul": {"type": "number", "exclusiveMinimum": 0}}, "additionalProperties": false},
+        {"type": "object", "required": ["op", "well", "volume_ul"], "properties": {"op": {"const": "dispense"}, "well": {"type": "string", "pattern": "^[A-H](1[0-2]|[1-9])$"}, "volume_ul": {"type": "number", "exclusiveMinimum": 0}}, "additionalProperties": false}
+      ]}
+    }
+  },
+  "$defs": {
+    "range": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+    "point": {"type": "object", "required": ["x", "y"], "properties": {"x": {"type": "number"}, "y": {"type": "number"}}}
+  }
+}

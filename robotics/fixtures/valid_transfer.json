@@ -1,0 +1,106 @@
+{
+  "spec_version": "0.1.0",
+  "proposal_ref": {
+    "proposal_id": "GENERIC-HANDLING-FIXTURE-0001",
+    "source_claim_ids": [],
+    "review_state": "generic_fixture_unreviewed"
+  },
+  "robot": {
+    "model": "generic-gantry-v0",
+    "version": "0.1.0",
+    "pipette_capacity_ul": 200,
+    "travel_height_mm": 60,
+    "bounds_mm": {
+      "x": [
+        0,
+        300
+      ],
+      "y": [
+        0,
+        200
+      ],
+      "z": [
+        0,
+        100
+      ]
+    }
+  },
+  "labware": {
+    "tiprack": {
+      "x": 40,
+      "y": 40
+    },
+    "source": {
+      "x": 40,
+      "y": 150
+    },
+    "waste": {
+      "x": 40,
+      "y": 100
+    },
+    "plate": {
+      "a1": {
+        "x": 150,
+        "y": 60
+      },
+      "pitch_mm": 9
+    },
+    "work_z_mm": {
+      "pick_tip": 15,
+      "aspirate": 10,
+      "dispense": 25,
+      "drop_tip": 30
+    }
+  },
+  "inventory": {
+    "source_volume_ul": 1000,
+    "tips": 4
+  },
+  "operations": [
+    {
+      "op": "pick_tip"
+    },
+    {
+      "op": "aspirate",
+      "volume_ul": 50
+    },
+    {
+      "op": "dispense",
+      "well": "A1",
+      "volume_ul": 50
+    },
+    {
+      "op": "drop_tip"
+    },
+    {
+      "op": "pick_tip"
+    },
+    {
+      "op": "aspirate",
+      "volume_ul": 50
+    },
+    {
+      "op": "dispense",
+      "well": "A2",
+      "volume_ul": 50
+    },
+    {
+      "op": "drop_tip"
+    },
+    {
+      "op": "pick_tip"
+    },
+    {
+      "op": "aspirate",
+      "volume_ul": 50
+    },
+    {
+      "op": "dispense",
+      "well": "A3",
+      "volume_ul": 50
+    },
+    {
+      "op": "drop_tip"
+    }
+  ]
+}
