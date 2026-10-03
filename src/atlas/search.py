@@ -44,6 +44,7 @@ from atlas.trials import TrialsSource
 MATCH_ORDER = ("identifier", "label", "exact synonym", "related synonym", "all words", "starts with", "close spelling")
 _TIER_MATCH = {0: "label", 1: "exact synonym", 2: "related synonym"}
 RELATED_LIMIT = 12
+GENES_PER_DISEASE = 4  # in the graph only; e.g. MELAS lists 17 mitochondrial genes
 CLOSE_SPELLING_MIN = 0.75  # every query word needs a name word at least this close
 NON_HUMAN_ROOT = "MONDO:0005583"  # "non-human animal disease"; its subtree is left out of search
 _PURL = "http://purl.obolibrary.org/obo/"
@@ -290,6 +291,62 @@ class SearchIndex:
         label = self.r.label_of(entity_id)
         exact = sorted({t for t, tier in syn if tier == 1 and len(t) > 3 and not t.isupper()}, key=len)[:6]
         return self.trials.for_disease(entity_id, label, names, [label, *exact])
+
+    def graph(self, entity_id: str, max_nodes: int = 40) -> dict[str, Any]:
+        """Two steps around an entry. Gene links are claims (clickable evidence). Symptom-similarity
+        links are computed by the phenotype channel, not claims: they carry `claim_id: None`, the
+        similarity, and status `computational_prediction`, so the UI can never present them as sourced."""
+        etype = next((t for t in ENTITY_TYPES if entity_id in self.r._labels[t]), None)
+        if etype not in (DISEASE, GENE):
+            return {"nodes": [], "edges": [], "truncated": False, "omitted": 0}
+        nodes: dict[str, str] = {entity_id: etype}
+        edges: list[dict[str, Any]] = []
+        omitted = 0
+
+        def add_node(i: str, t: str) -> bool:
+            nonlocal omitted
+            if i in nodes:
+                return True
+            if len(nodes) >= max_nodes:
+                omitted += 1
+                return False
+            nodes[i] = t
+            return True
+
+        def gene_edges(gene: str, disease: str, link: dict[str, str]) -> None:
+            c = self.store.claims[link["claim_id"]]
+            edges.append({"source": gene, "target": disease, "predicate": c.predicate, "claim_id": c.claim_id,
+                          "status": c.status.value, "review_state": c.review_state.value, "score": None})
+
+        if etype == DISEASE:
+            out = self.connections(entity_id)
+            for r in out["results"]:
+                score = next((c["score"] for c in r["comparisons"] if c["channel_id"] == "phenotype"), None)
+                if score is not None and add_node(r["candidate_id"], DISEASE):
+                    edges.append({"source": entity_id, "target": r["candidate_id"], "predicate": "SIMILAR_SYMPTOMS",
+                                  "claim_id": None, "status": "computational_prediction", "review_state": "unreviewed",
+                                  "score": score})
+            for d in list(nodes):  # step two: the genes of every disease shown (a few each), and their diseases
+                genes = self.genes_of.get(d, [])
+                omitted += max(0, len(genes) - GENES_PER_DISEASE)
+                for g in genes[:GENES_PER_DISEASE]:
+                    if add_node(g["id"], GENE):
+                        gene_edges(g["id"], d, g)
+            for g in [i for i, t in nodes.items() if t == GENE]:
+                for d in self.diseases_of.get(g, [])[:4]:
+                    if (d["id"] in nodes or add_node(d["id"], DISEASE)) and not any(
+                            e["source"] == g and e["target"] == d["id"] for e in edges):
+                        gene_edges(g, d["id"], d)
+        else:
+            for d in self.diseases_of.get(entity_id, []):
+                if add_node(d["id"], DISEASE):
+                    gene_edges(entity_id, d["id"], d)
+            for d in [i for i, t in nodes.items() if t == DISEASE]:
+                for g in self.genes_of.get(d, []):
+                    if g["id"] != entity_id and add_node(g["id"], GENE):
+                        gene_edges(g["id"], d, g)
+        return {"nodes": [{"id": i, "label": self.r.label_of(i), "type": t} for i, t in nodes.items()],
+                "edges": edges, "truncated": omitted > 0, "omitted": omitted}
 
     def actions(self, entity_id: str) -> list[dict[str, Any]]:
         """Q3 for a real disease: T10 template cards over the real Q1/Q2 facts (no LLM, no invented

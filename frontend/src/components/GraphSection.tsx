@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
 import { enc, type GraphData } from "@/lib/api";
-import { ClaimRef } from "./EvidenceDrawer";
+import { ClaimRef, PREDICATE_PLAIN } from "./EvidenceDrawer";
 
 const Graph3D = dynamic(() => import("./Graph3D"), {
   ssr: false,
@@ -26,14 +26,17 @@ export const NODE_COLOR: Record<string, string> = {
 export function GraphSection({ data, focusId }: { data: GraphData; focusId: string }) {
   const [view, setView] = useState<"3d" | "list">("3d");
   const labels = Object.fromEntries(data.nodes.map((n) => [n.id, n.label]));
+  const sourced = data.edges.filter((e) => e.claim_id).length;
+  const computed = data.edges.length - sourced;
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
         <p className="text-muted">
-          {data.nodes.length} entries and {data.edges.length} sourced links within two steps.
-          Drag to turn, click a node to open it, click a link for its evidence.
+          {data.nodes.length} entries within two steps: {sourced} sourced {sourced === 1 ? "link" : "links"}
+          {computed > 0 && <> and {computed} computed symptom {computed === 1 ? "similarity" : "similarities"}</>}.
+          {data.truncated && <> {data.omitted} more not drawn.</>} Drag to turn, click a node to open it, click a sourced link for its evidence.
         </p>
-        <div role="tablist" className="inline-flex rounded-md border border-rule bg-white p-0.5">
+        <div role="tablist" className="inline-flex rounded-md border border-rule bg-sheet p-0.5">
           {(["3d", "list"] as const).map((v) => (
             <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}
               className={`rounded px-3 py-1 ${view === v ? "bg-ink text-white" : "text-muted"}`}>
@@ -51,18 +54,20 @@ export function GraphSection({ data, focusId }: { data: GraphData; focusId: stri
                 <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c }} />{t}
               </li>
             ))}
-            <li>line: solid observed, faint predicted, purple inferred</li>
+            <li>{computed > 0 ? "line: dark = sourced claim, light grey = computed symptom similarity (not a claim), purple = inferred" : "line: solid observed, faint predicted, purple inferred"}</li>
           </ul>
         </>
       ) : (
-        <table className="w-full rounded-md border border-rule bg-white text-left text-sm">
+        <table className="w-full rounded-md border border-rule bg-sheet text-left text-sm">
           <tbody>
             {data.edges.map((e) => (
-              <tr key={e.claim_id} className="border-t border-rule first:border-0">
+              <tr key={`${e.source}>${e.target}>${e.predicate}`} className="border-t border-rule first:border-0">
                 <td className="px-3 py-1.5"><Link className="ref" href={`/entity/${enc(e.source)}`}>{labels[e.source]}</Link></td>
-                <td className="text-muted">{e.predicate.toLowerCase().replaceAll("_", " ")}</td>
+                <td className="text-muted">{e.claim_id ? (PREDICATE_PLAIN[e.predicate] ?? e.predicate.toLowerCase().replaceAll("_", " ")) : "has similar symptoms to"}</td>
                 <td><Link className="ref" href={`/entity/${enc(e.target)}`}>{labels[e.target]}</Link></td>
-                <td className="pr-3 text-right"><ClaimRef id={e.claim_id} /></td>
+                <td className="pr-3 text-right">
+                  {e.claim_id ? <ClaimRef id={e.claim_id} /> : <span className="text-xs text-muted">overlap {e.score?.toFixed(2)} · computed</span>}
+                </td>
               </tr>
             ))}
           </tbody>

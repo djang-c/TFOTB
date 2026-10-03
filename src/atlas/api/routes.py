@@ -251,6 +251,9 @@ def collaborators(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/graph")
 def graph(request: Request, entity_id: str, max_nodes: int = 40) -> Any:
     _entity(request, entity_id)
+    ix = _index(request)
+    if ix is not None and not entity_id.startswith("SYN:"):
+        return _wrap_real(**ix.graph(entity_id, max_nodes=max_nodes))
     g = _demo(request)["graphs"].get(entity_id, {"nodes": [], "edges": [], "truncated": False, "omitted": 0})
     return _wrap(request, **g)
 
