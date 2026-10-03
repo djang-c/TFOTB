@@ -83,3 +83,13 @@ def test_claim_lineage_and_contradictions():
     assert "CLAIM:syn-23" in r["contradicting_claims"]
     r = client.get("/api/claims/CLAIM:syn-12").json()
     assert "CLAIM:syn-13" in r["lineage_siblings"]
+
+
+def test_meta_featured_entries_are_derived_from_the_dataset():
+    m = client.get("/api/meta").json()
+    ids = {e["id"] for e in client.get("/api/entities").json()["items"]}
+    assert m["featured"], "dataset has connections and gaps, so something is featured"
+    for f in m["featured"]:
+        assert f["id"] in ids
+        assert f["reason"] in {"connections", "gap"}
+    assert {s["run_id"] for s in m["simulations"]} == {"SIM:syn-pass", "SIM:syn-fail"}

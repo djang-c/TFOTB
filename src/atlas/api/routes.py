@@ -58,7 +58,26 @@ def meta(request: Request) -> Any:
         schema_version=d["claims"][0]["schema_version"], entities_by_type=by_type,
         claims=len(d["claims"]), counts_by_source_type=counts["source_type"],
         counts_by_review_state=counts["review_state"], cached_outputs=True,
+        featured=_featured(d),
+        simulations=[{"run_id": k, "label": v["label"]} for k, v in d["simulations"]["runs"].items()],
     )
+
+
+def _featured(d: dict[str, Any]) -> list[dict[str, Any]]:
+    """Entry points derived from what the dataset holds, never hand-picked: the entities with the
+    most computed connections, then the entities with a recorded gap."""
+    labels = {e["id"]: (e["label"], e["type"]) for e in d["entities"]}
+    linked = sorted(d["connections"].items(), key=lambda kv: -len(kv[1]))
+    out = [
+        {"id": eid, "label": labels[eid][0], "type": labels[eid][1], "reason": "connections",
+         "connections": len(rows), "assets": len(d["assets"].get(eid, []))}
+        for eid, rows in linked if rows and eid in labels
+    ][:2]
+    out += [
+        {"id": eid, "label": labels[eid][0], "type": labels[eid][1], "reason": "gap", "gap_kind": g["kind"]}
+        for eid, g in d["gaps"].items() if eid in labels
+    ][:2]
+    return out[:3]
 
 
 @router.get("/search")

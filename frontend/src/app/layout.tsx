@@ -1,41 +1,52 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Public_Sans, Source_Serif_4 } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SearchBox } from "@/components/SearchBox";
 import { EvidenceDrawerProvider } from "@/components/EvidenceDrawer";
+import { api } from "@/lib/api";
 
-const serif = Source_Serif_4({ variable: "--font-source-serif", subsets: ["latin"] });
-const sans = Public_Sans({ variable: "--font-public-sans", subsets: ["latin"] });
+const sans = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TFOTB atlas",
+  title: "TFOTB Atlas",
   description: "Sourced connections between rare diseases, and honest gaps. Research support only.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The synthetic marker follows the data: shown while any synthetic fixture is served.
+  const synthetic = await api.meta()
+    .then((m) => (m.counts_by_source_type.synthetic_fixture ?? 0) > 0)
+    .catch(() => false);
   return (
-    <html lang="en" className={`${serif.variable} ${sans.variable} antialiased`}>
-      <body className="min-h-screen bg-page">
+    <html lang="en" className={`${sans.variable} ${mono.variable} antialiased`}>
+      <body className="flex min-h-screen flex-col bg-page">
         <EvidenceDrawerProvider>
-          <header className="border-b border-rule bg-sheet">
-            <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-              <Link href="/" className="font-serif text-xl font-semibold tracking-tight text-ink">
-                TFOTB atlas
+          <header className="sticky top-0 z-40 border-b border-rule bg-sheet/90 backdrop-blur">
+            <div className="mx-auto flex h-14 max-w-[1240px] items-center gap-6 px-4">
+              <Link href="/" className="flex shrink-0 items-baseline gap-1.5 text-[15px] tracking-tight text-ink">
+                <span className="font-semibold">TFOTB</span>
+                <span className="text-muted">Atlas</span>
               </Link>
-              <div className="min-w-[240px] flex-1">
+              <div className="mx-auto w-full max-w-[560px]">
                 <SearchBox />
               </div>
-              <span className="inline-flex items-center gap-2 text-sm text-muted">
-                <span aria-hidden className="tape inline-block h-3 w-6 rounded-sm" />
-                Synthetic demo data
-              </span>
+              {synthetic && <span className="hidden shrink-0 items-center gap-2 rounded-full border border-rule px-2.5 py-1 text-xs text-muted sm:inline-flex">
+                <span aria-hidden className="tape inline-block h-2 w-2 rounded-full" />
+                Synthetic data
+              </span>}
             </div>
           </header>
-          {children}
-          <footer className="mx-auto max-w-[1240px] px-4 py-10 text-sm text-muted">
-            Research support only. Not a clinical system: no diagnosis, dosing, eligibility or
-            treatment selection. Every statement links to its source.
+          <div className="flex-1">{children}</div>
+          <footer className="mt-16 border-t border-rule">
+            <div className="mx-auto flex max-w-[1240px] flex-wrap items-baseline justify-between gap-x-8 gap-y-2 px-4 py-6 text-xs text-muted">
+              <p className="max-w-[72ch]">
+                Research support only. Not a clinical system: no diagnosis, dosing, eligibility or
+                treatment selection. Every statement links to its source.
+              </p>
+              <p>TFOTB Atlas · Hack-Nation MVP</p>
+            </div>
           </footer>
         </EvidenceDrawerProvider>
       </body>

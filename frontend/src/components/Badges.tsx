@@ -61,3 +61,11 @@ export const AVAILABILITY_TEXT: Record<Availability, string> = {
   incompatible: "incompatible",
   failed: "source failed",
 };
+
+export const GAP_KIND: Record<string, string> = {
+  insufficient_coverage: "Insufficient coverage",
+  unresolved_identity: "Unresolved identity",
+  hypothesis_only: "Hypothesis only",
+  conflicting_evidence: "Conflicting evidence",
+  no_supported_route: "No supported route",
+};

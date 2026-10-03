@@ -1,16 +1,19 @@
 @import "tailwindcss";
 
-/* TFOTB atlas: a reference database, not a landing page.
-   Cool white page, blue-black ink, cobalt links. Evidence colours follow docs/implementation/08 §2
-   and always pair with text or shape (never colour alone). */
+/* TFOTB atlas, "quiet instrument": a reference tool, not a landing page.
+   White page, grey scale for structure, one cobalt accent, 1px hairlines, no shadows.
+   Evidence colours follow docs/implementation/08 §2 and always pair with text or shape
+   (never colour alone). */
 @theme {
-  --color-page: #f5f7f8;
+  --color-page: #ffffff;
   --color-sheet: #ffffff;
-  --color-ink: #17212e;
-  --color-muted: #566273;
-  --color-rule: #d9dee3;
-  --color-link: #1c56a3;
-  --color-link-soft: #e6eef8;
+  --color-subtle: #f6f7f9;
+  --color-ink: #111827;
+  --color-muted: #6b7280;
+  --color-rule: #e5e7eb;
+  --color-rule-strong: #d1d5db;
+  --color-link: #2952cc;
+  --color-link-soft: #eef2fc;
 
   --color-ev-reviewed: #0d7266;   /* reviewed mechanistic lead */
   --color-ev-symptom: #55667a;    /* symptom-level lead */
@@ -22,24 +25,35 @@
   --color-fail: #b3261e;
   --color-pass: #0d7266;
 
-  --font-serif: var(--font-source-serif), Georgia, serif;
-  --font-sans: var(--font-public-sans), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
 html { background: var(--color-page); color: var(--color-ink); }
-body { font-family: var(--font-sans); font-feature-settings: "tnum" 1; }
+body { font-family: var(--font-sans); font-feature-settings: "cv11" 1, "ss01" 1; }
+h1, h2, h3 { letter-spacing: -0.011em; }
+.tabular-nums, td, dd { font-variant-numeric: tabular-nums; }
 
-:focus-visible { outline: 2px solid var(--color-link); outline-offset: 2px; border-radius: 2px; }
+/* In the base layer so utilities (e.g. the search input's own ring) can override it. */
+@layer base {
+  :focus-visible { outline: 2px solid var(--color-link); outline-offset: 2px; border-radius: 2px; }
+}
 
 a.ref { color: var(--color-link); text-decoration: none; }
-a.ref:hover { text-decoration: underline; }
+a.ref:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+kbd {
+  font-family: var(--font-sans); font-size: 11px; line-height: 1;
+  padding: 3px 5px; border: 1px solid var(--color-rule); border-radius: 4px;
+  color: var(--color-muted); background: var(--color-sheet);
+}
 
 /* The hatched "no data" well: missing is visibly empty, never zero. */
 .well-missing {
-  background-image: repeating-linear-gradient(135deg, transparent 0 4px, #c9d0d7 4px 5px);
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, #d6dae0 4px 5px);
 }
 .tape {
-  background-image: repeating-linear-gradient(135deg, var(--color-synthetic) 0 8px, #17212e 8px 10px);
+  background-image: repeating-linear-gradient(135deg, var(--color-synthetic) 0 8px, #111827 8px 10px);
 }
 
 @media (prefers-reduced-motion: reduce) {

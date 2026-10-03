@@ -191,11 +191,18 @@ export async function get<T>(path: string): Promise<Wrapped<T>> {
 
 export const enc = (id: string) => encodeURIComponent(id);
 
+/** A home-page entry point. The API derives these from the dataset; they are never hand-picked. */
+export type Featured = { id: string; label: string; type: EntityType } & (
+  | { reason: "connections"; connections: number; assets: number }
+  | { reason: "gap"; gap_kind: string }
+);
+
 export const api = {
   meta: () => get<{ dataset_version: string; as_of: string; schema_version: string;
     entities_by_type: Record<string, number>; claims: number;
-    counts_by_review_state: Record<string, number>; counts_by_source_type: Record<string, number> }>("/meta"),
-  search: (q: string) => get<{ results: { id: string; label: string; type: EntityType; synonyms: string[]; matched: string | null }[] }>(`/search?q=${enc(q)}`),
+    counts_by_review_state: Record<string, number>; counts_by_source_type: Record<string, number>;
+    featured?: Featured[]; simulations?: { run_id: string; label: string }[] }>("/meta"),
+  search: (q: string) => get<{ results: { id: string; label: string; type: EntityType; synonyms: string[]; matched: string | null }[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
   entities: () => get<{ items: Entity[] }>("/entities"),
   entity: (id: string) => get<{ entity: Entity; claims: Claim[]; claim_counts_by_predicate: Record<string, number>;
     reviewed_claims: number; summary: { text: string; claim_ids: string[] }[] }>(`/entities/${enc(id)}`),
