@@ -23,3 +23,7 @@
 - Fuzzy matches never auto-resolve (doc 06 accepted a single hit at ratio >= 90). Reason: names like "type C1" vs "type C2" score high but are different diseases. Suggestions only; stdlib difflib used instead of rapidfuzz (not installed; no new package).
 - A unique label resolves; a synonym or abbreviation resolves only if no other entity uses it at any tier. Found on real MONDO: "NPC" is a synonym of Niemann-Pick type C, nasopharyngeal carcinoma and a susceptibility entry, so it stays ambiguous.
 - Real finding for T01: "Juvenile CLN3 Disease" (the paper's disease) matches two MONDO entries (MONDO:0008767 and MONDO:0979346), and MONDO:0019262 is a broader "juvenile NCL" group. The seed fixture needs a human choice of which ID to use; the resolver will not pick.
+
+## 2026-10-03 - Seed ID for CLN3 disease
+- Owner decision: use MONDO:0008767 ("neuronal ceroid lipofuscinosis 3") for CLN3 disease in the seed cluster. Niemann-Pick type C = MONDO:0018982. Genes: CLN3 = HGNC:2074, NPC1 = HGNC:7897, NPC2 = HGNC:14537.
+- UNREVIEWED by any expert. MONDO:0979346 (also named "juvenile CLN3 disease") was not opened and may be a valid alternative; MONDO:0019262 is a broader juvenile NCL group and is not used.
