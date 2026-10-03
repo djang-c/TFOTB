@@ -45,6 +45,8 @@ _CURIE = {
     "RUN": _SLUG,
     "SIM": _SLUG,
     "UNRESOLVED": _SLUG,
+    # SYNTHETIC demo/test records only; never a real ontology ID (see Entity._identity).
+    "SYN": _SLUG,
     "FINDING": r"[A-Za-z0-9_.-]+",
     "CLAIM": r"[A-Za-z0-9_.-]+",
     "ASSET": r"[A-Za-z0-9_.-]+",
@@ -342,7 +344,11 @@ class Entity(BaseModel):
     @model_validator(mode="after")
     def _identity(self) -> Entity:
         prefix = self.id.partition(":")[0]
-        if self.identity_status is IdentityStatus.resolved:
+        if prefix == "SYN" and self.source_type is not SourceType.synthetic_fixture:
+            raise ValueError("SYN: ids are reserved for synthetic records")
+        if prefix == "SYN":
+            pass
+        elif self.identity_status is IdentityStatus.resolved:
             if prefix == "UNRESOLVED":
                 raise ValueError("a resolved entity needs a real identifier")
             if prefix not in ENTITY_PREFIXES[self.type]:

@@ -6,17 +6,20 @@ from atlas.api import create_app
 
 client = TestClient(create_app())
 
+E = "/api/entities/SYN:disease-a"
 GETS = [
     "/api/meta",
-    "/api/search?q=x",
-    "/api/entities/MONDO:0000001",
-    "/api/entities/MONDO:0000001/connections",
-    "/api/entities/MONDO:0000001/assets",
-    "/api/entities/MONDO:0000001/collaborators",
-    "/api/entities/MONDO:0000001/graph",
-    "/api/entities/MONDO:0000001/gap",
+    "/api/search?q=disease",
+    "/api/entities",
+    E,
+    f"{E}/connections",
+    f"{E}/assets",
+    f"{E}/collaborators",
+    f"{E}/graph",
+    f"{E}/gap",
+    f"{E}/actions",
     "/api/claims/CLAIM:syn-1",
-    "/api/simulations/SIM:syn-1",
+    "/api/simulations/SIM:syn-pass",
 ]
 POSTS = ["/api/explain", "/api/actions", "/api/uploads"]
 
@@ -38,3 +41,45 @@ def test_all_stub_endpoints_serve_synthetic_fixtures():
 
 def test_upload_stub_is_quarantined():
     assert client.post("/api/uploads", json={}).json()["quarantined"] is True
+
+
+def test_unknown_ids_404():
+    assert client.get("/api/entities/SYN:nope").status_code == 404
+    assert client.get("/api/claims/CLAIM:nope").status_code == 404
+
+
+def test_demo_dataset_validates_against_models():
+    """The demo is built through the models; re-validate the served JSON (catches drift)."""
+    from atlas.api.routes import _demo_cached
+    from atlas.api.settings import Settings
+    from atlas.schemas import (
+        ActionCard,
+        AssetResult,
+        Claim,
+        ConnectionResult,
+        CoverageManifest,
+        Entity,
+        GapResult,
+    )
+
+    d = _demo_cached(Settings().fixtures_dir)
+    for e in d["entities"]:
+        assert Entity(**e).id.startswith("SYN:")
+    for c in d["claims"]:
+        Claim(**c)
+    for m in d["manifests"]:
+        CoverageManifest(**m)
+    for rows, model in ((d["connections"], ConnectionResult), (d["assets"], AssetResult),
+                        (d["cards"], ActionCard)):
+        for items in rows.values():
+            for x in items:
+                model(**x)
+    for g in d["gaps"].values():
+        GapResult(**g)
+
+
+def test_claim_lineage_and_contradictions():
+    r = client.get("/api/claims/CLAIM:syn-14").json()
+    assert "CLAIM:syn-23" in r["contradicting_claims"]
+    r = client.get("/api/claims/CLAIM:syn-12").json()
+    assert "CLAIM:syn-13" in r["lineage_siblings"]

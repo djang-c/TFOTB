@@ -1,0 +1,141 @@
+{
+  "run_id": "run-de7f1eeecd5d",
+  "experiment_spec_hash": "d1ea033b5608b33e90132aedfe3fb38d8cd2b5cf22c7a368bffd1e552e479b7d",
+  "scene_hash": "528b76b145f10a1116d5ef2f8cf448a15da4e79443a619a56c1beb15d45c13d3",
+  "simulator_name": "mujoco",
+  "simulator_version": "3.14.0",
+  "adapter_version": "0.1.0",
+  "random_seed": 0,
+  "review_state": "generic_fixture_unreviewed",
+  "started_at": "2026-10-03T21:05:43.222573+00:00",
+  "finished_at": "2026-10-03T21:05:43.229958+00:00",
+  "overall": "fail",
+  "operation_trace": [
+    {
+      "op_index": 0,
+      "op": "pick_tip",
+      "status": "ok",
+      "end_mm": [
+        40,
+        40,
+        15
+      ]
+    },
+    {
+      "op_index": 1,
+      "op": "aspirate",
+      "status": "ok",
+      "end_mm": [
+        40,
+        150,
+        10
+      ]
+    },
+    {
+      "op_index": 2,
+      "op": "dispense",
+      "status": "fail",
+      "end_mm": [
+        40,
+        150,
+        20.0
+      ]
+    }
+  ],
+  "ledger_before": {
+    "source_ul": 1000.0,
+    "tips_available": 4,
+    "tip_attached": false,
+    "held_ul": 0.0,
+    "wells_ul": {}
+  },
+  "ledger_after": {
+    "source_ul": 850.0,
+    "tips_available": 1,
+    "tip_attached": false,
+    "held_ul": 0.0,
+    "wells_ul": {
+      "A1": 50.0,
+      "A2": 50.0,
+      "A3": 50.0
+    }
+  },
+  "checks": [
+    {
+      "check_name": "spec_schema",
+      "status": "pass",
+      "reason": ""
+    },
+    {
+      "check_name": "operation_order",
+      "status": "pass",
+      "reason": ""
+    },
+    {
+      "check_name": "pipette_capacity",
+      "status": "pass",
+      "reason": ""
+    },
+    {
+      "check_name": "source_volume",
+      "status": "pass",
+      "reason": ""
+    },
+    {
+      "check_name": "tip_availability",
+      "status": "pass",
+      "reason": ""
+    },
+    {
+      "check_name": "declared_bounds",
+      "status": "pass",
+      "reason": ""
+    },
+    {
+      "check_name": "joint_limits",
+      "status": "pass",
+      "reason": ""
+    },
+    {
+      "check_name": "modeled_collision",
+      "status": "fail",
+      "reason": "unexpected contact ['pipette', 'tower'] at [89.2, 109.7, 20.0] mm"
+    },
+    {
+      "check_name": "biology",
+      "status": "not_modeled",
+      "reason": "efficacy, rescue, safety and assay outcomes are not simulated"
+    },
+    {
+      "check_name": "physical_execution",
+      "status": "not_modeled",
+      "reason": "no hardware, calibration or real-liquid validation"
+    }
+  ],
+  "modeled_collision_events": [
+    {
+      "op_index": 2,
+      "geoms": [
+        "pipette",
+        "tower"
+      ],
+      "at_mm": [
+        89.23,
+        109.72,
+        20.0
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "op_index": 2,
+      "check": "modeled_collision",
+      "reason": "unexpected contact ['pipette', 'tower'] at [89.2, 109.7, 20.0] mm"
+    }
+  ],
+  "simulation_steps": 261,
+  "path_length_mm": 196.57,
+  "simulation_time_note": "kinematic samples at 1 mm; not physical time",
+  "wall_clock_time_s": 0.0073,
+  "scope_label": "Workflow simulation only; not wet-lab validated"
+}
