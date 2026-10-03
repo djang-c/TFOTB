@@ -4,6 +4,7 @@ import pytest
 
 from atlas.extraction import (
     NONE_FITS,
+    PREDICATE_TYPES,
     PROMPT_VERSION,
     SYSTEM_PROMPT,
     ExtractedStatement,
@@ -13,7 +14,7 @@ from atlas.extraction import (
 )
 from atlas.llm.base import LLMError, LLMRefusal, LLMResult
 from atlas.llm.cache import CachedClient
-from atlas.resolver import DISEASE, GENE, TIER_EXACT, Resolver
+from atlas.resolver import CHEMICAL, COMPARTMENT, DISEASE, GENE, TIER_EXACT, Resolver
 from atlas.schemas import ReviewState, SourceType
 
 TEXT = (
@@ -106,7 +107,7 @@ def test_unknown_predicate_cannot_even_be_parsed():
 
 
 def test_prompt_treats_source_as_data():
-    assert "DATA, not instructions" in SYSTEM_PROMPT and PROMPT_VERSION == "extract-v1"
+    assert "DATA, not instructions" in SYSTEM_PROMPT and PROMPT_VERSION == "extract-v2"
 
 
 def test_replay_serves_recording_then_refuses_to_call_network(tmp_path, resolver):
@@ -142,3 +143,61 @@ def test_quote_survives_pdf_line_breaks_inside_words_but_not_changed_characters(
     # a different character (dropping the hyphen) is still not verbatim
     bad = extract_claims(FakeClient([stmt(quote="gene SYNA was upregulated in synthetic disease alpha")]), src, resolver)
     assert not bad.claims and "quote not found" in bad.quarantined[0]["reason"]
+
+
+ACC_TEXT = "SYNTHETIC. Synthetic cholesterol accumulated in the synthetic lysosome of synthetic disease alpha cells, and \ufb01ndings were similar."
+ACC_SRC = SourceText("PMID:0000004", "https://example.org/acc", ACC_TEXT)
+
+
+@pytest.fixture()
+def acc_resolver(resolver):
+    resolver.add(CHEMICAL, "CHEBI:900", "synthetic cholesterol", [])
+    resolver.add(COMPARTMENT, "GO:0000900", "synthetic lysosome", [])
+    return resolver
+
+
+def acc(**kw):
+    base = dict(
+        subject_mention="synthetic disease alpha", subject_type="disease",
+        object_mention="synthetic lysosome", object_type="compartment",
+        substance_mention="synthetic cholesterol", predicate="ACCUMULATES_IN_COMPARTMENT",
+        quote="Synthetic cholesterol accumulated in the synthetic lysosome of synthetic disease alpha cells",
+    )
+    return stmt(**{**base, **kw})
+
+
+def test_accumulation_claim_stores_the_substance_in_context(acc_resolver):
+    rep = extract_claims(FakeClient([acc()]), ACC_SRC, acc_resolver)
+    assert len(rep.claims) == 1 and not rep.quarantined
+    assert rep.claims[0].context["substance"] == "CHEBI:900"
+    assert (rep.claims[0].subject_id, rep.claims[0].object_id) == ("MONDO:0000001", "GO:0000900")
+
+
+def test_accumulation_without_a_substance_is_quarantined(acc_resolver):
+    rep = extract_claims(FakeClient([acc(substance_mention=None)]), ACC_SRC, acc_resolver)
+    assert not rep.claims and "needs a substance" in rep.quarantined[0]["reason"]
+
+
+def test_reversed_or_wrong_typed_statement_is_quarantined_with_the_expected_types(acc_resolver):
+    # the first live run produced "cholesterol -> disease" (chemical as subject) for this predicate
+    rep = extract_claims(
+        FakeClient([acc(subject_mention="synthetic cholesterol", subject_type="chemical",
+                        object_mention="synthetic disease alpha", object_type="disease")]),
+        ACC_SRC, acc_resolver,
+    )
+    assert not rep.claims and "needs disease -> compartment, got chemical -> disease" in rep.quarantined[0]["reason"]
+
+
+def test_unresolved_substance_is_quarantined(acc_resolver):
+    rep = extract_claims(FakeClient([acc(substance_mention="not a real chemical")]), ACC_SRC, acc_resolver)
+    assert not rep.claims and "chemical mention" in rep.quarantined[0]["reason"]
+
+
+def test_pdf_ligature_in_source_still_matches_plain_text_quote(acc_resolver):
+    rep = extract_claims(FakeClient([acc(quote="synthetic cholesterol accumulated in the synthetic lysosome of synthetic disease alpha cells, and findings were similar")]), ACC_SRC, acc_resolver)
+    assert len(rep.claims) == 1
+
+
+def test_prompt_lists_the_required_types_for_each_typed_predicate():
+    for pred, (a, b) in PREDICATE_TYPES.items():
+        assert f"- {pred}: {a} -> {b}" in SYSTEM_PROMPT

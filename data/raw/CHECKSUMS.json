@@ -1,4 +1,18 @@
 {
+  "chebi/chebi_lite.json": {
+    "bytes": 186952869,
+    "note": "ChEBI lite release 255 via the unversioned URL (CC BY 4.0, per the file header)",
+    "retrieved": "2026-10-03",
+    "sha256": "cd7aca93c0b6576b30a10376620a4b9bde3c899e2fc85e7ca5dc985c1e02ddb5",
+    "url": "https://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi_lite.json"
+  },
+  "go/go-basic.json": {
+    "bytes": 71156277,
+    "note": "Gene Ontology go-basic release 2026-07-26 via the unversioned URL (CC BY 4.0, per the file header)",
+    "retrieved": "2026-10-03",
+    "sha256": "531d85b2e7a6d4b91290093b487f228994123cec3f45a50136cad2c4b91862ac",
+    "url": "https://current.geneontology.org/ontology/go-basic.json"
+  },
   "hgnc/hgnc_complete_set.txt": {
     "bytes": 16963116,
     "note": "HGNC complete set (CC0), unversioned; date = retrieval date",

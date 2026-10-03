@@ -44,13 +44,21 @@ class ClaimOverlapChannel(EvidenceChannel):
     def _claims(self) -> list[Claim]:
         return [c for c in self.store.claims.values() if c.predicate in self.predicates]
 
+    @staticmethod
+    def _key(claim: Claim, end: str) -> str:
+        """A feature is the non-disease end of a claim. An accumulation claim also names WHAT
+        accumulates, so 'cholesterol in lysosome' and 'another lipid in lysosome' are different
+        features (otherwise every lysosomal storage disease would look connected)."""
+        substance = claim.context.get("substance")
+        return f"{end}[{substance}]" if substance else end
+
     def _features(self, entity: str) -> dict[str, list[Claim]]:
         out: dict[str, list[Claim]] = defaultdict(list)
         for c in self._claims():
             if c.subject_id == entity:
-                out[c.object_id].append(c)
+                out[self._key(c, c.object_id)].append(c)
             elif c.object_id == entity:
-                out[c.subject_id].append(c)
+                out[self._key(c, c.subject_id)].append(c)
         return out
 
     # ---- contract ----
@@ -58,15 +66,11 @@ class ClaimOverlapChannel(EvidenceChannel):
         feats = self._features(query_id)
         found: dict[str, None] = {}
         for c in self._claims():
-            if c.subject_id == query_id and c.object_id.startswith("MONDO:"):
-                found.setdefault(c.object_id)
-            if c.object_id == query_id and c.subject_id.startswith("MONDO:"):
-                found.setdefault(c.subject_id)
-            for end in (c.subject_id, c.object_id):
-                if end in feats and end != query_id:
-                    other = c.object_id if end == c.subject_id else c.subject_id
-                    if other.startswith("MONDO:") and other != query_id:
-                        found.setdefault(other)
+            for disease, other in ((c.subject_id, c.object_id), (c.object_id, c.subject_id)):
+                if not disease.startswith("MONDO:") or disease == query_id:
+                    continue
+                if other == query_id or self._key(c, other) in feats:  # direct link, or a shared feature
+                    found.setdefault(disease)
         return sorted(found)
 
     def compare(self, query_id: str, candidate_id: str, context: dict[str, Any]) -> ChannelComparison:

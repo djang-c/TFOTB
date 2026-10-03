@@ -1,10 +1,13 @@
 """T03 resolver tests. The small ontology below is SYNTHETIC (IDs and names are test-only)."""
 
+import json
 from pathlib import Path
 
 import pytest
 
 from atlas.resolver import (
+    CHEMICAL,
+    COMPARTMENT,
     DISEASE,
     GENE,
     TIER_EXACT,
@@ -129,14 +132,21 @@ class TestRealFiles:
         assert real.resolve("NPC1", GENE).resolved_id == "HGNC:7897"
         assert real.resolve("NPC2", GENE).resolved_id == "HGNC:14537"
 
-    def test_paper_disease_name_is_ambiguous_between_two_cln3_entries(self, real):
+    def test_paper_disease_name_is_ambiguous_between_two_cln3_entries(self, real, monkeypatch):
         # PMID 37245481 studies "juvenile CLN3 disease"; MONDO uses that string for two entries.
-        # A human must pick; the resolver must not.
+        # Without the owner alias a human must pick; the resolver must not.
+        monkeypatch.setattr(real, "_aliases", {})
         out = real.resolve("Juvenile CLN3 Disease", DISEASE)
         assert out.status == "ambiguous" and out.resolved_id is None
         assert {"MONDO:0008767", "MONDO:0979346"} <= {c.id for c in out.candidates}
 
-    def test_npc_abbreviation_is_ambiguous_not_a_guess(self, real):
+    def test_owner_aliases_settle_the_two_seed_names_and_say_so(self, real):
+        out = real.resolve("juvenile CLN3 disease", DISEASE)
+        assert out.resolved_id == "MONDO:0008767" and "owner-approved alias" in out.method
+        assert real.resolve("NPC", DISEASE).resolved_id == "MONDO:0018982"
+
+    def test_npc_abbreviation_is_ambiguous_not_a_guess(self, real, monkeypatch):
+        monkeypatch.setattr(real, "_aliases", {})
         out = real.resolve("NPC", DISEASE)
         assert out.status == "ambiguous" and out.resolved_id is None
         assert {"MONDO:0018982", "MONDO:0011775"} <= {c.id for c in out.candidates}
@@ -146,3 +156,62 @@ class TestRealFiles:
 
     def test_gene_symbol_is_not_a_disease(self, real):
         assert real.resolve("NPC1", DISEASE).resolved_id != "HGNC:7897"
+
+
+def test_outer_name_wins_over_the_bracketed_abbreviation(r):
+    out = r.resolve("synthetic disease alpha (synthetic disease beta)", DISEASE)
+    assert (out.status, out.resolved_id) == ("resolved", "MONDO:0000001") and "bracketed" in out.method
+
+
+def test_bracket_is_used_only_when_the_outer_name_does_not_resolve(r):
+    out = r.resolve("some unknown words (synthetic disease alpha) here", DISEASE)
+    assert (out.status, out.resolved_id) == ("resolved", "MONDO:0000001") and "bracketed 'synthetic" in out.method
+
+
+def test_bracketed_parts_naming_different_entities_stay_ambiguous(r):
+    out = r.resolve("unknown words (synthetic disease alpha) (synthetic disease beta)", DISEASE)
+    assert out.status == "ambiguous" and out.resolved_id is None
+    assert {c.id for c in out.candidates} == {"MONDO:0000001", "MONDO:0000002"}
+
+
+def test_bracketed_mention_with_no_matching_part_is_unresolved(r):
+    assert r.resolve("nothing like it (zzz)", DISEASE).status == "unresolved"
+
+
+def test_chemical_and_compartment_types_are_separate_namespaces(r):
+    r.add(CHEMICAL, "CHEBI:16113", "cholesterol", [])
+    r.add(COMPARTMENT, "GO:0005764", "lysosome", [("lytic vacuole", TIER_EXACT)])
+    assert r.resolve("Cholesterol", CHEMICAL).resolved_id == "CHEBI:16113"
+    assert r.resolve("lysosome", COMPARTMENT).resolved_id == "GO:0005764"
+    assert r.resolve("cholesterol", DISEASE).status == "unresolved"  # wrong type never resolves
+    with pytest.raises(ValueError):
+        r.add(CHEMICAL, "GO:0005764", "wrong prefix", [])
+
+
+def test_alias_applies_only_when_plain_match_does_not_resolve(r, tmp_path):
+    f = tmp_path / "aliases.json"
+    f.write_text(json.dumps({"aliases": [
+        {"type": "disease", "mention": "shared name", "id": "MONDO:0000002", "note": "test"},
+        {"type": "disease", "mention": "synthetic disease alpha", "id": "MONDO:0000002", "note": "test: must NOT override"},
+    ]}))
+    assert r.load_aliases(f) == 2
+    assert r.resolve("shared name", DISEASE).resolved_id == "MONDO:0000002"  # ambiguous plain -> alias
+    assert "alias" in r.resolve("shared name", DISEASE).method
+    assert r.resolve("synthetic disease alpha", DISEASE).resolved_id == "MONDO:0000001"  # unique label wins
+
+
+def test_alias_to_an_id_missing_from_the_ontology_is_rejected(r, tmp_path):
+    f = tmp_path / "aliases.json"
+    f.write_text(json.dumps({"aliases": [{"type": "disease", "mention": "x", "id": "MONDO:9999999", "note": "t"}]}))
+    with pytest.raises(ValueError):
+        r.load_aliases(f)
+
+
+@pytest.mark.skipif(not (RAW / "go" / "go-basic.json").exists(), reason="GO/ChEBI not downloaded")
+def test_real_go_and_chebi_resolve_the_seed_paper_terms():
+    real = Resolver.from_raw(RAW)
+    assert real.resolve("lysosome", COMPARTMENT).resolved_id == "GO:0005764"
+    assert real.resolve("cholesterol", CHEMICAL).resolved_id == "CHEBI:16113"
+    assert real.resolve("lysosome", CHEMICAL).status != "resolved"
+    assert real.resolve("Niemann-Pick Type C (NPC) disease", DISEASE).resolved_id == "MONDO:0018982"
+    assert real.resolve("juvenile CLN3 disease (JNCL)", DISEASE).resolved_id == "MONDO:0008767"

@@ -41,7 +41,7 @@ def test_extraction_lands_in_store_with_a_run_record():
     run = store.ingest_extraction(rep)
     assert len(store.claims) == 1
     assert run["claims_added"] == 1 and run["statements_quarantined"] == 1
-    assert (run["provider"], run["model"], run["prompt_version"]) == ("fake-test", "fake-model", "extract-v1")
+    assert (run["provider"], run["model"], run["prompt_version"]) == ("fake-test", "fake-model", "extract-v2")
     assert store.extraction_runs == [run]
     assert "quote not found" in store.quarantine[0]["error"] and store.quarantine[0]["source_id"] == "PMID:0000009"
 

@@ -20,8 +20,11 @@ from pathlib import Path
 from atlas.schemas import validate_curie
 
 DISEASE, GENE, PHENOTYPE = "disease", "gene", "phenotype"
-ENTITY_TYPES = (DISEASE, GENE, PHENOTYPE)
-_PREFIX_FOR_TYPE = {DISEASE: "MONDO", GENE: "HGNC", PHENOTYPE: "HP"}
+COMPARTMENT, CHEMICAL = "compartment", "chemical"  # GO cellular component; ChEBI compound
+ENTITY_TYPES = (DISEASE, GENE, PHENOTYPE, COMPARTMENT, CHEMICAL)
+_PREFIX_FOR_TYPE = {DISEASE: "MONDO", GENE: "HGNC", PHENOTYPE: "HP", COMPARTMENT: "GO", CHEMICAL: "CHEBI"}
+_ID_DIGITS = {"CHEBI": r"\d+"}  # every other prefix here uses 7 digits
+_BRACKETED = re.compile(r"\(([^()]*)\)")
 
 # Lower tier = stronger evidence that the mention names this entity.
 TIER_LABEL, TIER_EXACT, TIER_RELATED = 0, 1, 2
@@ -65,6 +68,7 @@ class Resolver:
         self._index: dict[str, dict[str, list[tuple[str, str, int]]]] = {t: {} for t in ENTITY_TYPES}
         self._xrefs: dict[str, set[str]] = {}
         self._tokens: dict[str, dict[str, set[str]]] = {t: {} for t in ENTITY_TYPES}  # token -> norm names
+        self._aliases: dict[tuple[str, str], tuple[str, str]] = {}  # (type, normalized) -> (id, note)
 
     # ---- building ----
     def add(self, entity_type: str, entity_id: str, label: str, names: list[tuple[str, int]], xrefs: list[str] = ()):
@@ -85,8 +89,9 @@ class Resolver:
             self._xrefs.setdefault(x.casefold(), set()).add(entity_id)
 
     def load_obo_json(self, path: Path, entity_type: str) -> int:
-        """Load a MONDO or HPO OBO-JSON file. Deprecated terms are skipped."""
+        """Load an OBO-JSON file (MONDO, HPO, GO cellular components, ChEBI). Deprecated terms are skipped."""
         prefix = _PREFIX_FOR_TYPE[entity_type]
+        digits = _ID_DIGITS.get(prefix, r"\d{7}")
         graph = json.loads(Path(path).read_text())["graphs"][0]
         count = 0
         for node in graph["nodes"]:
@@ -95,8 +100,10 @@ class Resolver:
             meta = node.get("meta", {})
             if meta.get("deprecated") or not node.get("lbl"):
                 continue
+            if entity_type == COMPARTMENT and not _in_namespace(meta, "cellular_component"):
+                continue
             curie = node["id"][len(_OBO_PURL):].replace("_", ":", 1)
-            if not re.fullmatch(r"\d{7}", curie.split(":")[1]):
+            if not re.fullmatch(digits, curie.split(":")[1]):
                 continue
             names = [
                 (s["val"], TIER_EXACT if s["pred"] == "hasExactSynonym" else TIER_RELATED)
@@ -104,6 +111,17 @@ class Resolver:
             ]
             xrefs = [x["val"] for x in meta.get("xrefs", []) if "val" in x]
             self.add(entity_type, curie, node["lbl"], names, xrefs)
+            count += 1
+        return count
+
+    def load_aliases(self, path: Path) -> int:
+        """Owner-approved aliases (data/aliases.json). Each must point at an ID that exists in the
+        pinned files, and applies ONLY when the plain name match would not resolve."""
+        count = 0
+        for a in json.loads(Path(path).read_text())["aliases"]:
+            if a["id"] not in self._labels[a["type"]]:
+                raise ValueError(f"alias {a['mention']!r} -> {a['id']} is not in the pinned {a['type']} file")
+            self._aliases[(a["type"], normalize(a["mention"]))] = (a["id"], a["note"])
             count += 1
         return count
 
@@ -132,6 +150,12 @@ class Resolver:
         r.load_hgnc(raw / "hgnc" / "hgnc_complete_set.txt")
         if include_hpo:
             r.load_obo_json(raw / "hpo" / "hp.json", PHENOTYPE)
+        for rel, kind in (("go/go-basic.json", COMPARTMENT), ("chebi/chebi_lite.json", CHEMICAL)):
+            if (raw / rel).exists():  # optional: older checkouts have neither file
+                r.load_obo_json(raw / rel, kind)
+        aliases = raw.parent / "aliases.json"
+        if aliases.exists():
+            r.load_aliases(aliases)
         return r
 
     # ---- resolving ----
@@ -144,10 +168,53 @@ class Resolver:
         if ":" in mention and re.fullmatch(r"[A-Za-z]+:\S+", mention):
             return self._resolve_curie(mention, entity_type)
 
+        plain = self._resolve_name(mention, entity_type)
+        if plain.status == "resolved":
+            return plain
+        # "Niemann-Pick Type C (NPC) disease": the text outside the brackets is the name and the
+        # bracket is usually an abbreviation of it, so the outer name wins. Only if it does not
+        # resolve are the bracketed parts tried, and then they must agree on one entity.
+        pieces = _bracket_pieces(mention)
+        if pieces:
+            outer = self._resolve_name(pieces[0], entity_type)
+            if outer.status == "resolved":
+                return Resolution(
+                    mention, entity_type, "resolved", outer.resolved_id,
+                    f"bracketed mention: matched '{pieces[0]}' ({outer.method})", outer.candidates,
+                )
+            hits = {}
+            for piece in pieces[1:]:
+                r = self._resolve_name(piece, entity_type)
+                if r.status == "resolved" and r.resolved_id:
+                    hits[r.resolved_id] = (piece, r)
+            if len(hits) == 1:
+                (rid, (piece, r)), = hits.items()
+                return Resolution(
+                    mention, entity_type, "resolved", rid,
+                    f"bracketed mention: matched the bracketed '{piece}' ({r.method})", r.candidates,
+                )
+            if len(hits) > 1:
+                cands = [self._candidate(entity_type, rid, piece, TIER_RELATED) for rid, (piece, _) in sorted(hits.items())]
+                return Resolution(
+                    mention, entity_type, "ambiguous", None,
+                    f"bracketed mention: the bracketed parts name {len(hits)} different entities; not merged", cands,
+                )
+        return plain if plain.status != "unresolved" else self._from_fuzzy(mention, entity_type)
+
+    def _resolve_name(self, mention: str, entity_type: str) -> Resolution:
+        """Exact name match, then an owner-approved alias if the exact match did not resolve."""
         entries = self._index[entity_type].get(normalize(mention), [])
-        if entries:
-            return self._from_exact(mention, entity_type, entries)
-        return self._from_fuzzy(mention, entity_type)
+        res = self._from_exact(mention, entity_type, entries) if entries else Resolution(
+            mention, entity_type, "unresolved", None, "no exact match"
+        )
+        alias = self._aliases.get((entity_type, normalize(mention)))
+        if res.status != "resolved" and alias:
+            rid, note = alias
+            return Resolution(
+                mention, entity_type, "resolved", rid, f"owner-approved alias ({note})",
+                [self._candidate(entity_type, rid, mention, TIER_EXACT)],
+            )
+        return res
 
     def ids_for_xref(self, xref: str) -> set[str]:
         return set(self._xrefs.get(xref.strip().casefold(), ()))
@@ -218,6 +285,22 @@ class Resolver:
         if cands:
             return Resolution(mention, entity_type, "suggestions", None, "fuzzy suggestions only; please confirm", cands)
         return Resolution(mention, entity_type, "unresolved", None, "no exact or close match in pinned files")
+
+
+def _in_namespace(meta: dict, namespace: str) -> bool:
+    return any(
+        p.get("pred", "").endswith("hasOBONamespace") and p.get("val") == namespace
+        for p in meta.get("basicPropertyValues", [])
+    )
+
+
+def _bracket_pieces(mention: str) -> list[str]:
+    """['Niemann-Pick Type C disease', 'NPC'] for 'Niemann-Pick Type C (NPC) disease'; [] if no brackets."""
+    inner = [m.strip() for m in _BRACKETED.findall(mention) if m.strip()]
+    if not inner:
+        return []
+    outer = " ".join(_BRACKETED.sub(" ", mention).split())
+    return [p for p in (outer, *inner) if p]
 
 
 def _split(value: str) -> list[str]:

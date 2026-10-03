@@ -8,9 +8,11 @@ This is the first live call in the project. It is guarded:
 
 Usage (the key must be in the environment; this script never reads .env itself):
     set -a; source .env; set +a
-    PYTHONPATH=src .venv/bin/python scripts/live_extract_once.py --source-id PMID:37245481 \\
-        --url https://pmc.ncbi.nlm.nih.gov/articles/PMC10224778/ --text-file /path/to/paper.txt \\
-        --i-approve-sending-this-text
+    PYTHONPATH=src .venv/bin/python scripts/live_extract_once.py --pmid 37245481 --i-approve-sending-this-text
+    (or --source-id ID --url URL --text-file FILE for text you already have)
+
+--pmid fetches clean open-access full text from Europe PMC (see atlas/sources.py) and prints the
+licence it reports. The text is cached under data/cache/texts (git-ignored), never committed.
 """
 
 from __future__ import annotations
@@ -18,22 +20,36 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from collections import Counter
 from pathlib import Path
 
 from atlas.extraction import PROMPT_VERSION, SourceText, extract_claims
 from atlas.llm.anthropic_client import AnthropicClient
 from atlas.llm.cache import CachedClient
 from atlas.resolver import Resolver
+from atlas.sources import SourceError, fetch_full_text
 from atlas.store import PublicStore
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _stage(reason: str) -> str:
+    """Which check rejected the statement (so a 0-claim run shows WHERE the loss is)."""
+    if reason.startswith("quote not found"):
+        return "quote"
+    if reason.startswith(("no allowed predicate", "needs a substance")) or " needs " in reason:
+        return "predicate/types"
+    if reason.startswith("schema:") or reason == "duplicate statement":
+        return "schema"
+    return "name resolution"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--source-id", required=True)
-    ap.add_argument("--url", required=True)
-    ap.add_argument("--text-file", type=Path, required=True)
+    ap.add_argument("--pmid", help="fetch open-access full text from Europe PMC")
+    ap.add_argument("--source-id")
+    ap.add_argument("--url")
+    ap.add_argument("--text-file", type=Path)
     ap.add_argument("--max-chars", type=int, default=60_000, help="refuse longer input (bounds input cost)")
     ap.add_argument("--max-tokens", type=int, default=4096, help="output cap sent to the API")
     ap.add_argument("--i-approve-sending-this-text", action="store_true")
@@ -45,17 +61,40 @@ def main() -> int:
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("Refusing: ANTHROPIC_API_KEY is not in the environment.")
         return 2
-    text = args.text_file.read_text()
+    if args.pmid:
+        try:
+            ft = fetch_full_text(args.pmid)
+        except SourceError as exc:
+            print(f"Refusing: {exc}")
+            return 2
+        text, source_id, url = ft.text, f"PMID:{args.pmid}", ft.url
+        cache = ROOT / "data" / "cache" / "texts"
+        cache.mkdir(parents=True, exist_ok=True)
+        (cache / f"PMID-{args.pmid}.txt").write_text(text)
+        print(f"fetched {ft.pmcid}: {len(text)} chars, licence reported by Europe PMC: {ft.license}")
+    elif args.text_file and args.source_id and args.url:
+        text, source_id, url = args.text_file.read_text(), args.source_id, args.url
+    else:
+        print("Refusing: give --pmid, or all of --source-id, --url and --text-file.")
+        return 2
     if len(text) > args.max_chars:
         print(f"Refusing: text is {len(text)} chars, over --max-chars {args.max_chars}.")
         return 2
 
     client = CachedClient(AnthropicClient(max_tokens=args.max_tokens), ROOT / "data" / "cache" / "llm", mode="record")
     resolver = Resolver.from_raw(ROOT / "data" / "raw")
-    report = extract_claims(client, SourceText(args.source_id, args.url, text), resolver)
+    report = extract_claims(client, SourceText(source_id, url, text), resolver)
 
     print(f"status={report.status} prompt={PROMPT_VERSION} reason={report.reason!r}")
     print(f"claims={len(report.claims)} quarantined={len(report.quarantined)}")
+    stages = Counter(_stage(q["reason"]) for q in report.quarantined)
+    proposed = len(report.claims) + len(report.quarantined)
+    print(
+        f"yield: proposed {proposed} -> quote verified {proposed - stages['quote']} -> "
+        f"types ok {proposed - stages['quote'] - stages['predicate/types']} -> "
+        f"names resolved {len(report.claims) + stages['schema']} -> stored {len(report.claims)}"
+    )
+    print("lost at each stage:", dict(stages) or "none")
     for c in report.claims:
         print(f"  CLAIM {c.claim_id}: {c.subject_id} -[{c.predicate}]-> {c.object_id} | status={c.status}")
     for q in report.quarantined:

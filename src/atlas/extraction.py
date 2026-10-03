@@ -12,6 +12,7 @@ through `atlas.llm.LLMClient` (replay mode by default: no network).
 from __future__ import annotations
 
 import hashlib
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -28,9 +29,18 @@ from atlas.schemas import (
     SourceType,
 )
 
-PROMPT_VERSION = "extract-v1"
+PROMPT_VERSION = "extract-v2"
 NONE_FITS = "NONE_FITS"
-EntityKind = Literal["disease", "gene", "phenotype"]
+EntityKind = Literal["disease", "gene", "phenotype", "compartment", "chemical"]
+# Required entity types at each end. Enforced in code (a wrong-way or wrong-type statement is
+# quarantined) and stated in the prompt. Predicates not listed here are not type-checked.
+PREDICATE_TYPES: dict[str, tuple[str, str]] = {
+    "GENE_ASSOCIATED_WITH_DISEASE": ("gene", "disease"),
+    "ACCUMULATES_IN_COMPARTMENT": ("disease", "compartment"),  # also needs a substance (chemical)
+    "SHARES_PATHOGENIC_PATHWAY_WITH": ("disease", "disease"),
+    "CANDIDATE_THERAPY_FOR": ("chemical", "disease"),
+}
+NEEDS_SUBSTANCE = frozenset({"ACCUMULATES_IN_COMPARTMENT"})
 Predicate = Literal[tuple(sorted(ALLOWED_PREDICATES)) + (NONE_FITS,)]  # type: ignore[valid-type]
 
 SYSTEM_PROMPT = (
@@ -39,7 +49,14 @@ SYSTEM_PROMPT = (
     "directly. Never infer, never add background knowledge, never invent identifiers. For each "
     "statement give the subject and object exactly as written, a predicate from the allowed list "
     f"or {NONE_FITS} if none fits, and a quote copied verbatim from the text that states it. "
-    "Copy hedging words in the quote. If the text states nothing extractable, return no statements."
+    "Copy hedging words in the quote. If the text states nothing extractable, return no statements.\n"
+    "Entity types: disease, gene, phenotype, compartment (a cell component such as 'lysosome'; "
+    "use the plain component name, not an abbreviation the text does not define), chemical (a "
+    "specific compound such as 'cholesterol'; NOT a class of treatments).\n"
+    "Required types per predicate (subject -> object); a statement with other types is rejected:\n"
+    + "\n".join(f"- {p}: {a} -> {b}" for p, (a, b) in PREDICATE_TYPES.items())
+    + "\nFor ACCUMULATES_IN_COMPARTMENT the subject is the DISEASE, the object is the compartment, "
+    "and `substance_mention` must name the chemical that accumulates there."
 )
 
 
@@ -48,6 +65,7 @@ class ExtractedStatement(BaseModel):
     subject_type: EntityKind
     object_mention: str
     object_type: EntityKind
+    substance_mention: str | None = None  # the chemical that accumulates (ACCUMULATES_IN_COMPARTMENT)
     predicate: Predicate
     quote: str = Field(min_length=1)
     organism: str | None = None
@@ -82,11 +100,13 @@ class ExtractionReport:
 def _squash(text: str) -> str:
     # Ignore ALL whitespace: PDF text breaks lines mid-word ("ju-\nvenile", "LE/\nLys"), so a quote
     # that is character-for-character correct would otherwise differ only by layout.
-    return "".join(text.split()).casefold()
+    # NFKC folds PDF ligatures ("\ufb01" -> "fi") so the model's plain-text quote still matches.
+    return "".join(unicodedata.normalize("NFKC", text).split()).casefold()
 
 
-def _claim_id(source_id: str, s: ExtractedStatement, subj: str, obj: str) -> str:
-    digest = hashlib.sha256(f"{source_id}|{subj}|{s.predicate}|{obj}|{_squash(s.quote)}".encode()).hexdigest()
+def _claim_id(source_id: str, s: ExtractedStatement, subj: str, obj: str, substance: str | None = None) -> str:
+    key = f"{source_id}|{subj}|{s.predicate}|{obj}|{_squash(s.quote)}" + (f"|{substance}" if substance else "")
+    digest = hashlib.sha256(key.encode()).hexdigest()
     return f"CLAIM:{source_id.replace(':', '-')}-{digest[:10]}"
 
 
@@ -118,8 +138,8 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
         if isinstance(reject, str):
             report.quarantined.append({"statement": s.model_dump(), "reason": reject})
             continue
-        subj, obj = reject
-        claim_id = _claim_id(source.source_id, s, subj, obj)
+        subj, obj, substance = reject
+        claim_id = _claim_id(source.source_id, s, subj, obj, substance)
         if claim_id in seen:
             report.quarantined.append({"statement": s.model_dump(), "reason": "duplicate statement"})
             continue
@@ -139,7 +159,13 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
                 ),
                 review_state=ReviewState.unreviewed,
                 lineage_id=f"STUDY:{source.source_id.replace(':', '-')}",
-                context={k: v for k, v in (("organism", s.organism), ("tissue", s.tissue), ("direction", s.direction)) if v},
+                context={
+                    k: v
+                    for k, v in (
+                        ("organism", s.organism), ("tissue", s.tissue), ("direction", s.direction), ("substance", substance),
+                    )
+                    if v
+                },
             )
         except ValueError as exc:
             report.quarantined.append({"statement": s.model_dump(), "reason": f"schema: {str(exc)[:200]}"})
@@ -149,15 +175,28 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
     return report
 
 
-def _reject_reason(s: ExtractedStatement, haystack: str, resolver: Resolver) -> str | tuple[str, str]:
+def _reject_reason(s: ExtractedStatement, haystack: str, resolver: Resolver) -> str | tuple[str, str, str | None]:
     if _squash(s.quote) not in haystack:
         return "quote not found verbatim in source text"
     if s.predicate == NONE_FITS:
         return "no allowed predicate fits this statement"
+    want = PREDICATE_TYPES.get(s.predicate)
+    if want and (s.subject_type, s.object_type) != want:
+        return (
+            f"{s.predicate} needs {want[0]} -> {want[1]}, got {s.subject_type} -> {s.object_type}"
+        )
+    if s.predicate in NEEDS_SUBSTANCE and not s.substance_mention:
+        return f"{s.predicate} needs a substance (the chemical that accumulates)"
     ids = []
     for mention, kind in ((s.subject_mention, s.subject_type), (s.object_mention, s.object_type)):
         res = resolver.resolve(mention, kind)
         if res.status != "resolved" or res.resolved_id is None:
             return f"{kind} mention {mention!r} is {res.status}: {res.method}"
         ids.append(res.resolved_id)
-    return ids[0], ids[1]
+    substance = None
+    if s.predicate in NEEDS_SUBSTANCE:
+        res = resolver.resolve(s.substance_mention or "", "chemical")
+        if res.status != "resolved" or res.resolved_id is None:
+            return f"chemical mention {s.substance_mention!r} is {res.status}: {res.method}"
+        substance = res.resolved_id
+    return ids[0], ids[1], substance

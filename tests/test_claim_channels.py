@@ -95,3 +95,22 @@ def test_candidates_are_diseases_sharing_a_feature_with_the_query(store):
     store.add(make_claim("CLAIM:b", "PERTURBS_MECHANISM", subject_id=C, object_id="GO:0000001"))
     store.add(make_claim("CLAIM:c", "PERTURBS_MECHANISM", subject_id=D, object_id="GO:0000009"))
     assert chan(store, "molecular_mechanisms").retrieve_candidates(Q, {}) == [C]
+
+
+def test_same_compartment_with_different_substances_is_not_a_shared_feature(store):
+    store.add(make_claim("CLAIM:a", "ACCUMULATES_IN_COMPARTMENT", subject_id=Q, object_id="GO:0005764", context={"substance": "CHEBI:16113"}))
+    store.add(make_claim("CLAIM:b", "ACCUMULATES_IN_COMPARTMENT", subject_id=C, object_id="GO:0005764", context={"substance": "CHEBI:99999"}))
+    ch = chan(store, "molecular_mechanisms")
+    out = ch.compare(Q, C, {})
+    assert out.availability.value == "available" and out.supporting_claim_ids == []
+    assert any("share no feature" in x for x in out.limitations)
+    assert ch.retrieve_candidates(Q, {}) == []
+
+
+def test_same_compartment_and_same_substance_is_shared(store):
+    for cid, d in (("CLAIM:a", Q), ("CLAIM:b", C)):
+        store.add(make_claim(cid, "ACCUMULATES_IN_COMPARTMENT", subject_id=d, object_id="GO:0005764", context={"substance": "CHEBI:16113"}))
+    ch = chan(store, "molecular_mechanisms")
+    out = ch.compare(Q, C, {})
+    assert out.supporting_claim_ids == ["CLAIM:a", "CLAIM:b"] and out.context_matches == ["shared GO:0005764[CHEBI:16113]"]
+    assert ch.retrieve_candidates(Q, {}) == [C]

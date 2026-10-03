@@ -1,0 +1,29 @@
+{
+  "_readme": "Owner-approved aliases for the CLN3 + NPC seed cluster only. Each applies ONLY when the plain name match does not resolve (a unique exact label or synonym always wins). The IDs are the seed IDs the owner chose on 2026-10-03 (docs/DECISIONS.md); this table is NOT expert-reviewed. Delete an entry to restore the strict behaviour (ambiguous stays ambiguous).",
+  "aliases": [
+    {
+      "type": "disease",
+      "mention": "juvenile CLN3 disease",
+      "id": "MONDO:0008767",
+      "note": "seed cluster: MONDO also lists this name on MONDO:0979346; owner chose MONDO:0008767"
+    },
+    {
+      "type": "disease",
+      "mention": "Niemann-Pick Type C disease",
+      "id": "MONDO:0018982",
+      "note": "seed cluster: MONDO label is 'Niemann-Pick disease type C' (word order differs)"
+    },
+    {
+      "type": "disease",
+      "mention": "NPC",
+      "id": "MONDO:0018982",
+      "note": "seed cluster: 'NPC' also names other diseases in MONDO; in this cluster it means Niemann-Pick type C"
+    },
+    {
+      "type": "disease",
+      "mention": "NPC disease",
+      "id": "MONDO:0018982",
+      "note": "seed cluster"
+    }
+  ]
+}

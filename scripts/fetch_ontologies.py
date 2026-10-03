@@ -17,6 +17,8 @@ FILES = {
     "hpo/hp.json": (f"{GH_HPO}/hp.json", "HPO v2026-09-01 (custom licence; see source_manifest.md)"),
     "hpo/phenotype.hpoa": (f"{GH_HPO}/phenotype.hpoa", "HPO annotations v2026-09-01"),
     "hpo/genes_to_disease.txt": (f"{GH_HPO}/genes_to_disease.txt", "HPO gene-disease v2026-09-01"),
+    "go/go-basic.json": ("https://current.geneontology.org/ontology/go-basic.json", "Gene Ontology go-basic release 2026-07-26 via the unversioned URL (CC BY 4.0, per the file header)"),
+    "chebi/chebi_lite.json": ("https://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi_lite.json", "ChEBI lite release 255 via the unversioned URL (CC BY 4.0, per the file header)"),
     "hgnc/hgnc_complete_set.txt": ("https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt", "HGNC complete set (CC0), unversioned; date = retrieval date"),
 }
 
@@ -42,7 +44,10 @@ def main() -> int:
             print(f"present {rel}")
         else:
             print(f"downloading {rel}")
-            urllib.request.urlretrieve(url, dest)
+            req = urllib.request.Request(url, headers={"User-Agent": "tfotb-fetch/1.0 (research; contact via repo)"})
+            with urllib.request.urlopen(req) as resp, dest.open("wb") as out:
+                while chunk := resp.read(1 << 20):
+                    out.write(chunk)
             dest.chmod(0o444)
         manifest[rel] = {
             "url": url,
