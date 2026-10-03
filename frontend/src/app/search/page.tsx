@@ -11,6 +11,7 @@ const MATCH_TEXT: Record<MatchKind, string> = {
   "exact synonym": "synonym",
   "related synonym": "related name",
   "all words": "contains every word",
+  "starts with": "name starts with this",
   "close spelling": "close spelling",
   demo: "demo data",
 };

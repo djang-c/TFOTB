@@ -32,7 +32,7 @@ from atlas.resolver import (
     normalize,
 )
 
-MATCH_ORDER = ("identifier", "label", "exact synonym", "related synonym", "all words", "close spelling")
+MATCH_ORDER = ("identifier", "label", "exact synonym", "related synonym", "all words", "starts with", "close spelling")
 _TIER_MATCH = {0: "label", 1: "exact synonym", 2: "related synonym"}
 RELATED_LIMIT = 12
 CLOSE_SPELLING_MIN = 0.75  # every query word needs a name word at least this close
@@ -71,6 +71,10 @@ class SearchIndex:
             if eid not in self.excluded
         ]
         self.db.executemany("INSERT INTO names VALUES (?,?,?,?,?)", rows)
+        # Trigrams need 3 characters, so 1-2 character queries use a plain sorted prefix index.
+        self.db.execute("CREATE TABLE prefix (norm TEXT, entity_id TEXT, type TEXT, text TEXT, tier INTEGER)")
+        self.db.executemany("INSERT INTO prefix VALUES (?,?,?,?,?)", rows)
+        self.db.execute("CREATE INDEX prefix_norm ON prefix (norm)")
         self.size = len(rows)
         self.names_of: dict[str, set[tuple[str, int]]] = {}
         for _norm, eid, _etype, text, tier in rows:
@@ -149,7 +153,15 @@ class SearchIndex:
                 if all(any(nw.startswith(w) for nw in name_words) for w in words):
                     keep(Hit(eid, etype, self.r.label_of(eid), text, "all words"))
 
-        if len(best) < 3:
+        if not long_words:
+            for etype in ENTITY_TYPES:  # a few of each type, so short gene symbols do not crowd out the rest
+                cur = self.db.execute(
+                    "SELECT entity_id, type, text FROM prefix WHERE type = ? AND norm >= ? AND norm < ? "
+                    "ORDER BY tier, length(norm), norm LIMIT 7", (etype, norm, norm + "\uffff"))
+                for eid, et, text in cur:
+                    keep(Hit(eid, et, self.r.label_of(eid), text, "starts with"))
+
+        if len(best) < 3 and long_words:
             for etype in ENTITY_TYPES:
                 res = self.r.resolve(q, etype)
                 if res.status == "suggestions":
@@ -171,7 +183,8 @@ class SearchIndex:
 
         for eid in [k for k in best if k in self.excluded]:
             del best[eid]
-        hits = sorted(best.values(), key=lambda h: (MATCH_ORDER.index(h.match), len(h.matched), h.label))
+        type_rank = {t: i for i, t in enumerate((DISEASE, GENE, PHENOTYPE))}
+        hits = sorted(best.values(), key=lambda h: (MATCH_ORDER.index(h.match), len(h.matched), type_rank.get(h.type, 9), h.label))
         # Resolver rule: a unique label wins; any other name used by more than one entry is ambiguous.
         named = [h for h in hits if h.match in ("label", "exact synonym", "related synonym")]
         labels = [h for h in named if h.match == "label"]
