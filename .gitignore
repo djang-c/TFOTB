@@ -1,7 +1,28 @@
+# Python
 __pycache__/
-.venv/
-.pytest_cache/
-.ruff_cache/
+*.py[cod]
 *.egg-info/
+build/
+dist/
+
+# Environments and secrets
+.venv/
+venv/
 .env
 .env.*
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Generated simulation outputs (regenerate with robotics/simulate.py)
+demo_outputs/
+*.mp4
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

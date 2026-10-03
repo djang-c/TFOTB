@@ -19,7 +19,7 @@ Legend: DONE-verified (tests pass), PARTIAL, TODO, BLOCKED (needs human/science)
 | T20 Contracts frozen | PARTIAL | `experiment_spec.schema.json` + generic fixtures. Not bound to a reviewed research question (blocked on T01/T10). |
 | T21 Scene + compiler | DONE-verified (generic) | `scene.xml`, `compile_workflow.py`, `simulate.py` |
 | T22 Ledger + failure gates | DONE-verified | Valid passes; insufficient volume, no tips, blocked path, out-of-range fail with reasons. |
-| T23 Report/replay/graph link | PARTIAL | JSON/MD report + mp4 replay exist in `demo_outputs/`. Missing: graph-linked `SimulationRun` record and UI display. |
+| T23 Report/replay/graph link | PARTIAL | JSON/MD report + mp4 replay are generated into `demo_outputs/` (git-ignored). Missing: graph-linked `SimulationRun` record and UI display. |
 | T24 Opentrons adapter | TODO (P1) | K-Dense `opentrons-integration` skill available in review clone, not installed. |
 
 Deviation from PLAN: `simulation_time` is recorded as `simulation_steps` + `simulation_time_note` (kinematic samples, not physical time).

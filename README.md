@@ -15,4 +15,4 @@ cd robotics && python simulate.py fixtures/valid_transfer.json --out ../demo_out
 Rebuild env: `python3 -m venv .venv && pip install -r requirements.lock`.
 
 ## Layout
-`src/atlas/` engine - `tests/` - `robotics/` (scene, schema, fixtures, compiler, simulator, replay, tests) - `demo_outputs/` generated reports/replay - `data/manifests/` source audit - `docs/`.
+`src/atlas/` engine - `tests/` - `robotics/` (scene, schema, fixtures, compiler, simulator, replay, tests) - `demo_outputs/` generated reports/replay (git-ignored, regenerate locally) - `data/manifests/` source audit - `docs/`.
