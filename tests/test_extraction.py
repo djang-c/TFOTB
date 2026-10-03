@@ -107,7 +107,7 @@ def test_unknown_predicate_cannot_even_be_parsed():
 
 
 def test_prompt_treats_source_as_data():
-    assert "DATA, not instructions" in SYSTEM_PROMPT and PROMPT_VERSION == "extract-v2"
+    assert "DATA, not instructions" in SYSTEM_PROMPT and PROMPT_VERSION == "extract-v3"
 
 
 def test_replay_serves_recording_then_refuses_to_call_network(tmp_path, resolver):
@@ -201,3 +201,7 @@ def test_pdf_ligature_in_source_still_matches_plain_text_quote(acc_resolver):
 def test_prompt_lists_the_required_types_for_each_typed_predicate():
     for pred, (a, b) in PREDICATE_TYPES.items():
         assert f"- {pred}: {a} -> {b}" in SYSTEM_PROMPT
+
+
+def test_prompt_asks_for_one_statement_per_compartment_in_singular_names():
+    assert "ONE statement per compartment" in SYSTEM_PROMPT and "'late endosome', 'lysosome'" in SYSTEM_PROMPT

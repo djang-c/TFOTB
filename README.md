@@ -6,7 +6,7 @@ Evidence-qualified rare-disease connection engine + a bounded MuJoCo workflow si
 ## What judges can verify today
 | Component | Status | Evidence |
 |---|---|---|
-| Evidence/claim schemas, channel registry, ranking gates, upload quarantine, public/private separation | Working, unit-tested | `pytest`: 197 passed |
+| Evidence/claim schemas, channel registry, ranking gates, upload quarantine, public/private separation | Working, unit-tested | `pytest`: 246 passed |
 | Robotics workflow: compile -> checks -> MuJoCo motion -> report | Working; 1 passing + 4 failing fixtures (failures are the intended safety checks) | `robotics/simulate.py` |
 | Replay video (`render_replay.py`) | Not verified on a clean machine; needs OpenGL/GLFW and ffmpeg | - |
 

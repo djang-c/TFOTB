@@ -29,7 +29,7 @@ from atlas.schemas import (
     SourceType,
 )
 
-PROMPT_VERSION = "extract-v2"
+PROMPT_VERSION = "extract-v3"
 NONE_FITS = "NONE_FITS"
 EntityKind = Literal["disease", "gene", "phenotype", "compartment", "chemical"]
 # Required entity types at each end. Enforced in code (a wrong-way or wrong-type statement is
@@ -56,7 +56,10 @@ SYSTEM_PROMPT = (
     "Required types per predicate (subject -> object); a statement with other types is rejected:\n"
     + "\n".join(f"- {p}: {a} -> {b}" for p, (a, b) in PREDICATE_TYPES.items())
     + "\nFor ACCUMULATES_IN_COMPARTMENT the subject is the DISEASE, the object is the compartment, "
-    "and `substance_mention` must name the chemical that accumulates there."
+    "and `substance_mention` must name the chemical that accumulates there. If the text names two "
+    "or more compartments together (for example 'late endosomes/lysosomes'), give ONE statement per "
+    "compartment, each with the singular standard name ('late endosome', 'lysosome') and the same "
+    "verbatim quote; do not merge them into one statement."
 )
 
 
