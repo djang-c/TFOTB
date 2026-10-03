@@ -74,3 +74,7 @@
 - Claim channels now flag `assay` context mismatches (non-blocking, like tissue). Nothing pools numbers across assays.
 - Evidence brief gained a "Known claims about <query>" section.
 - T13: added tests for assay incompatibility, honest gap and action traceability (tests/test_acceptance.py). Uncertain-variant stays not-applicable (no variant handling exists).
+
+## 2026-10-03 - Fourth live run (extract-v4) and graph.py
+- Run: PMID 37245481, `extract-v4`, `claude-sonnet-5-5`, licence `cc by-nc-nd` (same one-off owner-approved test). Yield: 8 proposed -> 8 quote-verified -> 8 type-valid -> 6 names resolved -> 6 stored (all `unreviewed`; in-memory store discarded). New: JNCL (CLN3 disease) and NPC each `ACCUMULATES_IN_COMPARTMENT` lysosome (GO:0005764), substance cholesterol. Two statements about "late endosomes" were quarantined because the model wrote the plural and the resolver only accepts exact singular names or owner-approved aliases (fuzzy matches are suggestions). Options for the owner: add a "late endosomes" alias, or accept the loss. Not done.
+- `src/atlas/graph.py` (T05/T09): NetworkX projection where each edge is one stored claim; `find_paths` (k=3, up to 4 hops; hypothesis-only paths last, then fewer hops, then more reviewed claims; no path score; no route returns a scoped `no_supported_route` gap); `neighborhood` for the optional canvas (capped at `max_nodes`, omissions counted). Not built: collaborator overlap (no investigator data), asset ranking, API wiring (Builder B's side).
