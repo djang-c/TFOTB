@@ -36,7 +36,8 @@ class AnthropicClient:
         self.max_tokens = max_tokens
 
     def model_for(self, tier: ModelTier) -> str:
-        return os.environ.get(ENV_MODELS[tier], DEFAULT_MODELS[tier])
+        # An empty value (e.g. `LLM_MODEL_FAST=` copied from env.example) means "use the default".
+        return os.environ.get(ENV_MODELS[tier], "").strip() or DEFAULT_MODELS[tier]
 
     def parse(
         self,
