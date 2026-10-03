@@ -27,6 +27,11 @@ CHECKS = (
 )
 
 
+# Float round-off tolerance for the volume ledger (0.1 + 0.2 != 0.3 in binary floating point).
+# 1e-9 uL is far below any pipetting resolution; it only absorbs accumulated rounding error.
+LEDGER_TOL_UL = 1e-9
+
+
 def spec_hash(spec: dict) -> str:
     return hashlib.sha256(
         json.dumps(spec, sort_keys=True, separators=(",", ":")).encode()
@@ -100,9 +105,9 @@ def compile_spec(spec: dict) -> dict:
             v = float(op["volume_ul"])
             if not led["tip_attached"]:
                 fail(i, "operation_order", "aspirate without a tip")
-            elif led["held_ul"] + v > cap:
+            elif led["held_ul"] + v > cap + LEDGER_TOL_UL:
                 fail(i, "pipette_capacity", f"{led['held_ul'] + v} uL exceeds capacity {cap} uL")
-            elif v > led["source_ul"]:
+            elif v > led["source_ul"] + LEDGER_TOL_UL:
                 fail(
                     i,
                     "source_volume",
@@ -112,13 +117,13 @@ def compile_spec(spec: dict) -> dict:
             tgt, z = well_xy(lw["plate"], op["well"]), wz["dispense"]
             if not led["tip_attached"]:
                 fail(i, "operation_order", "dispense without a tip")
-            elif float(op["volume_ul"]) > led["held_ul"]:
+            elif float(op["volume_ul"]) > led["held_ul"] + LEDGER_TOL_UL:
                 fail(i, "operation_order", "dispense volume exceeds liquid held in tip")
         else:  # drop_tip
             tgt, z = (lw["waste"]["x"], lw["waste"]["y"]), wz["drop_tip"]
             if not led["tip_attached"]:
                 fail(i, "operation_order", "drop_tip without a tip")
-            elif led["held_ul"] > 0:
+            elif led["held_ul"] > LEDGER_TOL_UL:
                 fail(i, "operation_order", "drop_tip while liquid remains in tip")
         if failures:
             break

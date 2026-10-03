@@ -19,7 +19,7 @@ class PublicStore:
         self.claims[claim.claim_id] = claim
 
     def ingest_lab_finding(self, payload: dict[str, Any]) -> Claim | None:
-        """Uploads are always lab_reported + unreviewed. Payload text is data, never instructions."""
+        """Uploads are always lab_reported + unreviewed; payload text is data, not instructions."""
         forced = {
             **payload,
             "source_type": SourceType.lab_reported,
@@ -30,6 +30,8 @@ class PublicStore:
             if not forced.get("contributor"):
                 raise ValueError("contributor attribution required")
             claim = Claim(**forced)
+            if claim.claim_id in self.claims:
+                raise ValueError(f"claim_id {claim.claim_id} already exists; uploads cannot overwrite")
         except (ValidationError, ValueError, TypeError) as exc:
             self.quarantine.append({"payload": payload, "error": str(exc)[:300]})
             return None

@@ -7,6 +7,7 @@ dependencies = ["pydantic>=2", "networkx", "fastapi", "numpy", "mujoco", "jsonsc
 
 [project.optional-dependencies]
 dev = ["pytest", "httpx", "ruff"]
+llm = ["anthropic"]  # optional; not installed/pinned yet - needs review (see docs/DECISIONS.md)
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -98,3 +98,27 @@ def test_pipette_capacity_enforced():
     s = load("valid_transfer")
     s["operations"][1]["volume_ul"] = 250
     assert compile_spec(s)["failures"][0]["check"] == "pipette_capacity"
+
+
+def test_float_split_dispense_is_not_rejected_by_round_off():
+    """0.1 + 0.2 uL dispensed from a 0.3 uL aspirate is a valid split (binary float round-off)."""
+    spec = load("valid_transfer")
+    spec["operations"] = [
+        {"op": "pick_tip"},
+        {"op": "aspirate", "volume_ul": 0.3},
+        {"op": "dispense", "well": "A1", "volume_ul": 0.1},
+        {"op": "dispense", "well": "A2", "volume_ul": 0.2},
+        {"op": "drop_tip"},
+    ]
+    out = compile_spec(spec)
+    assert not out["failures"], out["failures"]
+
+
+def test_real_volume_overdraw_still_fails_with_tolerance():
+    spec = load("valid_transfer")
+    spec["operations"] = [
+        {"op": "pick_tip"},
+        {"op": "aspirate", "volume_ul": 0.3},
+        {"op": "dispense", "well": "A1", "volume_ul": 0.31},
+    ]
+    assert [f["check"] for f in compile_spec(spec)["failures"]] == ["operation_order"]

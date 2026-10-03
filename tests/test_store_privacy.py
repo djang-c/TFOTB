@@ -1,6 +1,6 @@
 import pytest
 
-from atlas.schemas import ClaimStatus, ReviewState, SourceType
+from atlas.schemas import Claim, ClaimStatus, ReviewState, SourceType
 from atlas.store import CaseStore, PublicStore, SyntheticCase
 
 UPLOAD = dict(
@@ -50,3 +50,21 @@ def test_private_case_absent_from_public_search():
 def test_real_case_ids_rejected():
     with pytest.raises(ValueError):
         CaseStore().add(SyntheticCase("PATIENT-123", [], []))
+
+
+def test_upload_cannot_overwrite_existing_claim():
+    s = PublicStore()
+    reviewed = Claim(
+        **{
+            **UPLOAD,
+            "claim_id": "CLAIM:r1",
+            "source_type": "published",
+            "review_state": "reviewed",
+            "status": "reported_observation",
+        }
+    )
+    s.add(reviewed)
+    assert s.ingest_lab_finding({**UPLOAD, "claim_id": "CLAIM:r1"}) is None
+    assert s.claims["CLAIM:r1"] is reviewed
+    assert s.claims["CLAIM:r1"].review_state is ReviewState.reviewed
+    assert len(s.quarantine) == 1 and "already exists" in s.quarantine[0]["error"]

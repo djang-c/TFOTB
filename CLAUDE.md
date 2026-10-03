@@ -18,4 +18,4 @@ Research-support product. **Not a clinical system.** No diagnosis, prescribing, 
 - Simulate: `cd robotics && python simulate.py fixtures/valid_transfer.json --out ../demo_outputs`
 - Replay: `MUJOCO_GL=glfw python render_replay.py <traj.json> <out.mp4>`
 - Code flow: engineer -> `/code-qa` -> `/repro-check` -> skeptical-reviewer. Statistics/DOE via installed K-Dense skills.
-- OpenAI extraction (T04) is not wired: confirm the model, pin prompt+schema, and get approval before sending any data.
+- LLM provider: Anthropic for now (PLAN names OpenAI; OpenAI adapter is added at deployment). Use `atlas.llm.LLMClient` only; never import a vendor SDK in services. Extraction (T04) is not wired: confirm the model, pin prompt+schema, and get approval before sending any data.

@@ -6,12 +6,12 @@ Evidence-qualified rare-disease connection engine + a bounded MuJoCo workflow si
 ## What judges can verify today
 | Component | Status | Evidence |
 |---|---|---|
-| Evidence/claim schemas, channel registry, ranking gates, upload quarantine, public/private separation | Working, unit-tested | `pytest`: 34 passed |
+| Evidence/claim schemas, channel registry, ranking gates, upload quarantine, public/private separation | Working, unit-tested | `pytest`: 41 passed |
 | Robotics workflow: compile -> checks -> MuJoCo motion -> report | Working; 1 passing + 4 failing fixtures (failures are the intended safety checks) | `robotics/simulate.py` |
 | Replay video (`render_replay.py`) | Not verified on a clean machine; needs OpenGL/GLFW and ffmpeg | - |
 
 ## Not built (stated plainly)
-Real biological data, ID resolution, ingestion, OpenAI extraction, API, UI. Task T01 (choose and verify a disease cluster) needs a human expert first. All test fixtures are **SYNTHETIC**. The simulation is an engineering artifact: biology and hardware are `not_modeled`, and a pass never raises biological confidence.
+Real biological data, ID resolution, ingestion, extraction service, API, UI. LLM provider: Anthropic for now, OpenAI adapter at deployment; only an offline-tested provider-agnostic client scaffold exists (`src/atlas/llm/`), and the Anthropic adapter has never been run. Task T01 (choose and verify a disease cluster) needs a human expert first. All test fixtures are **SYNTHETIC**. The simulation is an engineering artifact: biology and hardware are `not_modeled`, and a pass never raises biological confidence.
 
 ## Quick start (any machine)
 Requires Python >= 3.10 (verified with 3.12 on macOS). From a fresh clone:
@@ -21,7 +21,7 @@ git clone https://github.com/djang-c/TFOTB.git && cd TFOTB
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.lock   # pinned; includes pytest and ruff
-python -m pytest -q                # expect: 34 passed
+python -m pytest -q                # expect: 41 passed
 ruff check .                       # expect: All checks passed!
 ```
 
