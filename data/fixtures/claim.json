@@ -2,7 +2,7 @@
   "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
   "claim": {
     "claim_id": "CLAIM:syn-1",
-    "schema_version": "0.1",
+    "schema_version": "0.2.0",
     "subject_id": "MONDO:0000001",
     "predicate": "ASSOCIATED_WITH_PHENOTYPE",
     "object_id": "HP:0000001",

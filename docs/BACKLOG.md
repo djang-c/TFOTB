@@ -4,7 +4,7 @@ Legend: DONE-verified (tests pass), PARTIAL, TODO, BLOCKED (needs human/science)
 | ID | Status | What exists / what is missing |
 |---|---|---|
 | T01 Cluster + source audit | BLOCKED (science) | Template: `data/manifests/source_manifest.md`. Needs a human/expert to choose the cluster and verify a positive route, counterexample, asset and contact. Not started; nothing fabricated. |
-| T02 Schemas | PARTIAL | `src/atlas/schemas.py` (Claim, ChannelComparison, ConnectionResult, validators) + tests. Missing: Entity tables, coverage manifest model, SQLite persistence. |
+| T02 Schemas | DONE (pending review) | `src/atlas/schemas.py` 0.2.0: Claim, ChannelComparison, ConnectionResult + Entity, CoverageManifest, GapResult, AssetResult, ActionCard with validators; `src/atlas/db.py` SQLite + checksummed snapshot; tests `test_schemas_t02.py`, `test_db.py`. Not yet: SimulationRun/ExperimentProposal (T20/T23), upload fields `sharing_permission`/`result_polarity` (T11), PublicStore on top of AtlasDB. |
 | T03 ID resolver | TODO | Only format validation exists (`validate_curie`); no pinned ontology mapping. |
 | T04 Ingestion + extraction | TODO | Needs source licence audit (T01) and an approved model/prompt. Provider: Anthropic for now, OpenAI adapter at deployment (DECISIONS.md). `src/atlas/llm/` has the provider-agnostic `LLMClient`, record/replay cache (tested offline) and an UNVERIFIED Anthropic adapter (SDK not installed, never run). No extraction service or live call yet. |
 | T05 Channel contract | DONE-verified | `channels/base.py` registry, candidate union, failure isolation; extension test passes. |

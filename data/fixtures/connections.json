@@ -7,6 +7,13 @@
     "source_versions": {},
     "retrieved_at": "2026-10-03T00:00:00Z",
     "filters": {},
-    "per_source": []
+    "per_source": [
+      {
+        "source": "synthetic",
+        "status": "not_queried"
+      }
+    ],
+    "dataset_version": "synthetic-0",
+    "generated_by": "fixture"
   }
 }
