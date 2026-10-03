@@ -13,3 +13,8 @@
 ## 2026-10-03 - No expert reviewer; roles
 - Owner is Builder A (evidence engine: T03, T04, T06-T09, T10, T11). Builder B not yet named. Databricks is the platform; which APIs/workspace is still unspecified.
 - No domain expert is available. Consequence: all biological claims stay `unreviewed`; README states this plainly. Nothing may be shown as expert-reviewed.
+- Builder B is Keving (anonabento). Databricks: about USD 100 credit, reserved for deployment; develop locally first.
+
+## 2026-10-03 - Ontology files downloaded (owner-approved)
+- MONDO v2026-09-01, HPO v2026-09-01 (hp.json, phenotype.hpoa, genes_to_disease.txt) and the HGNC complete set were fetched by `scripts/fetch_ontologies.py` into the git-ignored raw-data folder; SHA-256 is recorded in `CHECKSUMS.json` there.
+- HPO commercial-use terms remain UNRESOLVED; the owner approved the download for the hackathon demo only.
