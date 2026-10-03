@@ -38,6 +38,7 @@ from atlas.resolver import (
 from atlas.schemas import SourceCoverage, SourceStatus
 from atlas.store import PublicStore
 from atlas.structured import gene_disease_claims
+from atlas.trials import TrialsSource
 
 MATCH_ORDER = ("identifier", "label", "exact synonym", "related synonym", "all words", "starts with", "close spelling")
 _TIER_MATCH = {0: "label", 1: "exact synonym", 2: "related synonym"}
@@ -101,6 +102,7 @@ class SearchIndex:
                 self.diseases_of.setdefault(c.subject_id, []).append({"id": c.object_id, **link})
             if all(x["id"] != c.subject_id for x in self.genes_of.get(c.object_id, [])):
                 self.genes_of.setdefault(c.object_id, []).append({"id": c.subject_id, **link})
+        self.trials = TrialsSource()
         self.registry = ChannelRegistry()
         if phenotype:
             self.registry.register(phenotype)
@@ -274,9 +276,19 @@ class SearchIndex:
         return {"results": results, "labels": labels, "coverage": out.coverage.model_dump(mode="json"),
                 "gap": out.gap.model_dump(mode="json") if out.gap else None}
 
+    def assets(self, entity_id: str) -> dict[str, Any]:
+        """Q2 for a real disease: studies on ClinicalTrials.gov that list this disease by name."""
+        if entity_id not in self.r._labels[DISEASE]:
+            return {"assets": [], "coverage": None}
+        syn = self.names_of.get(entity_id, ())
+        names = {t for t, _tier in syn}
+        label = self.r.label_of(entity_id)
+        exact = sorted({t for t, tier in syn if tier == 1 and len(t) > 3 and not t.isupper()}, key=len)[:6]
+        return self.trials.for_disease(entity_id, label, names, [label, *exact])
+
     def claim(self, claim_id: str) -> dict[str, Any] | None:
         c = self.store.claims.get(claim_id)
-        return c.model_dump(mode="json") if c else None
+        return c.model_dump(mode="json") if c else self.trials.claims.get(claim_id)
 
     def entity(self, entity_id: str) -> dict[str, Any] | None:
         etype = next((t for t in ENTITY_TYPES if entity_id in self.r._labels[t]), None)

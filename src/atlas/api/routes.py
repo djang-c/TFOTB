@@ -233,6 +233,12 @@ def connections(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/assets")
 def assets(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)
+    ix = _index(request)
+    if ix is not None and not entity_id.startswith("SYN:"):
+        out = ix.assets(entity_id)
+        return _wrap_real(assets=out["assets"], coverage=out["coverage"], total=out.get("total"),
+                          registry_total=out.get("registry_total"), attribution=out.get("attribution"),
+                          modifications=out.get("modifications"))
     return _wrap(request, assets=_demo(request)["assets"].get(entity_id, []))
 
 
@@ -275,7 +281,7 @@ def claim(request: Request, claim_id: str) -> Any:
     ix = _index(request)
     real = ix.claim(claim_id) if ix is not None else None
     if real is not None:
-        return _wrap_real(claim=real, subject_label=ix.r.label_of(real["subject_id"]),
+        return _wrap_real(claim=real, subject_label=ix.r.label_of(real["subject_id"]) or real["subject_id"],
                           object_label=ix.r.label_of(real["object_id"]), lineage_siblings=[], contradicting_claims=[])
     d = _demo(request)
     c = next((c for c in d["claims"] if c["claim_id"] == claim_id), None)
