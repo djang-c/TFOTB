@@ -86,7 +86,8 @@ class TrialsSource:
                 claim_id=f"CLAIM:ctgov-{digest}", subject_id=f"NCT:{nct[3:]}", predicate="ASSET_RELEVANT_TO",
                 object_id=disease_id, source_url=record, source_span=match, source_type=SourceType.database_record,
                 status=ClaimStatus.reported_observation, lineage_id=f"NCT:{nct[3:]}",
-                context={"listed_conditions": "; ".join(conditions)}, extraction_method="structured_field",
+                context={"study_title": p.get("identificationModule", {}).get("briefTitle") or nct,
+                         "listed_conditions": "; ".join(conditions)}, extraction_method="structured_field",
                 retrieved_at=today,
             )
             claims[claim.claim_id] = claim.model_dump(mode="json")

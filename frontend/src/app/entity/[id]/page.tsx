@@ -118,6 +118,11 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
               <Empty>No connections are computed for this entry in the indexed evidence.</Empty>
             ) : (
               <>
+              <p className="mb-3 text-sm text-muted">
+                Each related disease shows what the two have in common. <b className="font-medium text-ink/80">Symptom overlap</b> runs
+                from 0 (nothing in common) to 1 (the same recorded symptoms); it is a similarity, not a probability, and
+                not a diagnosis. Labels such as &ldquo;symptom-level lead&rdquo; say how strong the evidence is, not how likely the link is.
+              </p>
               {silent.length > 0 && (
                 <p className="mb-3 text-sm text-muted">
                   {silent.map((c) => CHANNEL_LABEL[c] ?? c).join(", ")}: no data recorded for this entry in the indexed files, so
@@ -313,7 +318,7 @@ function Reveal<T>({ items, first, noun, render }: { items: T[]; first: number; 
 function Synonyms({ names }: { names: string[] }) {
   const shown = names.slice(0, 4);
   return (
-    <p className="mt-1.5 text-sm text-muted">
+    <div className="mt-1.5 text-sm text-muted">
       Also called {shown.join(" · ")}
       {names.length > shown.length && (
         <details className="inline [&_summary::-webkit-details-marker]:hidden">
@@ -321,7 +326,7 @@ function Synonyms({ names }: { names: string[] }) {
           <span> · {names.slice(shown.length).join(" · ")}</span>
         </details>
       )}
-    </p>
+    </div>
   );
 }
 
