@@ -80,7 +80,9 @@ class ExtractionReport:
 
 
 def _squash(text: str) -> str:
-    return " ".join(text.split()).casefold()
+    # Ignore ALL whitespace: PDF text breaks lines mid-word ("ju-\nvenile", "LE/\nLys"), so a quote
+    # that is character-for-character correct would otherwise differ only by layout.
+    return "".join(text.split()).casefold()
 
 
 def _claim_id(source_id: str, s: ExtractedStatement, subj: str, obj: str) -> str:

@@ -131,3 +131,14 @@ def test_hypothesis_only_predicate_is_recorded_as_inference_not_observation(reso
     )
     rep = extract_claims(FakeClient([s]), SRC, resolver)
     assert len(rep.claims) == 1 and rep.claims[0].status.value == "inference"
+
+
+def test_quote_survives_pdf_line_breaks_inside_words_but_not_changed_characters(resolver):
+    # Regression from the first live run: PDF text broke "ju-\nvenile" and "LE/\nLys" across lines.
+    pdf_text = "SYNTHETIC. In brain, gene SYNA was upregu-\nlated in synthetic disease alpha, see LE/\nLys data."
+    src = SourceText("PMID:0000003", "https://example.org/pdf", pdf_text)
+    ok = extract_claims(FakeClient([stmt(quote="gene SYNA was upregu-lated in synthetic disease alpha, see LE/Lys data.")]), src, resolver)
+    assert len(ok.claims) == 1
+    # a different character (dropping the hyphen) is still not verbatim
+    bad = extract_claims(FakeClient([stmt(quote="gene SYNA was upregulated in synthetic disease alpha")]), src, resolver)
+    assert not bad.claims and "quote not found" in bad.quarantined[0]["reason"]
