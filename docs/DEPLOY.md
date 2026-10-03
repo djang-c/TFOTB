@@ -1,5 +1,7 @@
 # Deploy (free tier)
 
+Owners: **Builder B owns the Hugging Face Space (API)** and **Builder A owns Vercel (frontend)**. Deployment happens at the end of the build.
+
 The frontend runs on **Vercel** (Hobby plan). The API runs on a **Hugging Face Docker Space** (free CPU). Neither costs money.
 
 - **The API is read-only.** It serves the data baked into the image.
@@ -9,7 +11,10 @@ The frontend runs on **Vercel** (Hobby plan). The API runs on a **Hugging Face D
 
 ## One-time setup
 
-### 1. Hugging Face Space (API)
+### 1. Hugging Face Space (API), Builder B
+
+An agent can do this through the `hf` CLI. Install it with `curl -LsSf https://hf.co/cli/install.sh | bash`, then run `hf auth login` and finish the login in a browser. The guide at https://huggingface.co/new-space/agents.md covers the same flow. Or do it by hand:
+
 1. Create a Space at https://huggingface.co/new-space:
    - SDK: **Docker** → Blank
    - Hardware: **CPU basic (free)**
@@ -22,7 +27,7 @@ The frontend runs on **Vercel** (Hobby plan). The API runs on a **Hugging Face D
 5. Run the `deploy-api` action manually (Actions tab → deploy-api → Run workflow). After that it deploys on every push to `main` that touches the API.
 6. Check that it works: `https://<hf-user>-<space-name>.hf.space/api/health` → `{"status":"ok"}`.
 
-### 2. Vercel (frontend)
+### 2. Vercel (frontend), Builder A
 1. Go to https://vercel.com/new and import the GitHub repo.
    - The Hobby plan only imports repos owned by your personal account. For an organization-owned repo, the owner imports it.
 2. Set **Root Directory** to `frontend`. The framework is auto-detected as Next.js.
