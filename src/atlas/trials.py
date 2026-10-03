@@ -39,7 +39,7 @@ FIELDS = ("NCTId,BriefTitle,OverallStatus,Condition,StudyType,Phase,LeadSponsorN
 OPEN = {"RECRUITING", "NOT_YET_RECRUITING", "ENROLLING_BY_INVITATION", "ACTIVE_NOT_RECRUITING", "AVAILABLE"}
 CACHE_SECONDS = 24 * 3600
 PAGE_SIZE = 100
-MAX_SHOWN = 12
+MAX_SHOWN = 50
 MODIFICATIONS = ("Only studies that list this disease by name are shown; titles and conditions are verbatim; "
                  "status is shown in lower case without underscores; order is ours (open first, then most recently updated).")
 
