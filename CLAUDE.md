@@ -1,6 +1,6 @@
 # TFOTB - The Flight of The Buffalo (hackathon MVP; formerly AI Rare Disease Atlas)
 
-Spec: `docs/PLAN.md` (authoritative). Status per task: `docs/BACKLOG.md`. Root `CLAUDE.md` charter also applies.
+Spec: `docs/PLAN.md` (authoritative). Status per task: `docs/BACKLOG.md`. Build-level detail per task: `docs/implementation/` (PLAN wins on conflict). Root `CLAUDE.md` charter also applies.
 Research-support product. **Not a clinical system.** No diagnosis, prescribing, dosing, eligibility or treatment selection.
 
 ## Project rules (from PLAN)
