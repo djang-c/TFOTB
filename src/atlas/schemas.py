@@ -88,9 +88,17 @@ ALLOWED_PREDICATES = frozenset(
         "INVESTIGATED_IN",
         "ASSET_RELEVANT_TO",
         "SIMULATES_WORKFLOW_FOR",
+        # Added 2026-10-03 (docs/DECISIONS.md): disease-level and breadth-layer relationships.
+        "GENE_ASSOCIATED_WITH_DISEASE",  # gene -> disease, association only (not causal)
+        "ACCUMULATES_IN_COMPARTMENT",  # disease -> GO cellular component, observed in a study
+        "SHARES_PATHOGENIC_PATHWAY_WITH",  # disease -> disease, hypothesis-only
+        "CANDIDATE_THERAPY_FOR",  # CHEBI compound -> disease, hypothesis-only, never a recommendation
     }
 )
 STRONG_CAUSAL = frozenset({"AFFECTS_TRANSCRIPT", "PERTURBS_MECHANISM"})
+# Statements that are inferences or hopes even when a paper says them: they can never be recorded
+# as an observation and never support a "reviewed mechanistic lead".
+HYPOTHESIS_ONLY_PREDICATES = frozenset({"SHARES_PATHOGENIC_PATHWAY_WITH", "CANDIDATE_THERAPY_FOR"})
 
 
 class ClaimStatus(str, Enum):
@@ -205,6 +213,8 @@ class Claim(BaseModel):
     def _rules(self) -> Claim:
         if self.predicate in STRONG_CAUSAL and self.status is ClaimStatus.inference:
             raise ValueError("strong causal predicate cannot rest on an inference")
+        if self.predicate in HYPOTHESIS_ONLY_PREDICATES and self.status is ClaimStatus.reported_observation:
+            raise ValueError(f"{self.predicate} is hypothesis-only; status must be inference or computational_prediction")
         if self.score is not None and not self.score_definition:
             raise ValueError("a score requires a documented score_definition")
         return self

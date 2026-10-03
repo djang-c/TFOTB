@@ -21,6 +21,7 @@ from atlas.llm.base import LLMClient, LLMRefusal
 from atlas.resolver import Resolver
 from atlas.schemas import (
     ALLOWED_PREDICATES,
+    HYPOTHESIS_ONLY_PREDICATES,
     Claim,
     ClaimStatus,
     ReviewState,
@@ -84,7 +85,7 @@ def _squash(text: str) -> str:
 
 def _claim_id(source_id: str, s: ExtractedStatement, subj: str, obj: str) -> str:
     digest = hashlib.sha256(f"{source_id}|{subj}|{s.predicate}|{obj}|{_squash(s.quote)}".encode()).hexdigest()
-    return f"{source_id.replace(':', '-')}-{digest[:10]}"
+    return f"CLAIM:{source_id.replace(':', '-')}-{digest[:10]}"
 
 
 def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) -> ExtractionReport:
@@ -129,7 +130,11 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
                 source_url=source.source_url,
                 source_span=s.quote,
                 source_type=SourceType.published,
-                status=ClaimStatus.reported_observation,
+                status=(
+                    ClaimStatus.inference
+                    if s.predicate in HYPOTHESIS_ONLY_PREDICATES
+                    else ClaimStatus.reported_observation
+                ),
                 review_state=ReviewState.unreviewed,
                 lineage_id=f"STUDY:{source.source_id.replace(':', '-')}",
                 context={k: v for k, v in (("organism", s.organism), ("tissue", s.tissue), ("direction", s.direction)) if v},

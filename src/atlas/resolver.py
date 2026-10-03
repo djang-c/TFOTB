@@ -149,6 +149,12 @@ class Resolver:
             return self._from_exact(mention, entity_type, entries)
         return self._from_fuzzy(mention, entity_type)
 
+    def ids_for_xref(self, xref: str) -> set[str]:
+        return set(self._xrefs.get(xref.strip().casefold(), ()))
+
+    def label_of(self, entity_id: str) -> str:
+        return next((labels[entity_id] for labels in self._labels.values() if entity_id in labels), "")
+
     def resolve_xref(self, xref: str) -> Resolution:
         ids = sorted(self._xrefs.get(xref.strip().casefold(), ()))
         cands = [self._candidate(DISEASE, i, xref, TIER_EXACT) for i in ids]
