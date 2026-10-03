@@ -45,3 +45,6 @@ Delta table versions give "as of" snapshots, which is what the coverage manifest
 - Anthropic adapter and the structured-output call have never run (see `scripts/live_extract_once.py`).
 - Real extraction quality is unknown: we have seen zero real papers go through it.
 - Databricks plan features and per-run cost are unknown.
+
+## Built locally on 2026-10-03 (still no Databricks code)
+`src/atlas/pipeline.py` + `scripts/ingest_papers.py` are the single-machine form of weekly steps 3-5 (fetch, extract, store). They write the existing SQLite store (`data/store/atlas.db`, git-ignored) and a checksummed snapshot, and keep an append-only run log. Guards: a licence allow-list (default CC0 / CC BY / CC BY-SA; anything else is skipped and logged), a per-run paper cap, a size cap, replay-only by default (a paid call needs `--live` + `--i-approve-sending-these-texts` + the key). Not built: paper DISCOVERY (needs the owner's search terms), the Databricks wrapper, Delta tables, the schedule, any spend cap. A Databricks job would call `ingest_papers` unchanged.

@@ -1,0 +1,124 @@
+"""Pipeline tests with a fake paper source and a fake model (SYNTHETIC; software behaviour only)."""
+
+import pytest
+
+from atlas.db import AtlasDB
+from atlas.extraction import ExtractedStatement, ExtractionOutput
+from atlas.llm.base import LLMResult
+from atlas.pipeline import ingest_papers
+from atlas.resolver import DISEASE, GENE, Resolver
+from atlas.schemas import Claim, SourceStatus
+from atlas.sources import FullText, SourceError
+
+QUOTE = "gene SYNA is linked to synthetic disease alpha"
+TEXT = f"SYNTHETIC TEXT. We report that {QUOTE} in this cohort."
+
+
+class Fake:
+    provider = "fake"
+
+    def __init__(self, statements=None):
+        self.calls = 0
+        self.statements = statements if statements is not None else [
+            ExtractedStatement(
+                subject_mention="SYNA", subject_type="gene", object_mention="synthetic disease alpha",
+                object_type="disease", predicate="GENE_ASSOCIATED_WITH_DISEASE", quote=QUOTE,
+            ),
+            ExtractedStatement(  # the quote is not in the text, so it must be quarantined
+                subject_mention="SYNA", subject_type="gene", object_mention="synthetic disease alpha",
+                object_type="disease", predicate="GENE_ASSOCIATED_WITH_DISEASE", quote="invented sentence",
+            ),
+        ]
+
+    def parse(self, schema, **kw):
+        self.calls += 1
+        return LLMResult(ExtractionOutput(statements=self.statements), "fake", "fake-model", kw["prompt_version"])
+
+
+@pytest.fixture()
+def resolver():
+    r = Resolver()
+    r.add(DISEASE, "MONDO:0000001", "synthetic disease alpha", [])
+    r.add(GENE, "HGNC:100", "SYNA", [])
+    return r
+
+
+def paper(pmid, licence="cc by", text=TEXT):
+    return FullText(pmid, f"PMC{pmid}", "t", licence, text, "https://example.invalid/x")
+
+
+def source(**by_pmid):
+    def fetch(pmid):
+        item = by_pmid[pmid]
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    return fetch
+
+
+def run(pmids, resolver, db, client=None, **kw):
+    kw.setdefault("fetch", source(**{p: paper(p) for p in pmids}))
+    return ingest_papers(pmids, client=client or Fake(), resolver=resolver, db=db, **kw)
+
+
+def test_good_paper_stores_unreviewed_claims_and_quarantines_the_invented_quote(resolver):
+    db = AtlasDB()
+    rep = run(["1"], resolver, db)
+    r = rep.runs[0]
+    assert (r.status, r.claims_added, r.statements_quarantined) == ("ingested", 1, 1)
+    claim = db.all(Claim)[0]
+    assert claim.review_state.value == "unreviewed" and claim.claim_id.startswith("CLAIM:PMID-1-")
+    assert "invented sentence" in str(db.quarantined()[0]["payload"])
+
+
+def test_rerunning_the_same_paper_adds_nothing_and_never_overwrites(resolver):
+    db = AtlasDB()
+    run(["1"], resolver, db)
+    r = run(["1"], resolver, db).runs[0]
+    assert (r.claims_added, r.claims_already_present) == (0, 1) and len(db.all(Claim)) == 1
+
+
+def test_a_licence_not_on_the_allow_list_is_skipped_and_never_sent_to_the_model(resolver):
+    client = Fake()
+    rep = run(["1"], resolver, AtlasDB(), client, fetch=source(**{"1": paper("1", "cc by-nc-nd")}))
+    assert rep.runs[0].status == "skipped" and "allow-list" in rep.runs[0].reason and client.calls == 0
+    ok = run(["1"], resolver, AtlasDB(), client, fetch=source(**{"1": paper("1", "cc by-nc-nd")}), allowed_licences=["cc by-nc-nd"])
+    assert ok.runs[0].status == "ingested" and client.calls == 1
+
+
+def test_the_per_run_cap_skips_the_rest_with_a_reason(resolver):
+    client = Fake()
+    rep = run(["1", "2", "3"], resolver, AtlasDB(), client, max_papers=2)
+    assert [r.status for r in rep.runs] == ["ingested", "ingested", "skipped"]
+    assert "cap of 2" in rep.runs[2].reason and client.calls == 2
+
+
+def test_oversize_text_and_unavailable_papers_are_skipped_or_failed_not_dropped(resolver):
+    fetch = source(**{"1": paper("1", text="x" * 50), "2": SourceError("not open access")})
+    rep = run(["1", "2"], resolver, AtlasDB(), fetch=fetch, max_chars=10)
+    assert [r.status for r in rep.runs] == ["skipped", "failed"] and "not open access" in rep.runs[1].reason
+
+
+def test_already_done_sources_are_skipped_without_a_model_call(resolver):
+    client = Fake()
+    rep = run(["1"], resolver, AtlasDB(), client, skip=["PMID:1"])
+    assert rep.runs == [] and client.calls == 0
+
+
+def test_coverage_marks_skipped_and_failed_sources_as_failed_never_as_zero(resolver):
+    fetch = source(**{"1": paper("1"), "2": SourceError("not open access")})
+    cov = run(["1", "2"], resolver, AtlasDB(), fetch=fetch).coverage()
+    assert [(c.source, c.status) for c in cov] == [("PMID:1", SourceStatus.ok), ("PMID:2", SourceStatus.failed)]
+    assert cov[0].fetched == 2 and cov[0].screened == 1 and cov[1].fetched is None
+
+
+def test_a_changed_claim_with_the_same_id_is_quarantined_not_overwritten(resolver):
+    db = AtlasDB()
+    run(["1"], resolver, db)
+    stored = db.all(Claim)[0]
+    from atlas import pipeline
+
+    changed = stored.model_copy(update={"source_span": "different text"})
+    assert pipeline._store_claim(db, changed, "PMID:1") == "conflict"
+    assert db.all(Claim)[0] == stored and "not overwritten" in db.quarantined()[-1]["error"]

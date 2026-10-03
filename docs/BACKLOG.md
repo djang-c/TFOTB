@@ -23,3 +23,5 @@ Legend: DONE-verified (tests pass), PARTIAL, TODO, BLOCKED (needs human/science)
 | T24 Opentrons adapter | TODO (P1) | K-Dense `opentrons-integration` skill available in review clone, not installed. |
 
 Deviation from PLAN: `simulation_time` is recorded as `simulation_steps` + `simulation_time_note` (kinematic samples, not physical time).
+
+<!-- 2026-10-03: T10 now also has routes in the brief and the simulation_report card; graph.py (T05/T09) built; src/atlas/pipeline.py + scripts/ingest_papers.py ingest papers into the SQLite store. Still open: API/UI wiring for cards and graph, paper discovery, Databricks wrapper, spend cap. -->
