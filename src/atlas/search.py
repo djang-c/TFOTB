@@ -21,6 +21,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
+from atlas.cards import CardError, asset_reuse, evidence_brief
 from atlas.channels.base import ChannelRegistry
 from atlas.channels.claims import build_claim_channels
 from atlas.channels.phenotype import PhenotypeChannel
@@ -35,7 +36,7 @@ from atlas.resolver import (
     Resolver,
     normalize,
 )
-from atlas.schemas import SourceCoverage, SourceStatus
+from atlas.schemas import AssetResult, Claim, SourceCoverage, SourceStatus
 from atlas.store import PublicStore
 from atlas.structured import gene_disease_claims
 from atlas.trials import TrialsSource
@@ -103,6 +104,7 @@ class SearchIndex:
             if all(x["id"] != c.subject_id for x in self.genes_of.get(c.object_id, [])):
                 self.genes_of.setdefault(c.object_id, []).append({"id": c.subject_id, **link})
         self.trials = TrialsSource()
+        self._outcomes: dict[str, Any] = {}  # T09 outcome per disease, reused by the action cards
         self.registry = ChannelRegistry()
         if phenotype:
             self.registry.register(phenotype)
@@ -264,8 +266,11 @@ class SearchIndex:
             per_source.append(SourceCoverage(source="HPO phenotype.hpoa", version=versions.get("hpo/phenotype.hpoa"),
                                              status=SourceStatus.ok, fetched=self.ph.n_diseases,
                                              screened=self.ph.n_diseases - self.ph._unmapped))
-        out = run_query(entity_id, self.registry, self.store.claims, dataset_version="pinned-ontologies",
-                        per_source=per_source, source_versions=versions, context={"max_candidates": RELATED_LIMIT})
+        out = self._outcomes.get(entity_id)
+        if out is None:
+            out = run_query(entity_id, self.registry, self.store.claims, dataset_version="pinned-ontologies",
+                            per_source=per_source, source_versions=versions, context={"max_candidates": RELATED_LIMIT})
+            self._outcomes[entity_id] = out
         results = [r.result.model_dump(mode="json") for r in out.ranked if r.result.candidate_id not in self.excluded]
         labels = {r["candidate_id"]: self.r.label_of(r["candidate_id"]) for r in results}
         for r in results:  # features named in channel matches ("shared HGNC:2074")
@@ -285,6 +290,27 @@ class SearchIndex:
         label = self.r.label_of(entity_id)
         exact = sorted({t for t, tier in syn if tier == 1 and len(t) > 3 and not t.isupper()}, key=len)[:6]
         return self.trials.for_disease(entity_id, label, names, [label, *exact])
+
+    def actions(self, entity_id: str) -> list[dict[str, Any]]:
+        """Q3 for a real disease: T10 template cards over the real Q1/Q2 facts (no LLM, no invented
+        content). Evidence brief always; asset-reuse cards for up to two open studies. No outreach
+        note: a registry record page is not a verified contact route."""
+        if entity_id not in self.r._labels[DISEASE]:
+            return []
+        self.connections(entity_id)
+        outcome = self._outcomes[entity_id]
+        cards = [evidence_brief(outcome, self.store.claims, label_of=self.r.label_of, audience="science")]
+        assets = self.assets(entity_id)
+        claims = {k: Claim.model_validate(v) for k, v in assets.get("claims", {}).items()}
+        for a in [x for x in assets.get("assets", []) if "open" in x["ranking_reasons"]][:2]:
+            try:
+                cards.append(asset_reuse(AssetResult.model_validate(a), claims, label_of=self._label, audience="science"))
+            except CardError:
+                continue
+        return [c.model_dump(mode="json") for c in cards]
+
+    def _label(self, entity_id: str) -> str:
+        return self.r.label_of(entity_id)
 
     def claim(self, claim_id: str) -> dict[str, Any] | None:
         c = self.store.claims.get(claim_id)

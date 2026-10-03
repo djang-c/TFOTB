@@ -273,6 +273,9 @@ def gap(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/actions")
 def entity_actions(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)
+    ix = _index(request)
+    if ix is not None and not entity_id.startswith("SYN:"):
+        return _wrap_real(cards=ix.actions(entity_id))
     return _wrap(request, cards=_demo(request)["cards"].get(entity_id, []))
 
 

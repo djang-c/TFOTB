@@ -86,11 +86,12 @@ def evidence_brief(
     if len(outcome.ranked) > len(shown):
         lines.append(f"Showing {len(shown)} of {len(outcome.ranked)} candidates.")
     unreviewed = sum(1 for i in dict.fromkeys(cited) if claims[i].review_state is not ReviewState.reviewed)
-    step = (
-        f"Ask a domain expert to review the {unreviewed} unreviewed claim(s) cited in this brief."
-        if unreviewed
-        else "Ask a domain expert to confirm the reviewed claims still reflect the sources."
-    )
+    if not cited:  # e.g. phenotype-only candidates: similarities, no claim to review yet
+        step = "Ask a domain expert whether these symptom similarities are meaningful; no claim is cited in this brief yet."
+    elif unreviewed:
+        step = f"Ask a domain expert to review the {unreviewed} unreviewed claim(s) cited in this brief."
+    else:
+        step = "Ask a domain expert to confirm the reviewed claims still reflect the sources."
     return ActionCard(
         card_id=_card_id("evidence_brief", outcome.query_id, outcome.coverage.manifest_id, audience),
         kind="evidence_brief",
@@ -102,7 +103,8 @@ def evidence_brief(
         claim_ids=tuple(dict.fromkeys(cited)),
         coverage_manifest_id=outcome.coverage.manifest_id,
         limitations=(
-            "Ranking uses evidence category and tie-breakers only; no score or probability orders results.",
+            ("Ranking uses the evidence category and evidence tie-breakers first; symptom similarity only orders "
+             "candidates that tie on all of those. No probability is computed."),
             "Missing data is reported as missing, never as zero.",
             "No claim here has been reviewed by an expert unless its line says reviewed.",
         ),
