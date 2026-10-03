@@ -9,3 +9,7 @@
 - **Uploads cannot overwrite claims (2026-10-03):** `ingest_lab_finding` quarantines a payload whose `claim_id` already exists (QA finding F2).
 - **`fastapi` and `networkx` stay declared though not yet imported:** docs/implementation/02 and 05 plan the API and graph code that will use them.
 - **Seed cluster (2026-10-03, project owner): GO on CLN3 disease + Niemann-Pick type C (CLN7 as stretch).** Provisional: made on the agent-drafted audit (`data/manifests/cluster_audit.md`); the headline paper (PMID 37245481) has not yet been read by a human, and no expert reviewer is assigned. All its claims remain `CANDIDATE`/`unreviewed`; nothing may be labelled `reviewed`. Switch cluster if the paper's quotes, the BMP direction or the sample sizes fail a human check, or if no route + counterexample survives.
+
+## 2026-10-03 - No expert reviewer; roles
+- Owner is Builder A (evidence engine: T03, T04, T06-T09, T10, T11). Builder B not yet named. Databricks is the platform; which APIs/workspace is still unspecified.
+- No domain expert is available. Consequence: all biological claims stay `unreviewed`; README states this plainly. Nothing may be shown as expert-reviewed.

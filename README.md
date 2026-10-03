@@ -11,7 +11,7 @@ Evidence-qualified rare-disease connection engine + a bounded MuJoCo workflow si
 | Replay video (`render_replay.py`) | Not verified on a clean machine; needs OpenGL/GLFW and ffmpeg | - |
 
 ## Not built (stated plainly)
-Real biological data, ID resolution, ingestion, extraction service, API, UI. LLM provider: Anthropic for now, OpenAI adapter at deployment; only an offline-tested provider-agnostic client scaffold exists (`src/atlas/llm/`), and the Anthropic adapter has never been run. Task T01 (choose and verify a disease cluster) needs a human expert first. All test fixtures are **SYNTHETIC**. The simulation is an engineering artifact: biology and hardware are `not_modeled`, and a pass never raises biological confidence.
+Real biological data, ID resolution, ingestion, extraction service, API, UI. LLM provider: Anthropic for now, OpenAI adapter at deployment; only an offline-tested provider-agnostic client scaffold exists (`src/atlas/llm/`), and the Anthropic adapter has never been run. **No domain expert has reviewed any biological claim**: the CLN3 + NPC audit (`data/manifests/cluster_audit.md`) was drafted by AI agents and read against the source paper by a non-expert, so every claim stays `unreviewed` and hypothesis-level. All test fixtures are **SYNTHETIC**. The simulation is an engineering artifact: biology and hardware are `not_modeled`, and a pass never raises biological confidence.
 
 ## Quick start (any machine)
 Toolchain is pinned in `mise.toml` (Python 3.12.15, Node 22.23.3, pnpm 12.8.2). Install [mise](https://mise.jdx.dev) once (`curl https://mise.run | sh`), then from a fresh clone:
