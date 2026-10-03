@@ -5,11 +5,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ForceGraph3D, { type ForceGraphMethods } from "react-force-graph-3d";
 import SpriteText from "three-spritetext";
 import { enc, type GraphData } from "@/lib/api";
-import { useOpenClaim } from "./EvidenceDrawer";
+import { PREDICATE_PLAIN, useOpenClaim } from "./EvidenceDrawer";
 import { NODE_COLOR } from "./GraphSection";
 
 type N = { id: string; label: string; type: string; x?: number; y?: number; z?: number };
-type L = { source: string | N; target: string | N; claim_id: string; status: string; predicate: string };
+type L = { source: string | N; target: string | N; claim_id: string | null; status: string; predicate: string; score?: number | null };
 
 export default function Graph3D({ data, focusId }: { data: GraphData; focusId: string }) {
   const router = useRouter();
@@ -78,10 +78,12 @@ export default function Graph3D({ data, focusId }: { data: GraphData; focusId: s
         linkWidth={(l) => (l.status === "reported_observation" ? 1.2 : 0.5)}
         linkDirectionalParticles={(l) => (hover && (idOf(l.source) === hover || idOf(l.target) === hover) ? 2 : 0)}
         linkDirectionalParticleWidth={2}
-        linkLabel={(l) => `${l.predicate.toLowerCase().replaceAll("_", " ")}. Click for evidence.`}
+        linkLabel={(l) => l.claim_id
+          ? `${PREDICATE_PLAIN[l.predicate] ?? l.predicate.toLowerCase().replaceAll("_", " ")}. Click for evidence.`
+          : `similar symptoms${l.score != null ? ` (overlap ${l.score.toFixed(2)})` : ""}: computed, not a sourced claim`}
         onNodeHover={(n) => setHover(n ? n.id : null)}
         onNodeClick={(n) => router.push(`/entity/${enc(n.id)}`)}
-        onLinkClick={(l) => openClaim(l.claim_id)}
+        onLinkClick={(l) => l.claim_id && openClaim(l.claim_id)}
       />
     </div>
   );

@@ -31,3 +31,14 @@ def test_brief_plus_reuse_cards_for_open_studies_only_and_no_outreach():
 
 def test_unknown_entry_gets_no_cards():
     assert index({"studies": []}).actions("MONDO:9999999") == []
+
+
+def test_graph_marks_computed_links_as_unsourced_and_gene_links_as_claims():
+    ix = index({"studies": []})
+    g = ix.graph("HGNC:900001")
+    assert {n["id"] for n in g["nodes"]} == {"HGNC:900001", "MONDO:9000001"}
+    (edge,) = g["edges"]
+    assert edge["claim_id"] in ix.store.claims and edge["predicate"] == "GENE_ASSOCIATED_WITH_DISEASE"
+    for e in ix.graph("MONDO:9000001")["edges"]:
+        if e["predicate"] == "SIMILAR_SYMPTOMS":
+            assert e["claim_id"] is None and e["status"] == "computational_prediction"

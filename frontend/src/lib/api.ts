@@ -148,7 +148,8 @@ export interface ActionCard {
 
 export interface GraphData {
   nodes: { id: string; label: string; type: EntityType }[];
-  edges: { source: string; target: string; predicate: string; claim_id: string; status: ClaimStatus; review_state: ReviewState }[];
+  /** claim_id is null for computed links (symptom similarity): never shown as sourced. */
+  edges: { source: string; target: string; predicate: string; claim_id: string | null; status: ClaimStatus; review_state: ReviewState; score?: number | null }[];
   truncated: boolean;
   omitted: number;
 }
