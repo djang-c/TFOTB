@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from atlas.extraction import ExtractionReport
 from atlas.schemas import Claim, ClaimStatus, ReviewState, SourceType
 
 
@@ -14,9 +15,52 @@ class PublicStore:
     def __init__(self) -> None:
         self.claims: dict[str, Claim] = {}
         self.quarantine: list[dict[str, Any]] = []
+        # One record per ingested extraction; coverage counts come from these, not from generated text.
+        self.extraction_runs: list[dict[str, Any]] = []
 
     def add(self, claim: Claim) -> None:
         self.claims[claim.claim_id] = claim
+
+    def ingest_extraction(self, report: ExtractionReport) -> dict[str, Any]:
+        """Store the verified claims from one T04 extraction; keep every rejection with its reason.
+
+        Re-ingesting an identical claim is a no-op; a claim_id that exists with different content is
+        quarantined, never overwritten.
+        """
+        added = already = 0
+        for claim in report.claims:
+            existing = self.claims.get(claim.claim_id)
+            if existing is None:
+                self.add(claim)
+                added += 1
+            elif existing == claim:
+                already += 1
+            else:
+                self.quarantine.append(
+                    {
+                        "source_id": report.source_id,
+                        "claim_id": claim.claim_id,
+                        "error": "claim_id exists with different content; not overwritten",
+                    }
+                )
+        for rejected in report.quarantined:
+            self.quarantine.append(
+                {"source_id": report.source_id, "payload": rejected["statement"], "error": rejected["reason"]}
+            )
+        run = {
+            "source_id": report.source_id,
+            "status": report.status,
+            "reason": report.reason,
+            "provider": report.provider,
+            "model": report.model,
+            "prompt_version": report.prompt_version,
+            "from_cache": report.from_cache,
+            "claims_added": added,
+            "claims_already_present": already,
+            "statements_quarantined": len(report.quarantined),
+        }
+        self.extraction_runs.append(run)
+        return run
 
     def ingest_lab_finding(self, payload: dict[str, Any]) -> Claim | None:
         """Uploads are always lab_reported + unreviewed; payload text is data, not instructions."""
