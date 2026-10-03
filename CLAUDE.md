@@ -1,6 +1,6 @@
 # TFOTB - The Flight of The Buffalo (hackathon MVP; formerly AI Rare Disease Atlas)
 
-Spec: `docs/PLAN.md` (authoritative). Status per task: `docs/BACKLOG.md`. Root `CLAUDE.md` charter also applies.
+Spec: `docs/PLAN.md` (authoritative). Status per task: `docs/BACKLOG.md`. Developed inside the private `startup-research` workspace, whose charter (traceable, falsifiable results) it follows.
 Research-support product. **Not a clinical system.** No diagnosis, prescribing, dosing, eligibility or treatment selection.
 
 ## Project rules (from PLAN)
@@ -14,7 +14,7 @@ Research-support product. **Not a clinical system.** No diagnosis, prescribing, 
 - Counts in coverage manifests come from recorded operations, not generated text.
 
 ## Commands (use `.venv`)
-- Tests: `.venv/bin/python -m pytest -q` (atlas + robotics) and `ruff check .`
+- Tests (after `source .venv/bin/activate`): `python -m pytest -q` (atlas + robotics) and `ruff check .`
 - Simulate: `cd robotics && python simulate.py fixtures/valid_transfer.json --out ../demo_outputs`
 - Replay: `MUJOCO_GL=glfw python render_replay.py <traj.json> <out.mp4>`
 - Code flow: engineer -> `/code-qa` -> `/repro-check` -> skeptical-reviewer. Statistics/DOE via installed K-Dense skills.

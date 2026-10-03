@@ -1,18 +1,37 @@
-# TFOTB - The Flight of The Buffalo - hackathon workspace
+# TFOTB - The Flight of The Buffalo
 
-Implements `docs/PLAN.md` (Hack-Nation challenge MVP): evidence-qualified rare-disease connections + a bounded MuJoCo workflow simulation. Research support only; not clinical.
+Hackathon submission (Hack-Nation challenge MVP). Spec: [`docs/PLAN.md`](docs/PLAN.md). Task status: [`docs/BACKLOG.md`](docs/BACKLOG.md).
+Evidence-qualified rare-disease connection engine + a bounded MuJoCo workflow simulation. **Research support only; not a clinical system.** Formerly "AI Rare Disease Atlas".
 
-## State of the build
-Working and tested: evidence/claim schemas, channel registry, ranking gates, upload quarantine, public/private separation, and the robotics workflow (compile -> checks -> MuJoCo motion -> report -> replay) with one passing and four failing fixtures. See `docs/BACKLOG.md` for the honest task table.
-Not built: any real biological data, ID resolution, ingestion, OpenAI extraction, API, UI. T01 (choose + verify a disease cluster) needs a human expert first.
+## What judges can verify today
+| Component | Status | Evidence |
+|---|---|---|
+| Evidence/claim schemas, channel registry, ranking gates, upload quarantine, public/private separation | Working, unit-tested | `pytest`: 34 passed |
+| Robotics workflow: compile -> checks -> MuJoCo motion -> report | Working; 1 passing + 4 failing fixtures (failures are the intended safety checks) | `robotics/simulate.py` |
+| Replay video (`render_replay.py`) | Not verified on a clean machine; needs OpenGL/GLFW and ffmpeg | - |
 
-## Run
+## Not built (stated plainly)
+Real biological data, ID resolution, ingestion, OpenAI extraction, API, UI. Task T01 (choose and verify a disease cluster) needs a human expert first. All test fixtures are **SYNTHETIC**. The simulation is an engineering artifact: biology and hardware are `not_modeled`, and a pass never raises biological confidence.
+
+## Quick start (any machine)
+Requires Python >= 3.10 (verified with 3.12 on macOS). From a fresh clone:
+
 ```bash
-cd hackathon/tfotb && source .venv/bin/activate
-python -m pytest -q && ruff check .
-cd robotics && python simulate.py fixtures/valid_transfer.json --out ../demo_outputs
+git clone https://github.com/djang-c/TFOTB.git && cd TFOTB
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.lock   # pinned; includes pytest and ruff
+python -m pytest -q                # expect: 34 passed
+ruff check .                       # expect: All checks passed!
 ```
-Rebuild env: `python3 -m venv .venv && pip install -r requirements.lock`.
+
+Run the simulation (writes to `demo_outputs/`, which is git-ignored and created on first run):
+```bash
+cd robotics
+python simulate.py fixtures/valid_transfer.json --out ../demo_outputs      # expect: pass
+python simulate.py fixtures/blocked_path.json --out ../demo_outputs        # expect: fail (intended)
+```
+Optional replay video: `MUJOCO_GL=glfw python render_replay.py ../demo_outputs/valid_transfer.trajectory.json ../demo_outputs/valid_transfer.replay.mp4`
 
 ## Layout
-`src/atlas/` engine - `tests/` - `robotics/` (scene, schema, fixtures, compiler, simulator, replay, tests) - `demo_outputs/` generated reports/replay (git-ignored, regenerate locally) - `data/manifests/` source audit - `docs/`.
+`src/atlas/` engine (Python package name is still `atlas`) - `tests/` - `robotics/` (scene, schema, fixtures, compiler, simulator, replay, tests) - `data/manifests/` source audit (empty template) - `docs/`.
