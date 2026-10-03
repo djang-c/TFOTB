@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowDown, ArrowRight } from "lucide-react";
-import { api, enc, type Entity, type EntityType, type Featured } from "@/lib/api";
+import { api, enc, type Entity, type EntityType, type Featured, type RealMeta } from "@/lib/api";
 import { ApiDown } from "@/components/ApiDown";
 import { GAP_KIND } from "@/components/Badges";
 import { SearchBox } from "@/components/SearchBox";
@@ -29,12 +29,13 @@ export default async function Home() {
   const featured = meta.featured ?? [];
   const reviewed = meta.counts_by_review_state.reviewed ?? 0;
 
-  // Example queries come from the dataset itself, so they always return something.
-  const examples = [
-    ...featured.map((f) => f.label),
-    byType("gene")[0]?.label,
-    byType("phenotype")[0]?.label,
-  ].filter((x): x is string => !!x).slice(0, 4);
+  const real = meta.real ?? null;
+  // Example queries come from the loaded data itself, so they always return something:
+  // the seed cluster when the real files are loaded, otherwise the demo entries.
+  const examples = (real
+    ? [...real.seed.filter((x) => x.type === "gene").map((x) => x.label), ...real.seed.filter((x) => x.type === "disease").map((x) => x.label)]
+    : [...featured.map((f) => f.label), byType("gene")[0]?.label, byType("phenotype")[0]?.label]
+  ).filter((x): x is string => !!x).slice(0, 4);
 
   return (
     <main>
@@ -60,6 +61,7 @@ export default async function Home() {
         </a>
       </section>
 
+      {real ? <RealExplore real={real} demo={featured} /> : (
       <div id="explore" className="mx-auto max-w-[1240px] scroll-mt-14 border-t border-rule px-4 pt-14 pb-10">
       <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         <Stat label="Entries" value={entities.items.length} />
@@ -116,6 +118,7 @@ export default async function Home() {
         </div>
       </section>
       </div>
+      )}
     </main>
   );
 }
@@ -143,5 +146,68 @@ function FeaturedCard({ f }: { f: Featured }) {
         Open <ArrowRight aria-hidden className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
       </span>
     </Link>
+  );
+}
+
+function RealExplore({ real, demo }: { real: RealMeta; demo: Featured[] }) {
+  const n = (x: number) => x.toLocaleString("en-US");
+  const rel = (r: Record<string, number>) => [
+    r.genes && `${r.genes} linked ${r.genes === 1 ? "gene" : "genes"}`,
+    r.diseases && `${r.diseases} linked diseases`,
+    r.phenotype_neighbours && `${r.phenotype_neighbours} diseases with similar symptoms`,
+  ].filter(Boolean).join(" · ");
+  const walkthrough = demo[0];
+  return (
+    <div id="explore" className="mx-auto max-w-[1240px] scroll-mt-14 border-t border-rule px-4 pt-14 pb-10">
+      <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+        <Stat label="Diseases" value={n(real.counts.disease)} />
+        <Stat label="Genes" value={n(real.counts.gene)} />
+        <Stat label="Symptoms" value={n(real.counts.phenotype)} />
+        <Stat label="Names and synonyms" value={n(real.names)} />
+      </dl>
+      <p className="mt-2 max-w-[90ch] text-xs text-muted">
+        From {Object.values(real.sources).map((v) => v.split(" (")[0]).join(" · ")}. Public reference files,
+        read as published; nothing here has been reviewed by an expert.
+      </p>
+
+      <section className="mt-12">
+        <h2 className="text-xs font-medium tracking-wide text-muted uppercase">Start here: the seed cluster</h2>
+        <p className="mt-1 text-sm text-muted">{real.seed_note}</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {real.seed.map((x) => (
+            <Link key={x.id} href={`/entity/${enc(x.id)}`}
+              className="group flex flex-col rounded-lg border border-rule p-4 transition-colors hover:border-ink">
+              <span className="flex justify-between text-xs text-muted"><span className="capitalize">{x.type}</span><span className="font-mono text-[11px]">{x.id}</span></span>
+              <span className="mt-1 font-semibold">{x.label}</span>
+              <span className="mt-1 text-sm text-muted">{rel(x.related) || "No links recorded in the files"}</span>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm text-link">
+                Open <ArrowRight aria-hidden className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {walkthrough && (
+        <section className="mt-12">
+          <h2 className="text-xs font-medium tracking-wide text-muted uppercase">Demo walkthrough</h2>
+          <Link href={`/entity/${enc(walkthrough.id)}`}
+            className="group mt-3 flex flex-col gap-3 rounded-lg border border-rule p-5 transition-colors hover:border-ink sm:flex-row sm:items-center">
+            <span aria-hidden className="tape h-10 w-1.5 shrink-0 rounded-full max-sm:hidden" />
+            <span className="flex-1">
+              <span className="font-semibold">See the full journey on placeholder data</span>
+              <span className="mt-1 block text-sm text-muted">
+                Evidence from papers is not extracted yet, so the three questions (who shares our
+                characteristics, what already exists, what to do next) are shown on a synthetic
+                example. Every name in it is made up and labelled Synthetic.
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-sm text-link">
+              Open demo <ArrowRight aria-hidden className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+        </section>
+      )}
+    </div>
   );
 }

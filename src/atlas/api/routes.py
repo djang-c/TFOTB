@@ -107,7 +107,33 @@ def meta(request: Request) -> Any:
         counts_by_review_state=counts["review_state"], cached_outputs=True,
         featured=_featured(d),
         simulations=[{"run_id": k, "label": v["label"]} for k, v in d["simulations"]["runs"].items()],
+        real=_real_meta(request),
     )
+
+
+# Owner decision 2026-10-03 (docs/DECISIONS.md, "Seed ID for CLN3 disease"); unreviewed by any expert.
+SEED_CLUSTER = ("MONDO:0008767", "MONDO:0018982", "HGNC:2074", "HGNC:7897")
+
+
+def _real_meta(request: Request) -> dict[str, Any] | None:
+    """What the real-ontology layer holds, or None when the pinned files are not loaded."""
+    ix = _index(request)
+    if ix is None:
+        return None
+    seed = []
+    for eid in SEED_CLUSTER:
+        e = ix.entity(eid)
+        if e is None:
+            continue
+        groups = {g["kind"]: g["total"] for g in ix.related(eid)["groups"]}
+        seed.append({"id": eid, "label": e["label"], "type": e["type"], "related": groups})
+    return {
+        "counts": {t: sum(1 for x in ix.r._labels[t] if x not in ix.excluded) for t in ("disease", "gene", "phenotype")},
+        "names": ix.size,
+        "sources": ix.r.versions,
+        "seed": seed,
+        "seed_note": "Seed cluster chosen by the project owner on 2026-10-03; provisional and unreviewed.",
+    }
 
 
 def _featured(d: dict[str, Any]) -> list[dict[str, Any]]:

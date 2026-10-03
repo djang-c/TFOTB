@@ -4,7 +4,6 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { HeaderSearch } from "@/components/HeaderSearch";
 import { EvidenceDrawerProvider } from "@/components/EvidenceDrawer";
-import { api } from "@/lib/api";
 
 const sans = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
@@ -14,11 +13,7 @@ export const metadata: Metadata = {
   description: "Sourced connections between rare diseases, and honest gaps. Research support only.",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // The synthetic marker follows the data: shown while any synthetic fixture is served.
-  const synthetic = await api.meta()
-    .then((m) => (m.counts_by_source_type.synthetic_fixture ?? 0) > 0)
-    .catch(() => false);
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} antialiased`}>
       <body className="flex min-h-screen flex-col bg-page">
@@ -31,10 +26,6 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <div className="mx-auto w-full max-w-[560px]">
                 <HeaderSearch />
               </div>
-              {synthetic && <span className="ml-auto hidden shrink-0 items-center gap-2 rounded-full border border-rule px-2.5 py-1 text-xs text-muted sm:inline-flex">
-                <span aria-hidden className="tape inline-block h-2 w-2 rounded-full" />
-                Synthetic data
-              </span>}
             </div>
           </header>
           <div className="flex-1">{children}</div>
