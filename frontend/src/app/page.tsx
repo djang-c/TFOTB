@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowRight } from "lucide-react";
 import { api, enc, type Entity, type EntityType, type Featured } from "@/lib/api";
 import { ApiDown } from "@/components/ApiDown";
 import { GAP_KIND } from "@/components/Badges";
+import { SearchBox } from "@/components/SearchBox";
+import { ExampleQuery } from "@/components/ExampleQuery";
 
 const GROUPS: [EntityType, string][] = [
   ["disease", "Diseases"],
@@ -20,24 +22,46 @@ export default async function Home() {
   try {
     [meta, entities] = await Promise.all([api.meta(), api.entities()]);
   } catch {
-    return <ApiDown what="the atlas" />;
+    return <ApiDown what="the data" />;
   }
   const byType = (t: EntityType) => entities.items.filter((e: Entity) => e.type === t);
   const synthetic = (meta.counts_by_source_type.synthetic_fixture ?? 0) > 0;
   const featured = meta.featured ?? [];
   const reviewed = meta.counts_by_review_state.reviewed ?? 0;
 
-  return (
-    <main className="mx-auto max-w-[1240px] px-4 pt-14 pb-10">
-      <h1 className="max-w-[26ch] text-[32px] leading-[1.15] font-semibold tracking-tight text-balance">
-        Follow a rare disease to the research that already connects to it.
-      </h1>
-      <p className="mt-3 max-w-[60ch] text-[15px] leading-relaxed text-muted">
-        Each connection shows which evidence supports it, which is missing, and the quoted source
-        behind every statement. When nothing is supported, the atlas says what is unknown.
-      </p>
+  // Example queries come from the dataset itself, so they always return something.
+  const examples = [
+    ...featured.map((f) => f.label),
+    byType("gene")[0]?.label,
+    byType("phenotype")[0]?.label,
+  ].filter((x): x is string => !!x).slice(0, 4);
 
-      <dl className="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+  return (
+    <main>
+      <section className="relative flex min-h-[calc(100svh-56px)] flex-col items-center justify-center px-4 pb-24">
+        <div className="w-full max-w-[680px] text-center">
+          <h1 className="text-[34px] leading-tight font-semibold tracking-tight text-balance sm:text-[40px]">
+            What are you looking into?
+          </h1>
+          <p className="mx-auto mt-3 max-w-[52ch] text-[15px] leading-relaxed text-muted">
+            A disease, a gene, a symptom or a mechanism. You get the research that connects to it,
+            the source behind every statement, and an honest account of what is unknown.
+          </p>
+          <div className="mt-8 text-left"><SearchBox size="lg" autoFocus /></div>
+          {examples.length > 0 && (
+            <p className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-muted">
+              Try {examples.map((x) => <ExampleQuery key={x} q={x} />)}
+            </p>
+          )}
+        </div>
+        <a href="#explore" className="absolute bottom-8 inline-flex flex-col items-center gap-1 text-xs text-muted hover:text-ink">
+          Not sure where to start? Explore
+          <ArrowDown aria-hidden className="h-4 w-4 motion-safe:animate-bounce" />
+        </a>
+      </section>
+
+      <div id="explore" className="mx-auto max-w-[1240px] scroll-mt-14 border-t border-rule px-4 pt-14 pb-10">
+      <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         <Stat label="Entries" value={entities.items.length} />
         <Stat label="Claims" value={meta.claims} />
         <Stat label="Reviewed" value={`${reviewed} of ${meta.claims}`} />
@@ -91,6 +115,7 @@ export default async function Home() {
           })}
         </div>
       </section>
+      </div>
     </main>
   );
 }

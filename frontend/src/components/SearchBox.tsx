@@ -7,7 +7,10 @@ import { api, enc, type EntityType } from "@/lib/api";
 
 type Hit = { id: string; label: string; type: EntityType; synonyms: string[]; matched: string | null };
 
-export function SearchBox({ autoFocus = false }: { autoFocus?: boolean }) {
+const PLACEHOLDER = "Search a disease, gene, symptom or mechanism";
+
+export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: boolean; size?: "sm" | "lg" }) {
+  const lg = size === "lg";
   const router = useRouter();
   const listId = useId();
   const [q, setQ] = useState("");
@@ -17,6 +20,7 @@ export function SearchBox({ autoFocus = false }: { autoFocus?: boolean }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const blurTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // "/" or Cmd/Ctrl+K focuses search from anywhere, unless the user is already typing.
   useEffect(() => {
@@ -27,8 +31,19 @@ export function SearchBox({ autoFocus = false }: { autoFocus?: boolean }) {
         input.current?.focus();
       }
     };
+    // Example chips on the home page fill the query and open the results.
+    const onFill = (e: Event) => {
+      clearTimeout(blurTimer.current);
+      setQ((e as CustomEvent<string>).detail);
+      setOpen(true);
+      input.current?.focus();
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("search:fill", onFill);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("search:fill", onFill);
+    };
   }, []);
 
   useEffect(() => {
@@ -45,7 +60,7 @@ export function SearchBox({ autoFocus = false }: { autoFocus?: boolean }) {
 
   return (
     <div className="relative">
-      <Search aria-hidden className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted" />
+      <Search aria-hidden className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-muted ${lg ? "left-4 h-5 w-5" : "left-2.5 h-4 w-4"}`} />
       <input
         ref={input}
         type="search"
@@ -56,11 +71,11 @@ export function SearchBox({ autoFocus = false }: { autoFocus?: boolean }) {
         aria-label="Search diseases, genes, phenotypes"
         autoFocus={autoFocus}
         value={q}
-        placeholder="Search diseases, genes, variants…"
-        className="h-9 w-full rounded-md border border-rule bg-subtle pr-12 pl-8 text-sm placeholder:text-muted focus:border-link focus:bg-sheet focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-link/15 [&::-webkit-search-cancel-button]:hidden"
+        placeholder={PLACEHOLDER}
+        className={`w-full border border-rule placeholder:text-muted ${lg ? "h-14 rounded-xl bg-sheet pr-16 pl-12 text-base shadow-[0_1px_2px_rgba(17,24,39,0.04)]" : "h-9 rounded-md bg-subtle pr-12 pl-8 text-sm"} focus:border-link focus:bg-sheet focus:outline-none focus-visible:outline-none focus:ring-4 focus:ring-link/10 [&::-webkit-search-cancel-button]:hidden`}
         onChange={(e) => { setQ(e.target.value); setOpen(true); if (!e.target.value.trim()) setHits([]); }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        onFocus={() => { clearTimeout(blurTimer.current); setOpen(true); }}
+        onBlur={() => { blurTimer.current = setTimeout(() => setOpen(false), 120); }}
         onKeyDown={(e) => {
           if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, hits.length - 1)); }
           if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
@@ -68,7 +83,7 @@ export function SearchBox({ autoFocus = false }: { autoFocus?: boolean }) {
           if (e.key === "Escape") setOpen(false);
         }}
       />
-      {!q && <kbd aria-hidden className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2">⌘K</kbd>}
+      {!q && <kbd aria-hidden className={`pointer-events-none absolute hidden sm:inline top-1/2 -translate-y-1/2 ${lg ? "right-4" : "right-2.5"}`}>⌘K</kbd>}
       {open && q.trim() && (
         <div className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-lg border border-rule bg-sheet shadow-[0_8px_24px_rgba(17,24,39,0.08)]">
           {error && <p className="px-3 py-3 text-sm text-fail">{error}</p>}
