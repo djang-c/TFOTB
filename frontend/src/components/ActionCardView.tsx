@@ -23,6 +23,8 @@ export function ActionCardView({ card, simulationHref }: { card: ActionCard; sim
     .replace(/`([A-Z_]+)`/g, (m, code) => PREDICATE_PLAIN[code] ?? m)
     .replace(/^# .*\n/, "");
   const long = md.length > 400;
+  // The card's own H1 ("Asset: <study title>") tells cards of the same kind apart.
+  const subject = card.body_markdown.match(/^# (?:Asset|Draft note to|Evidence brief): (.*)$/m)?.[1];
   const isRecord = card.contact?.url.includes("clinicaltrials.gov");
 
   const download = () => {
@@ -37,7 +39,10 @@ export function ActionCardView({ card, simulationHref }: { card: ActionCard; sim
   return (
     <article className="rounded-lg border border-rule bg-sheet">
       <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-rule px-4 py-2.5">
-        <h3 className="font-semibold">{KIND[card.kind]}</h3>
+        <h3 className="min-w-0 font-semibold">
+          {KIND[card.kind]}
+          {subject && <span className="block text-sm font-normal text-muted">{subject}</span>}
+        </h3>
         <span className="text-xs text-muted">for {card.audience === "family" ? "families" : "researchers"}</span>
       </header>
       <div className="space-y-3 px-4 py-3">
@@ -47,7 +52,7 @@ export function ActionCardView({ card, simulationHref }: { card: ActionCard; sim
         {long ? (
           <details className="group [&_summary::-webkit-details-marker]:hidden">
             <summary className="cursor-pointer list-none text-sm text-link hover:underline">
-              <span className="group-open:hidden">Read the full {KIND[card.kind].toLowerCase()}</span>
+              <span className="group-open:hidden">Read the full card</span>
               <span className="hidden group-open:inline">Hide</span>
             </summary>
             <div className="mt-2"><Markdown md={md} /></div>
