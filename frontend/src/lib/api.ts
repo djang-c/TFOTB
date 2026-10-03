@@ -191,6 +191,34 @@ export async function get<T>(path: string): Promise<Wrapped<T>> {
 
 export const enc = (id: string) => encodeURIComponent(id);
 
+export type MatchKind = "identifier" | "label" | "exact synonym" | "related synonym" | "all words" | "close spelling" | "demo";
+
+/** One search match. `matched` is the label or synonym text that matched; `match` says how. */
+export interface SearchHit {
+  id: string;
+  label: string;
+  type: EntityType;
+  matched: string | null;
+  match?: MatchKind;
+  source_type?: SourceType;
+}
+
+export interface RelatedItem {
+  id: string;
+  label: string;
+  type: EntityType;
+  association?: string;
+  source_id?: string;
+  score?: number | null;
+  shared?: string[];
+}
+
+/** What connects to an entry in the pinned files. Each group names the source it came from. */
+export interface Related {
+  entity_id: string;
+  groups: { kind: string; title: string; source: string; total: number; items: RelatedItem[] }[];
+}
+
 /** A home-page entry point. The API derives these from the dataset; they are never hand-picked. */
 export type Featured = { id: string; label: string; type: EntityType } & (
   | { reason: "connections"; connections: number; assets: number }
@@ -202,7 +230,8 @@ export const api = {
     entities_by_type: Record<string, number>; claims: number;
     counts_by_review_state: Record<string, number>; counts_by_source_type: Record<string, number>;
     featured?: Featured[]; simulations?: { run_id: string; label: string }[] }>("/meta"),
-  search: (q: string) => get<{ results: { id: string; label: string; type: EntityType; synonyms: string[]; matched: string | null }[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
+  search: (q: string) => get<{ results: SearchHit[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
+  related: (id: string) => get<Related>(`/entities/${enc(id)}/related`),
   entities: () => get<{ items: Entity[] }>("/entities"),
   entity: (id: string) => get<{ entity: Entity; claims: Claim[]; claim_counts_by_predicate: Record<string, number>;
     reviewed_claims: number; summary: { text: string; claim_ids: string[] }[] }>(`/entities/${enc(id)}`),

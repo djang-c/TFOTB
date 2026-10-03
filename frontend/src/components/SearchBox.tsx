@@ -3,9 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { Search } from "lucide-react";
-import { api, enc, type EntityType } from "@/lib/api";
-
-type Hit = { id: string; label: string; type: EntityType; synonyms: string[]; matched: string | null };
+import { api, enc, type SearchHit as Hit } from "@/lib/api";
 
 const PLACEHOLDER = "Search a disease, gene, symptom or mechanism";
 
@@ -57,6 +55,7 @@ export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: bool
   }, [q]);
 
   const go = (h: Hit) => { setOpen(false); setQ(""); router.push(`/entity/${enc(h.id)}`); };
+  const all = () => { setOpen(false); router.push(`/search?q=${enc(q.trim())}`); };
 
   return (
     <div className="relative">
@@ -79,7 +78,8 @@ export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: bool
         onKeyDown={(e) => {
           if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, hits.length - 1)); }
           if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
-          if (e.key === "Enter" && hits[active]) go(hits[active]);
+          if (e.key === "Enter" && (e.shiftKey || !hits[active])) { if (q.trim()) all(); }
+          else if (e.key === "Enter") go(hits[active]);
           if (e.key === "Escape") setOpen(false);
         }}
       />
@@ -88,13 +88,13 @@ export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: bool
         <div className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-lg border border-rule bg-sheet shadow-[0_8px_24px_rgba(17,24,39,0.08)]">
           {error && <p className="px-3 py-3 text-sm text-fail">{error}</p>}
           {!error && hits.length === 0 && (
-            <p className="px-3 py-3 text-sm text-muted">No matches for “{q}”. Try a synonym or an ID.</p>
+            <p className="px-3 py-3 text-sm text-muted">No matches for “{q}”. Try another spelling, a synonym, a gene symbol or an ID.</p>
           )}
           {hits.length > 0 && (
             <>
               <p className="px-3 pt-2.5 pb-1 text-xs text-muted">
                 {hits.length} {hits.length === 1 ? "result" : "results"}
-                {ambiguous && " · more than one could be what you mean"}
+                {ambiguous && " · this name is used by more than one entry"}
               </p>
               <ul id={listId} role="listbox" className="max-h-[360px] overflow-y-auto px-1.5 pb-1.5">
                 {hits.map((h, i) => (
@@ -110,16 +110,21 @@ export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: bool
                     <span className="text-xs text-muted capitalize">{h.type}</span>
                     <span className="min-w-0 truncate">
                       <Highlight text={h.label} q={q} />
-                      {h.matched && <span className="ml-2 text-muted">matches “{h.matched}”</span>}
+                      {h.match === "close spelling" && <span className="ml-2 rounded bg-subtle px-1.5 py-0.5 text-[11px] text-muted ring-1 ring-rule">did you mean</span>}
+                      {h.source_type === "synthetic_fixture" && <span className="ml-2 rounded bg-synthetic/30 px-1.5 py-0.5 text-[11px] text-ink">Synthetic</span>}
+                      {h.matched && h.matched !== h.label && <span className="ml-2 text-muted">matches “{h.matched}”</span>}
                     </span>
                     <span className="hidden font-mono text-[11px] text-muted sm:inline">{h.id}</span>
                   </li>
                 ))}
               </ul>
-              <p className="flex gap-4 border-t border-rule bg-subtle px-3 py-1.5 text-[11px] text-muted" aria-hidden>
+              <p className="flex items-center gap-4 border-t border-rule bg-subtle px-3 py-1.5 text-[11px] text-muted">
                 <span><kbd>↑</kbd> <kbd>↓</kbd> move</span>
                 <span><kbd>↵</kbd> open</span>
                 <span><kbd>esc</kbd> close</span>
+                <button type="button" onMouseDown={all} className="ml-auto text-link hover:underline">
+                  All results <kbd>⇧↵</kbd>
+                </button>
               </p>
             </>
           )}
