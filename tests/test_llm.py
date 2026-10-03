@@ -50,3 +50,18 @@ def test_cache_key_changes_with_prompt_version_and_input():
 
 def test_anthropic_adapter_import_is_lazy_and_optional():
     import atlas.llm  # noqa: F401  (importing the package must not require the SDK)
+
+
+def test_empty_model_env_falls_back_to_default(monkeypatch):
+    # Regression: `LLM_MODEL_FAST=` (empty, as in env.example) once produced model="" and an API 400.
+    pytest.importorskip("anthropic")
+    from atlas.llm.anthropic_client import DEFAULT_MODELS, AnthropicClient
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-real")
+    monkeypatch.setenv("LLM_MODEL_FAST", "")
+    monkeypatch.setenv("LLM_MODEL_REASONING", "  ")
+    client = AnthropicClient()
+    assert client.model_for("fast") == DEFAULT_MODELS["fast"]
+    assert client.model_for("reasoning") == DEFAULT_MODELS["reasoning"]
+    monkeypatch.setenv("LLM_MODEL_FAST", "some-pinned-model")
+    assert client.model_for("fast") == "some-pinned-model"
