@@ -1,0 +1,15 @@
+{
+  "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
+  "card_id": "CARD:syn-1",
+  "kind": "evidence_brief",
+  "this_week": "SYNTHETIC: review the cited claim with a domain expert.",
+  "responsible_human": "domain expert",
+  "body_markdown": "SYNTHETIC brief [^CLAIM:syn-1]",
+  "claim_ids": [
+    "CLAIM:syn-1"
+  ],
+  "limitations": [
+    "synthetic fixture"
+  ],
+  "generated_by": "template"
+}

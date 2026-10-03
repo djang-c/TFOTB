@@ -1,0 +1,16 @@
+{
+  "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
+  "entity": {
+    "id": "MONDO:0000001",
+    "type": "disease",
+    "label": "SYNTHETIC disease A",
+    "synonyms": [],
+    "xrefs": [],
+    "attributes": {},
+    "source_url": "https://example.invalid/synthetic",
+    "retrieved_at": "2026-10-03"
+  },
+  "claim_counts_by_predicate": {
+    "ASSOCIATED_WITH_PHENOTYPE": 1
+  }
+}

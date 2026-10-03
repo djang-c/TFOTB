@@ -1,0 +1,9 @@
+{
+  "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
+  "claim": null,
+  "quarantined": true,
+  "unresolved_ids": [],
+  "missing_fields": [
+    "source_span"
+  ]
+}
