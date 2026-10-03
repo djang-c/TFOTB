@@ -38,3 +38,7 @@ Opentrons as P1 adapter.
 3. OpenAI key availability (for the adapter / track prizes)?
 4. Hosting: Vercel + Render/Fly OK?
 5. When does the 24h clock start / submission deadline?
+6. **HPO commercial-use terms** — read the HPO licence directly or ask the HPO team before the phenotype channel ships (audit could not settle it).
+7. Which Databricks APIs do we have (LLM serving, compute, Delta)? Public data only; each outbound use needs approval.
+8. Is there a licensed, non-identifiable imaging dataset for any ViT work? If not, no imaging model (doc 12 §3).
+9. Does the graph-model channel (T26) have time, or is it cut? Without a leakage-controlled evaluation we make no accuracy claim.

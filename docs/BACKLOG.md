@@ -3,7 +3,7 @@ Legend: DONE-verified (tests pass), PARTIAL, TODO, BLOCKED (needs human/science)
 
 | ID | Status | What exists / what is missing |
 |---|---|---|
-| T01 Cluster + source audit | BLOCKED (science) | Template: `data/manifests/source_manifest.md`. Needs a human/expert to choose the cluster and verify a positive route, counterexample, asset and contact. Not started; nothing fabricated. |
+| T01 Cluster + source audit | PARTIAL - agent draft done, EXPERT REVIEW PENDING | 2026-10-03 AI-read audit: `data/manifests/source_manifest.md` (17 sources; HPO commercial terms, ClinicalTrials.gov, Monarch, PrimeKG UNVERIFIED) and `data/manifests/cluster_audit.md` (19 CANDIDATE / 3 UNVERIFIED rows; cluster re-anchored on CLN3 + NPC). Nothing is `reviewed`; a qualified human must re-check every quote, the BMP direction, the CLN3-CLN7 pairing and registry terms. |
 | T02 Schemas | PARTIAL | `src/atlas/schemas.py` (Claim, ChannelComparison, ConnectionResult, validators) + tests. Missing: Entity tables, coverage manifest model, SQLite persistence. |
 | T03 ID resolver | TODO | Only format validation exists (`validate_curie`); no pinned ontology mapping. |
 | T04 Ingestion + extraction | TODO | Needs source licence audit (T01) and an approved model/prompt. Provider: Anthropic for now, OpenAI adapter at deployment (DECISIONS.md). `src/atlas/llm/` has the provider-agnostic `LLMClient`, record/replay cache (tested offline) and an UNVERIFIED Anthropic adapter (SDK not installed, never run). No extraction service or live call yet. |
