@@ -151,3 +151,10 @@ def test_brief_lists_known_claims_about_the_query_even_when_they_lead_nowhere():
     card = evidence_brief(outcome(store), store.claims, now=NOW)
     body = card.body_markdown
     assert "## Known claims about MONDO:0000001" in body and "[^c:CLAIM:g]" in body and "CLAIM:g" in card.claim_ids
+
+
+def test_brief_with_nothing_cited_never_mentions_reviewed_claims():
+    # Found on real data: phenotype-only candidates cite no claim, and the step used to say
+    # "confirm the reviewed claims", implying reviewed evidence that does not exist.
+    card = evidence_brief(outcome(PublicStore()), {}, now=NOW)
+    assert "reviewed claims" not in card.this_week and "no claim is cited" in card.this_week

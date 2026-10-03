@@ -3,7 +3,7 @@
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import type { ActionCard } from "@/lib/api";
-import { ClaimRef } from "./EvidenceDrawer";
+import { ClaimRef, PREDICATE_PLAIN } from "./EvidenceDrawer";
 
 const KIND: Record<ActionCard["kind"], string> = {
   evidence_brief: "Evidence brief",
@@ -17,7 +17,13 @@ const FOOTNOTE = /\[\^c:([^\]\s]+)\]/g;
 
 export function ActionCardView({ card, simulationHref }: { card: ActionCard; simulationHref?: string }) {
   const order = [...new Set([...card.body_markdown.matchAll(FOOTNOTE)].map((m) => m[1]))];
-  const md = card.body_markdown.replace(FOOTNOTE, (_, id) => `[${order.indexOf(id) + 1}](#claim=${id})`);
+  // On screen, relationship codes read in plain words and the card's own H1 is dropped (the header shows it).
+  const md = card.body_markdown
+    .replace(FOOTNOTE, (_, id) => `[${order.indexOf(id) + 1}](#claim=${id})`)
+    .replace(/`([A-Z_]+)`/g, (m, code) => PREDICATE_PLAIN[code] ?? m)
+    .replace(/^# .*\n/, "");
+  const long = md.length > 400;
+  const isRecord = card.contact?.url.includes("clinicaltrials.gov");
 
   const download = () => {
     const refs = order.map((id, i) => `[${i + 1}] ${id}`).join("\n");
@@ -29,7 +35,7 @@ export function ActionCardView({ card, simulationHref }: { card: ActionCard; sim
   };
 
   return (
-    <article className="rounded-md border border-rule bg-white">
+    <article className="rounded-lg border border-rule bg-sheet">
       <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-rule px-4 py-2.5">
         <h3 className="font-semibold">{KIND[card.kind]}</h3>
         <span className="text-xs text-muted">for {card.audience === "family" ? "families" : "researchers"}</span>
@@ -38,37 +44,57 @@ export function ActionCardView({ card, simulationHref }: { card: ActionCard; sim
         <p className="text-[15px]">
           <span className="font-semibold">This week:</span> {card.this_week}
         </p>
-        <div className="text-[15px] leading-relaxed text-ink/90 [&_p]:my-1">
-          <ReactMarkdown
-            components={{
-              a: ({ href, children }) =>
-                href?.startsWith("#claim=") ? (
-                  <ClaimRef id={href.slice(7)} n={Number(String(children))} />
-                ) : (
-                  <a className="ref" href={href}>{children}</a>
-                ),
-            }}
-          >
-            {md}
-          </ReactMarkdown>
-        </div>
+        {long ? (
+          <details className="group [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer list-none text-sm text-link hover:underline">
+              <span className="group-open:hidden">Read the full {KIND[card.kind].toLowerCase()}</span>
+              <span className="hidden group-open:inline">Hide</span>
+            </summary>
+            <div className="mt-2"><Markdown md={md} /></div>
+          </details>
+        ) : <Markdown md={md} />}
         {card.contact && (
           <p className="text-sm">
-            Contact route: <a className="ref" href={card.contact.url} target="_blank" rel="noreferrer">{card.contact.label}</a>
+            {isRecord ? "Study record" : "Contact route"}: <a className="ref" href={card.contact.url} target="_blank" rel="noreferrer">{card.contact.label}</a>
             <span className="text-muted"> (public page, checked {card.contact.verified_at})</span>
           </p>
         )}
         <ul className="list-disc pl-5 text-sm text-muted">
-          {[...card.reuse_limits, ...card.limitations].map((l) => <li key={l}>{l}</li>)}
+          {card.limitations.map((l) => <li key={l}>{l}</li>)}
         </ul>
       </div>
-      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-rule bg-page/60 px-4 py-2 text-sm">
-        <span className="text-muted">A {card.responsible_human} reviews this before it is used.</span>
+      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-rule bg-subtle px-4 py-2 text-sm">
+        <span className="text-muted">Reviewed before use by: {card.responsible_human}</span>
         <span className="flex gap-3">
           {simulationHref && <Link className="ref font-medium" href={simulationHref}>Open simulation</Link>}
           <button onClick={download} className="font-medium text-link hover:underline">Download .md</button>
         </span>
       </footer>
     </article>
+  );
+}
+
+function Markdown({ md }: { md: string }) {
+  return (
+    <div className="text-sm leading-relaxed text-ink/90">
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => <h4 className="mt-3 font-semibold">{children}</h4>,
+          h2: ({ children }) => <h4 className="mt-4 mb-1 font-semibold">{children}</h4>,
+          h3: ({ children }) => <h5 className="mt-3 font-medium">{children}</h5>,
+          p: ({ children }) => <p className="my-1.5">{children}</p>,
+          ul: ({ children }) => <ul className="my-1.5 list-disc space-y-0.5 pl-5">{children}</ul>,
+          code: ({ children }) => <code className="font-mono text-[12px]">{children}</code>,
+          a: ({ href, children }) =>
+            href?.startsWith("#claim=") ? (
+              <ClaimRef id={href.slice(7)} n={Number(String(children))} />
+            ) : (
+              <a className="ref" href={href}>{children}</a>
+            ),
+        }}
+      >
+        {md}
+      </ReactMarkdown>
+    </div>
   );
 }
