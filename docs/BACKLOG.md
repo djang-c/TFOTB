@@ -12,7 +12,7 @@ Legend: DONE-verified (tests pass), PARTIAL, TODO, BLOCKED (needs human/science)
 | T09 Candidate union + gates | PARTIAL | `ranking.py`: categories, conflict, direction block, lineage count, sim-never-support. Missing: wiring to real channels, coverage manifests. |
 | T10 Action cards | TODO | |
 | T11 Upload quarantine | PARTIAL | Backend in `store.py` (forced unreviewed, quarantine, inert text, cannot overwrite an existing claim_id). Missing: UI, contributor confirmation, review queue, recompute. |
-| T12 Explorer UI | TODO | |
+| T12 Explorer UI | PARTIAL (demo on SYNTHETIC data) | Next.js wiki-style explorer: search autocomplete, entity article (Q1-Q3 sections, channel wells, evidence drawer, assets, action cards with .md export, gap card + coverage), 3D graph + list view, `/simulation/[id]` 3D kinematic replay of recorded MuJoCo runs. Data: `scripts/build_demo.py` -> `data/fixtures/demo.json` (SYN: ids). Not yet: Family/Science toggle, upload panel UI, /about, 2D xyflow canvas, e2e tests. |
 | T13 Evaluation | PARTIAL | Acceptance tests implemented for: missing RNA, mechanism conflict, tissue mismatch, duplicate evidence, upload review, extension, private case, simulation traceability/failure/reproducibility/limits. Not yet: assay incompatibility, honest-gap, action traceability, uncertain-variant n/a (no variant handling exists in code or tests; was wrongly listed as done until the 2026-10-03 QA audit, `reports/qa/2026-10-03-tfotb.md` in the startup-research workspace). |
 | T14 Packaging/video | TODO | |
 | T15-T19 P1/P2 | TODO | Cut order per PLAN. |
