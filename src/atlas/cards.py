@@ -76,6 +76,7 @@ def evidence_brief(
     lines.append("")
     if not shown:
         lines += ["No connected candidates were found by any channel in the indexed evidence.", ""]
+    lines += _known_about_query(outcome.query_id, claims, label_of, cited)
     for i, rc in enumerate(shown, 1):
         lines += _connection_section(i, rc, claims, label_of, cited)
     lines += ["## What is missing", ""]
@@ -108,6 +109,18 @@ def evidence_brief(
         generated_by="template",
         created_at=now,
     )
+
+
+def _known_about_query(query_id: str, claims: dict[str, Claim], label_of: Label, cited: list[str]) -> list[str]:
+    """Stored claims that name the query entity itself, whether or not they lead to a connection."""
+    about = sorted(i for i, c in claims.items() if query_id in (c.subject_id, c.object_id))
+    if not about:
+        return []
+    lines = [f"## Known claims about {_name(label_of, query_id)}", ""]
+    for i in about:
+        lines.append(_claim_line(claims[i], label_of))
+        cited.append(i)
+    return [*lines, ""]
 
 
 def _connection_section(

@@ -38,7 +38,7 @@ def _stage(reason: str) -> str:
     if reason.startswith("quote not found"):
         return "quote"
     if reason.startswith(("no allowed predicate", "needs a substance")) or " needs " in reason:
-        return "predicate/types"
+        return "predicate/types/substance"
     if reason.startswith("schema:") or reason == "duplicate statement":
         return "schema"
     return "name resolution"
@@ -91,7 +91,7 @@ def main() -> int:
     proposed = len(report.claims) + len(report.quarantined)
     print(
         f"yield: proposed {proposed} -> quote verified {proposed - stages['quote']} -> "
-        f"types ok {proposed - stages['quote'] - stages['predicate/types']} -> "
+        f"types ok {proposed - stages['quote'] - stages['predicate/types/substance']} -> "
         f"names resolved {len(report.claims) + stages['schema']} -> stored {len(report.claims)}"
     )
     print("lost at each stage:", dict(stages) or "none")

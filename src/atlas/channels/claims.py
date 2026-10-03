@@ -115,6 +115,10 @@ class ClaimOverlapChannel(EvidenceChannel):
             tissues_c = {c.context.get("tissue") for c in claims_c if c.context.get("tissue")}
             if tissues_q and tissues_c and not tissues_q & tissues_c:
                 mismatches.add("tissue")
+            assays_q = {c.context.get("assay") for c in claims_q if c.context.get("assay")}
+            assays_c = {c.context.get("assay") for c in claims_c if c.context.get("assay")}
+            if assays_q and assays_c and not assays_q & assays_c:
+                mismatches.add("assay")  # unlike assays: flagged, never pooled (no number is produced here)
         if not self.supports_category:
             support = []
         if not matches:

@@ -68,23 +68,49 @@ def test_within_category_direct_then_reviewed_then_id_order():
     assert out.ranked[0].direct and not out.ranked[1].direct
 
 
-def test_a_channel_number_never_reorders_results():
-    class Scored(EvidenceChannel):
-        channel_id, version = "phenotype", "1"
+class _Phenotype(EvidenceChannel):
+    channel_id, version = "phenotype", "1"
 
-        def retrieve_candidates(self, query_id, context):
-            return [A, B]
+    def __init__(self, scores):
+        self.scores = scores
 
-        def compare(self, query_id, candidate_id, context):
-            return ChannelComparison(
-                channel_id="phenotype", channel_version="1", query_id=query_id, candidate_id=candidate_id,
-                availability="available", score=0.99 if candidate_id == B else 0.01, score_definition="test similarity",
-            )
+    def retrieve_candidates(self, query_id, context):
+        return list(self.scores)
 
+    def compare(self, query_id, candidate_id, context):
+        return ChannelComparison(
+            channel_id="phenotype", channel_version="1", query_id=query_id, candidate_id=candidate_id,
+            availability="available", score=self.scores[candidate_id], score_definition="test similarity",
+        )
+
+
+def test_phenotype_similarity_orders_only_candidates_that_tie_on_everything_else():
     reg = ChannelRegistry()
-    reg.register(Scored())
+    reg.register(_Phenotype({A: 0.01, B: 0.99}))
     out = run(PublicStore(), reg)
-    assert [r.result.candidate_id for r in out.ranked] == [A, B]  # ID order, not score order
+    assert [r.result.candidate_id for r in out.ranked] == [B, A]  # higher similarity first, not ID order
+
+
+def test_similarity_never_crosses_a_category():
+    store = PublicStore()
+    store.add(make_claim("CLAIM:d", "SHARES_PATHOGENIC_PATHWAY_WITH", subject_id=Q, object_id=A, status="inference"))
+    reg = registry(store)
+    reg.register(_Phenotype({A: 0.01, B: 0.99}))
+    cats = {r.result.candidate_id: r.result.category for r in run(store, reg).ranked}
+    assert cats == {B: EvidenceCategory.symptom_level_lead, A: EvidenceCategory.hypothesis_only}
+    assert list(cats) == [B, A]  # category order, with the lower similarity (A) placed by its category
+
+
+def test_similarity_never_outranks_a_direct_link_or_reviewed_support_in_the_same_category():
+    store = PublicStore()
+    for cid, d in (("CLAIM:q", Q), ("CLAIM:a", A), ("CLAIM:b", B), ("CLAIM:c", C)):
+        share(store, cid, d, lineage=f"STUDY:{cid}")
+    store.add(make_claim("CLAIM:d", "SHARES_PATHOGENIC_PATHWAY_WITH", subject_id=Q, object_id=C, status="inference"))
+    store.add(make_claim("CLAIM:r", "ACCUMULATES_IN_COMPARTMENT", subject_id=B, object_id="GO:0005764", review_state="reviewed", lineage="STUDY:r"))
+    reg = registry(store)
+    reg.register(_Phenotype({A: 0.99, B: 0.50, C: 0.01}))  # similarity favours A, then B, then C
+    out = run(store, reg)
+    assert [r.result.candidate_id for r in out.ranked] == [C, B, A]  # same as without it: evidence decides
 
 
 def test_independent_lineages_count_shared_study_once():

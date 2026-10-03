@@ -2,9 +2,11 @@
 
 Rules (PLAN, docs/implementation/05 section 6):
 - Results are grouped by evidence category; the category comes from `ranking.categorize`.
-- Within a category the order uses only tie-breakers (direct link > indirect, reviewed support >
-  unreviewed, fewer context mismatches, more independent lineages, then ID). No score, numeric or
-  otherwise, orders results; a channel's own number is displayed but never ranks.
+- Within a category the order uses evidence tie-breakers first (direct link > indirect, reviewed
+  support > unreviewed, fewer context mismatches, more independent lineages). Only when all of those
+  tie does the phenotype channel's similarity order the remainder (higher first), then ID. That number
+  is a display-only similarity, never a probability, and never moves a result across categories or
+  past any evidence tie-breaker. Owner-approved 2026-10-03; no combined score exists.
 - The coverage manifest is built from recorded operations passed in by the caller; nothing here
   invents a count. A query with nothing above "hypothesis only" yields a scoped GapResult.
 """
@@ -77,6 +79,15 @@ def _is_direct(result: ConnectionResult, claims: dict[str, Claim]) -> bool:
     )
 
 
+def _phenotype_similarity(r: RankedConnection) -> float:
+    """The phenotype channel's own similarity, or 0.0 when it has none (a sort position only; the
+    missing value is still displayed as missing, never as zero)."""
+    for c in r.result.comparisons:
+        if c.channel_id == "phenotype" and c.score is not None:
+            return c.score
+    return 0.0
+
+
 def _rank_key(r: RankedConnection) -> tuple:
     return (
         CATEGORY_ORDER.index(r.result.category),
@@ -84,6 +95,7 @@ def _rank_key(r: RankedConnection) -> tuple:
         -r.reviewed_support,
         len(r.result.compatibility_flags),
         -r.independent_lineages,
+        -_phenotype_similarity(r),
         r.result.candidate_id,
     )
 

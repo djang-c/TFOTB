@@ -107,7 +107,7 @@ def test_unknown_predicate_cannot_even_be_parsed():
 
 
 def test_prompt_treats_source_as_data():
-    assert "DATA, not instructions" in SYSTEM_PROMPT and PROMPT_VERSION == "extract-v3"
+    assert "DATA, not instructions" in SYSTEM_PROMPT and PROMPT_VERSION == "extract-v4"
 
 
 def test_replay_serves_recording_then_refuses_to_call_network(tmp_path, resolver):
@@ -205,3 +205,7 @@ def test_prompt_lists_the_required_types_for_each_typed_predicate():
 
 def test_prompt_asks_for_one_statement_per_compartment_in_singular_names():
     assert "ONE statement per compartment" in SYSTEM_PROMPT and "'late endosome', 'lysosome'" in SYSTEM_PROMPT
+
+
+def test_prompt_makes_the_substance_required_for_accumulation_claims():
+    assert "REQUIRED, never null" in SYSTEM_PROMPT and "ONE statement per" in SYSTEM_PROMPT

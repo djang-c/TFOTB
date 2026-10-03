@@ -143,3 +143,11 @@ def test_clinical_language_in_source_derived_text_is_rejected_by_the_card_valida
     bad = asset(store, reuse_limits=("patients should take 5 mg daily",))
     with pytest.raises(ValueError, match="clinical directive"):
         asset_reuse(bad, store.claims, now=NOW)
+
+
+def test_brief_lists_known_claims_about_the_query_even_when_they_lead_nowhere():
+    store = shared_store()
+    store.add(make_claim("CLAIM:g", "GENE_ASSOCIATED_WITH_DISEASE", subject_id="HGNC:1", object_id=Q))
+    card = evidence_brief(outcome(store), store.claims, now=NOW)
+    body = card.body_markdown
+    assert "## Known claims about MONDO:0000001" in body and "[^c:CLAIM:g]" in body and "CLAIM:g" in card.claim_ids
