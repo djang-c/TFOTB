@@ -191,7 +191,7 @@ export async function get<T>(path: string): Promise<Wrapped<T>> {
 
 export const enc = (id: string) => encodeURIComponent(id);
 
-export type MatchKind = "identifier" | "label" | "exact synonym" | "related synonym" | "all words" | "close spelling" | "demo";
+export type MatchKind = "identifier" | "label" | "exact synonym" | "related synonym" | "all words" | "starts with" | "close spelling" | "demo";
 
 /** One search match. `matched` is the label or synonym text that matched; `match` says how. */
 export interface SearchHit {

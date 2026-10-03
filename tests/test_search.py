@@ -52,6 +52,11 @@ def test_close_spelling_is_a_suggestion_not_a_resolution(ix):
     assert res["results"] and all(h["match"] == "close spelling" for h in res["results"])
 
 
+def test_short_query_matches_name_starts(ix):
+    res = ix.search("ex")
+    assert "HGNC:900001" in ids(res) and all(h["match"] in ("starts with", "label") for h in res["results"])
+
+
 def test_identifier_lookup(ix):
     assert ix.search("HGNC:900001")["results"][0]["match"] == "identifier"
 
