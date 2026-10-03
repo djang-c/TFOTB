@@ -85,7 +85,7 @@ def _squash(text: str) -> str:
 
 def _claim_id(source_id: str, s: ExtractedStatement, subj: str, obj: str) -> str:
     digest = hashlib.sha256(f"{source_id}|{subj}|{s.predicate}|{obj}|{_squash(s.quote)}".encode()).hexdigest()
-    return f"{source_id.replace(':', '-')}-{digest[:10]}"
+    return f"CLAIM:{source_id.replace(':', '-')}-{digest[:10]}"
 
 
 def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) -> ExtractionReport:
