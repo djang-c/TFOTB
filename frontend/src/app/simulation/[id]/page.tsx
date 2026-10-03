@@ -27,7 +27,7 @@ export default async function SimulationPage(props: PageProps<"/simulation/[id]"
   return (
     <main className="mx-auto max-w-[1240px] px-4 py-8">
       <p className="text-sm text-muted"><Link className="ref" href={`/entity/${enc("SYN:disease-a")}`}>Disease A</Link> / workflow simulation</p>
-      <h1 className="mt-1 font-serif text-[34px] font-semibold leading-tight">Can the robot run this plate layout?</h1>
+      <h1 className="mt-1 text-[34px] font-semibold leading-tight">Can the robot run this plate layout?</h1>
       <p className="mt-2 max-w-[70ch] text-muted">
         A liquid-transfer workflow checked in MuJoCo before anyone books lab time. It tests motion
         and volume bookkeeping only. {r.scope_label}.
@@ -47,7 +47,7 @@ export default async function SimulationPage(props: PageProps<"/simulation/[id]"
 
         <aside className="space-y-5 text-sm">
           <div className={`rounded-md border-2 bg-white px-4 py-3 ${r.overall === "pass" ? "border-pass" : "border-fail"}`}>
-            <p className={`font-serif text-2xl font-semibold ${r.overall === "pass" ? "text-pass" : "text-fail"}`}>
+            <p className={`text-2xl font-semibold ${r.overall === "pass" ? "text-pass" : "text-fail"}`}>
               {r.overall === "pass" ? "Workflow passed its checks" : "Workflow stopped"}
             </p>
             {r.failures.map((f, i) => <p key={i} className="mt-1">{f.reason}</p>)}

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     port: int = 8000
     cors_origins: str = "http://localhost:3000"
     fixtures_dir: Path = REPO_ROOT / "data" / "fixtures"
+    raw_dir: Path = REPO_ROOT / "data" / "raw"
+    # Search the pinned ontologies when scripts/fetch_ontologies.py has been run.
+    real_search: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:

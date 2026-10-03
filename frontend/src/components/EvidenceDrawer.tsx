@@ -55,7 +55,7 @@ export function EvidenceDrawerProvider({ children }: { children: React.ReactNode
           className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[440px] flex-col border-l border-rule bg-white shadow-2xl animate-[slidein_.18s_ease-out]"
         >
           <div className="flex items-center justify-between border-b border-rule px-5 py-3">
-            <h2 className="font-serif text-lg font-semibold">Evidence</h2>
+            <h2 className="text-lg font-semibold">Evidence</h2>
             <button ref={closeRef} onClick={() => setClaimId(null)} className="rounded px-2 py-1 text-sm text-muted hover:bg-page">
               Close
             </button>
@@ -76,7 +76,7 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
   const predicate = c.predicate.toLowerCase().replaceAll("_", " ");
   return (
     <div className="space-y-5 text-[15px]">
-      <p className="font-serif text-lg leading-snug">
+      <p className="text-lg leading-snug">
         <EntityLink id={c.subject_id} label={d.subject_label} onClose={onClose} />{" "}
         <span className="text-muted">{predicate}</span>{" "}
         <EntityLink id={c.object_id} label={d.object_label} onClose={onClose} />
@@ -88,7 +88,7 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
       </div>
 
       <figure className="border-l-4 border-ink/80 pl-4">
-        <blockquote className="font-serif text-[17px] leading-relaxed">{c.source_span}</blockquote>
+        <blockquote className="text-[17px] leading-relaxed">{c.source_span}</blockquote>
         <figcaption className="mt-2 text-sm text-muted">
           <a className="ref" href={c.source_url} target="_blank" rel="noreferrer">Open source</a>
           {c.published_at && <> · published {c.published_at}</>}

@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { api, ApiError, enc, type AssetResult, type ConnectionResult, type CoverageManifest, type Entity, type GapResult } from "@/lib/api";
 import { ActionCardView } from "@/components/ActionCardView";
 import { ApiDown } from "@/components/ApiDown";
-import { CategoryPill, ReviewBadge, SourceBadge, StatusMark } from "@/components/Badges";
+import { CategoryPill, GAP_KIND, ReviewBadge, SourceBadge, StatusMark } from "@/components/Badges";
 import { ClaimRef } from "@/components/EvidenceDrawer";
 import { GraphSection } from "@/components/GraphSection";
+import { RelatedGroups } from "@/components/RelatedGroups";
 import { Wells } from "@/components/Wells";
 
 export default async function EntityPage(props: PageProps<"/entity/[id]">) {
@@ -14,21 +15,24 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
   try {
     data = await Promise.all([
       api.entity(id), api.connections(id), api.assets(id), api.gap(id), api.actions(id), api.graph(id), api.entities(),
+      api.related(id).catch(() => null),
     ]);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
     return <ApiDown what={id} />;
   }
-  const [ent, conn, assets, gap, actions, graph, all] = data;
+  const [ent, conn, assets, gap, actions, graph, all, related] = data;
+  const hasRelated = !!related && related.groups.length > 0;
   const e = ent.entity;
   const labels = Object.fromEntries(all.items.map((x: Entity) => [x.id, x.label]));
   const sections = [
     ["summary", "Summary"],
+    ...(hasRelated ? [["related", "Connected in the source data"]] : []),
     ["shares", "Who shares our characteristics?"],
     ["existing", "What useful work already exists?"],
     ["next", "What should we do next?"],
-    ["graph", "Graph"],
-    ["sources", "Sources"],
+    ...(graph.nodes.length > 0 ? [["graph", "Graph"]] : []),
+    ...(ent.claims.length > 0 ? [["sources", "Sources"]] : []),
   ];
 
   return (
@@ -46,7 +50,7 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
 
       <article className="min-w-0">
         <p className="text-sm capitalize text-muted">{e.type}</p>
-        <h1 className="font-serif text-[34px] font-semibold leading-tight">{e.label}</h1>
+        <h1 className="text-[34px] font-semibold leading-tight">{e.label}</h1>
         {e.synonyms.length > 0 && <p className="mt-1 text-muted">Also called {e.synonyms.join(", ")}</p>}
 
         <div className="lg:hidden"><Infobox e={e} ent={ent} coverage={conn.coverage ?? gap.coverage} /></div>
@@ -54,6 +58,15 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
         <Section id="summary" title="Summary">
           <Summary sentences={ent.summary} attributes={e.attributes} />
         </Section>
+
+        {hasRelated && (
+          <Section id="related" title="Connected in the source data">
+            <p className="-mt-1 text-sm text-muted">
+              Read directly from the pinned public files. Unreviewed: each block names where it came from.
+            </p>
+            <RelatedGroups related={related!} />
+          </Section>
+        )}
 
         <Section id="shares" title="Who shares our characteristics?">
           {conn.results.length === 0 ? (
@@ -87,23 +100,25 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
           </div>
         </Section>
 
-        <Section id="graph" title="Graph">
-          <GraphSection data={graph} focusId={e.id} />
-        </Section>
+        {graph.nodes.length > 0 && (
+          <Section id="graph" title="Graph">
+            <GraphSection data={graph} focusId={e.id} />
+          </Section>
+        )}
 
-        <Section id="sources" title="Sources">
+        {ent.claims.length > 0 && <Section id="sources" title="Sources">
           <ol className="space-y-2 text-sm">
             {ent.claims.map((c) => (
               <li key={c.claim_id} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <ClaimRef id={c.claim_id} />
-                <span className="font-serif text-[15px]">{c.source_span}</span>
+                <span className="text-[15px]">{c.source_span}</span>
                 <SourceBadge type={c.source_type} />
                 <ReviewBadge state={c.review_state} />
                 <StatusMark status={c.status} />
               </li>
             ))}
           </ol>
-        </Section>
+        </Section>}
       </article>
 
       <div className="hidden lg:block">
@@ -116,7 +131,7 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="mt-10 scroll-mt-6">
-      <h2 className="mb-3 border-b border-rule pb-1 font-serif text-2xl font-semibold">{title}</h2>
+      <h2 className="mb-3 border-b border-rule pb-1 text-2xl font-semibold">{title}</h2>
       {children}
     </section>
   );
@@ -132,7 +147,7 @@ function Summary({ sentences, attributes }: { sentences: { text: string; claim_i
     return <p className="text-muted">No plain-language summary is drafted for this entry. {missing}</p>;
   }
   return (
-    <p className="max-w-[68ch] font-serif text-[18px] leading-relaxed">
+    <p className="max-w-[68ch] text-[18px] leading-relaxed">
       {sentences.map((s, i) => (
         <span key={i}>
           {s.text}
@@ -147,7 +162,7 @@ function ConnectionRow({ r, label }: { r: ConnectionResult; label: string }) {
   return (
     <li className="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
       <div>
-        <Link href={`/entity/${enc(r.candidate_id)}`} className="ref font-serif text-lg font-semibold">{label}</Link>
+        <Link href={`/entity/${enc(r.candidate_id)}`} className="ref text-lg font-semibold">{label}</Link>
         <div className="mt-1"><CategoryPill category={r.category} /></div>
         {r.compatibility_flags.map((f) => (
           <p key={f} className={`mt-2 text-sm ${f.startsWith("Opposite") || f.startsWith("symptoms") ? "font-medium text-ev-conflict" : "text-muted"}`}>
@@ -181,20 +196,13 @@ function AssetRow({ a }: { a: AssetResult }) {
   );
 }
 
-const GAP_KIND: Record<string, string> = {
-  insufficient_coverage: "Insufficient coverage",
-  unresolved_identity: "Unresolved identity",
-  hypothesis_only: "Hypothesis only",
-  conflicting_evidence: "Conflicting evidence",
-  no_supported_route: "No supported route",
-};
 
 function GapCard({ gap, coverage }: { gap: GapResult; coverage: CoverageManifest | null }) {
   return (
     <div className="rounded-md border-2 border-ev-gap/60 bg-white">
       <div className="border-b border-rule px-4 py-3">
         <p className="text-sm font-semibold text-ev-gap">{GAP_KIND[gap.kind] ?? gap.kind}</p>
-        <p className="mt-1 font-serif text-xl leading-snug">{gap.statement}</p>
+        <p className="mt-1 text-xl leading-snug">{gap.statement}</p>
       </div>
       <div className="grid gap-4 px-4 py-3 text-sm md:grid-cols-2">
         <div>
@@ -238,15 +246,16 @@ function Infobox({ e, ent, coverage }: { e: Entity; ent: Awaited<ReturnType<type
   const failed = coverage?.per_source.filter((s) => s.status !== "ok").length ?? 0;
   return (
     <aside className="mt-4 rounded-md border border-rule bg-white text-sm lg:mt-0">
-      <div className="tape h-1.5 rounded-t-md" aria-hidden />
+      {e.source_type === "synthetic_fixture" && <div className="tape h-1.5 rounded-t-md" aria-hidden />}
       <div className="px-4 py-3">
-        <h2 className="font-serif text-base font-semibold">{e.label}</h2>
+        <h2 className="text-base font-semibold">{e.label}</h2>
         <dl className="mt-2 grid grid-cols-[96px_1fr] gap-y-1.5">
           <dt className="text-muted">ID</dt><dd className="break-all">{e.id}</dd>
           <dt className="text-muted">Type</dt><dd className="capitalize">{e.type}</dd>
           <dt className="text-muted">Identity</dt><dd>{e.identity_status}</dd>
           <dt className="text-muted">Source</dt><dd><SourceBadge type={e.source_type} /></dd>
-          <dt className="text-muted">Retrieved</dt><dd>{e.retrieved_at}</dd>
+          {e.retrieved_at && <><dt className="text-muted">Retrieved</dt><dd>{e.retrieved_at}</dd></>}
+          {e.source_version && <><dt className="text-muted">Version</dt><dd className="break-words">{e.source_version}</dd></>}
           <dt className="text-muted">Claims</dt><dd>{ent.claims.length} ({ent.reviewed_claims} reviewed)</dd>
           {coverage && (
             <>
