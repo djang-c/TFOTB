@@ -6,17 +6,35 @@ scope *explicitly* with fewer — the cuts are listed below. Status baseline: `d
 
 ## Roles
 
-- **Builder A — Data & Engine:** T01 support, T02 rest, T03, T04, T06–T09, API.
-- **Builder B — Experience & Actions:** T12 frontend, T10 actions, T11 UI, T20/T23 robotics binding, T14 packaging.
-- **Both:** T01 evidence audit (needs whichever of us can do science review — or disclose none), T13 evaluation.
+- **Builder A — Evidence engine:** T03 resolver, T04 ingestion + extraction, T06–T08 channels, T09 gate wiring, T11 upload UI.
+- **Builder B — Platform & experience:** P0 scaffold + T02 rest (entities, coverage, SQLite), T12 frontend, API routers, T10 actions, T20/T23 robotics binding.
+- **Both:** T01 evidence audit (needs whichever of us can do science review — or disclose none), T13 evaluation, T14 packaging.
+
+### Load balance (rough effort estimates, 1 point ≈ 1 h; NOT measured — revise after the first phase)
+
+| Task | pts | | Task | pts |
+|---|---|---|---|---|
+| T03 resolver | 4 | | P0 scaffold | 2 |
+| T04 ingestion + extraction | 5 | | T02 rest | 3 |
+| T06–T08 channels | 5 | | T12 explorer | 5 |
+| T09 gate wiring | 2 | | API routers | 2 |
+| T11 upload UI | 1 | | T10 action cards | 2 |
+| | | | T20/T23 robotics binding | 3 |
+| **A total** | **17** | | **B total** | **17** |
+
+The previous split was A ≈ 21 vs B ≈ 13 (A held all of T02/T03/T04/T06–T09/API; B's mock-first work
+had slack). Moves: T02 rest + API routers → B (B already scaffolds the stub API and fixtures in P0,
+and the schemas are an early, short dependency); T11 UI → A (thin layer over the existing
+`ingest_lab_finding`, close to A's quarantine/validation work).
+Not balanced by this table: T01 (needs a human science reviewer), T13/T14 (shared).
 
 ## Timeline
 
 ```
 Hour     0    2    4    6    8   10   12   14   16   18   20   22   24
-A        [T01 audit ][T02 ][T03 ][T04 extract][T06][T07/T08][T09+API][ T13 ][T14]
-B        [T01 audit ][P0 scaffold+fixtures][ T12 explorer (mock) ...][T10][T11 UI][T23][ T13 ][T14 video]
-              ▲ T01 gate (H3): cluster chosen or switched       ▲ data freeze (H12)   ▲ feature freeze (H19)
+A        [T01 audit ][T03 resolver][T04 extract   ][T06-T08 channels][T09][T11][ T13 ][T14]
+B        [T01 audit ][P0+T02 rest   ][T12 explorer (mock)][API][T10 ][T20/T23 ][ T13 ][T14 video]
+              ▲ T01 gate (H3)                  ▲ data freeze (H12)             ▲ feature freeze (H19)
 ```
 
 **Explicit scope cuts for 2 builders** (PLAN cut order, applied up front): T24 Opentrons adapter,
@@ -29,7 +47,7 @@ action card, negative cases, honest gap card, the bounded simulation report/repl
 
 ---
 
-## P0 · Scaffold (B, H3–H5)
+## P0 · Scaffold (B, H3–H5; then T02 rest to H8)
 ```text
 Read CLAUDE.md, docs/PLAN.md, docs/implementation/02 and 03. Add without restructuring existing code:
 src/atlas/api/ (FastAPI app factory, CORS from env, /api/health, /api/meta stub, stub routers for
@@ -39,7 +57,7 @@ lint, typegen, e2e), frontend/ via create-next-app (latest, TS strict, App Route
 SYNTHETIC-labelled. Existing `pytest -q` and `ruff check .` must still pass. Stop for review.
 ```
 
-## T02 rest · Entities, coverage, SQLite (A, H3–H5)
+## T02 rest · Entities, coverage, SQLite (B, H5–H8)
 ```text
 Extend src/atlas/schemas.py with Entity, CoverageManifest, GapResult, AssetResult, ActionCard per
 docs/implementation/03 §2 (do not change existing models' behaviour). Add SQLite persistence
@@ -47,7 +65,7 @@ docs/implementation/03 §2 (do not change existing models' behaviour). Add SQLit
 round-trip through SQLite; existing tests unchanged.
 ```
 
-## T03 · ID resolver (A, H5–H7)
+## T03 · ID resolver (A, H3–H7)
 ```text
 Implement src/atlas/resolver.py per docs/implementation/04 + 06 §2: pinned MONDO/HGNC/HPO mapping
 files from data/raw (record versions), exact/synonym/xref + rapidfuzz candidates, type filtering,
@@ -56,7 +74,7 @@ transcript. Optional LLM pick among ≤8 candidates via dynamic Literal — retu
 Tests: label-built IDs rejected; ambiguous synonym stays unresolved; transcript versions not merged.
 ```
 
-## T04 · Ingestion + bounded extraction (A, H7–H10)
+## T04 · Ingestion + bounded extraction (A, H7–H12)
 ```text
 Only for sources with a completed row in data/manifests/source_manifest.md. Implement
 scripts/pipeline steps per docs/implementation/04 and src/atlas/llm/ per 06 §0–1 (provider-agnostic
@@ -66,19 +84,24 @@ first live call. Quote verification; failures → quarantine with reasons; linea
 Tests run offline in replay mode.
 ```
 
-## T06–T08 · Channels (A, H10–H14)
+## T06–T08 · Channels (A, H12–H17)
 ```text
 Implement phenotype, dna_variants, rna_effects, molecular_mechanisms, experimental_findings channels
 per docs/implementation/05 §1–5 against the EvidenceChannel contract. Missing → availability missing +
 score None. Add the tests in 05 §9 and register channels in the API's registry.
 ```
 
-## T09 + API (A, H14–H17)
-Wire registry → `build_result` → coverage manifest; within-category ordering; replace stub routers
-with real ones; gap results; collaborators + assets ranked separately. API integration tests for
-the PLAN fixture cases.
+## T09 gate wiring (A, H17–H19)
+Wire registry → `build_result` → coverage manifest; within-category ordering; gap results;
+collaborators + assets ranked separately. Hand B the function signatures at H12 so the API can be
+built against them before the channels land.
 
-## T12 · Explorer (B, H5–H14, mock-first)
+## API routers (B, H13–H15; final integration H19)
+Replace the P0 stub routers with real ones over the T02 models and A's `build_result`; use the
+registry with the channels that exist so far. API integration tests for the PLAN fixture cases are
+re-run when A's T09 wiring lands.
+
+## T12 · Explorer (B, H8–H13, mock-first)
 ```text
 Implement docs/implementation/08 against NEXT_PUBLIC_MOCK=1: landing, /entity/[id] with the three
 question sections, ConnectionCard + ChannelChips, EvidenceDrawer, AssetCard, CollaboratorList,
@@ -86,24 +109,24 @@ GapCard, LimitationsPanel, ViewToggle, DatasetBadge; GraphCanvas last. typecheck
 must pass; screenshots at 1440 and 390 px.
 ```
 
-## T10 · Action cards (B, H14–H16)
+## T10 · Action cards (B, H15–H17)
 P0 kinds from doc 07 §1 (evidence_brief, outreach_note, asset_reuse, gap_followup); Jinja2
 templates; footnotes resolve; denylist test; Markdown export.
 
-## T11 UI (B, H16–H17)
+## T11 UI (A, H19–H20)
 Upload panel over existing `ingest_lab_finding`; contributor confirmation; quarantine reasons shown.
 
-## T20/T23 · Robotics binding (B, H17–H19)
+## T20/T23 · Robotics binding (B, H17–H20)
 Doc 07 §4: ExperimentProposal → reviewed spec ref → SimulationRun record → API → SimulationReplay
 panel. Pre-render replays for deploy.
 
-## T13 · Evaluation (both, H19–H21)
+## T13 · Evaluation (both, H20–H22; ~1 h overlap with the end of T11 and T20/T23)
 PLAN acceptance table: add the missing ones (assay incompatibility, honest gap, action
 traceability) + Playwright demo-path E2E (Journey A, Journey B, simulation report). Reviewer audits
 every positive path + counterexample, or the README says no expert review was available.
 10× measurement per doc 01 §4.
 
-## T14 · Package (both, H21–H24)
+## T14 · Package (both, H22–H24)
 Deploy; README (architecture, dataset reproduction, sources/licence manifest, 10× method + measured
 result, limitations); team video + 1-minute walkthrough recorded from the deployed app, cached
 output labelled.
