@@ -244,7 +244,7 @@ export const api = {
   entities: () => get<{ items: Entity[] }>("/entities"),
   entity: (id: string) => get<{ entity: Entity; claims: Claim[]; claim_counts_by_predicate: Record<string, number>;
     reviewed_claims: number; summary: { text: string; claim_ids: string[] }[] }>(`/entities/${enc(id)}`),
-  connections: (id: string) => get<{ results: ConnectionResult[]; coverage: CoverageManifest | null }>(`/entities/${enc(id)}/connections`),
+  connections: (id: string) => get<{ results: ConnectionResult[]; coverage: CoverageManifest | null; labels?: Record<string, string> }>(`/entities/${enc(id)}/connections`),
   assets: (id: string) => get<{ assets: AssetResult[] }>(`/entities/${enc(id)}/assets`),
   graph: (id: string) => get<GraphData>(`/entities/${enc(id)}/graph`),
   gap: (id: string) => get<{ gap: GapResult | null; coverage: CoverageManifest | null }>(`/entities/${enc(id)}/gap`),

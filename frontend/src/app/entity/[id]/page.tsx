@@ -22,12 +22,14 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
     return <ApiDown what={id} />;
   }
   const [ent, conn, assets, gap, actions, graph, all, related] = data;
+  // Similar-symptom diseases appear in Q1 once connections are computed; keep the other blocks.
+  if (related && conn.results.length > 0) related.groups = related.groups.filter((g) => g.kind !== "phenotype_neighbours");
   const hasRelated = !!related && related.groups.length > 0;
   const e = ent.entity;
   const synthetic = e.source_type === "synthetic_fixture";
   // Real entries have no claims extracted from papers yet: one honest note instead of three empty sections.
   const noEvidence = !synthetic && conn.results.length === 0 && assets.assets.length === 0 && !gap.gap && actions.cards.length === 0;
-  const labels = Object.fromEntries(all.items.map((x: Entity) => [x.id, x.label]));
+  const labels: Record<string, string> = { ...Object.fromEntries(all.items.map((x: Entity) => [x.id, x.label])), ...conn.labels };
   const sections = [
     ...(synthetic || ent.summary.length > 0 ? [["summary", "Summary"]] : []),
     ...(hasRelated ? [["related", "Connected in the source data"]] : []),
@@ -97,7 +99,7 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
               <Empty>No connections are computed for this entry in the indexed evidence.</Empty>
             ) : (
               <ol className="divide-y divide-rule rounded-md border border-rule bg-white">
-                {conn.results.map((r) => <ConnectionRow key={r.candidate_id} r={r} label={labels[r.candidate_id] ?? r.candidate_id} />)}
+                {conn.results.map((r) => <ConnectionRow key={r.candidate_id} r={r} label={labels[r.candidate_id] ?? r.candidate_id} labels={labels} />)}
               </ol>
             )}
           </Section>
@@ -184,7 +186,7 @@ function Summary({ sentences, attributes }: { sentences: { text: string; claim_i
   );
 }
 
-function ConnectionRow({ r, label }: { r: ConnectionResult; label: string }) {
+function ConnectionRow({ r, label, labels }: { r: ConnectionResult; label: string; labels: Record<string, string> }) {
   return (
     <li className="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
       <div>
@@ -196,7 +198,7 @@ function ConnectionRow({ r, label }: { r: ConnectionResult; label: string }) {
           </p>
         ))}
       </div>
-      <Wells comparisons={r.comparisons} />
+      <Wells comparisons={r.comparisons} labels={labels} />
     </li>
   );
 }

@@ -14,13 +14,17 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 import sqlite3
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
+from atlas.channels.base import ChannelRegistry
+from atlas.channels.claims import build_claim_channels
 from atlas.channels.phenotype import PhenotypeChannel
+from atlas.connections import run_query
 from atlas.resolver import (
     _TIER_NAME,
     DISEASE,
@@ -31,6 +35,9 @@ from atlas.resolver import (
     Resolver,
     normalize,
 )
+from atlas.schemas import SourceCoverage, SourceStatus
+from atlas.store import PublicStore
+from atlas.structured import gene_disease_claims
 
 MATCH_ORDER = ("identifier", "label", "exact synonym", "related synonym", "all words", "starts with", "close spelling")
 _TIER_MATCH = {0: "label", 1: "exact synonym", 2: "related synonym"}
@@ -80,20 +87,26 @@ class SearchIndex:
         for _norm, eid, _etype, text, tier in rows:
             if tier != TIER_LABEL:
                 self.names_of.setdefault(eid, set()).add((text, tier))
-        # gene <-> disease from the HPO gene-disease file, mapped to HGNC / MONDO through the resolver.
+        # gene <-> disease: HPO genes_to_disease rows become sourced claims (atlas.structured).
+        claims, self.g2d_tally = gene_disease_claims(gene_disease or [], resolver, exclude=self.excluded)
+        self.store = PublicStore()
+        for c in claims:
+            self.store.add(c)
         self.genes_of: dict[str, list[dict[str, str]]] = {}
         self.diseases_of: dict[str, list[dict[str, str]]] = {}
-        for row in gene_disease or []:
-            hg = resolver.resolve(row["gene_symbol"], GENE).resolved_id
-            for mondo in sorted(resolver.ids_for_xref(_mondo_xref(row["disease_id"])) - self.excluded):
-                if not hg:
-                    continue
-                link = {"association": row["association_type"].lower(), "source_id": row["disease_id"],
-                        "source": "HPO genes_to_disease"}
-                if all(x["id"] != mondo for x in self.diseases_of.get(hg, [])):
-                    self.diseases_of.setdefault(hg, []).append({"id": mondo, **link})
-                if all(x["id"] != hg for x in self.genes_of.get(mondo, [])):
-                    self.genes_of.setdefault(mondo, []).append({"id": hg, **link})
+        for c in claims:
+            link = {"association": c.context["association_type"], "source_id": c.context["via"],
+                    "source": "HPO genes_to_disease", "claim_id": c.claim_id}
+            if all(x["id"] != c.object_id for x in self.diseases_of.get(c.subject_id, [])):
+                self.diseases_of.setdefault(c.subject_id, []).append({"id": c.object_id, **link})
+            if all(x["id"] != c.subject_id for x in self.genes_of.get(c.object_id, [])):
+                self.genes_of.setdefault(c.object_id, []).append({"id": c.subject_id, **link})
+        self.registry = ChannelRegistry()
+        if phenotype:
+            self.registry.register(phenotype)
+        for ch in build_claim_channels(self.store):
+            if ch.channel_id == "dna_variants":
+                self.registry.register(ch)
 
     @classmethod
     def from_raw(cls, raw_dir: Path) -> SearchIndex:
@@ -235,6 +248,36 @@ class SearchIndex:
                                "items": [{"id": m, "label": lab(m), "type": DISEASE} for m in ds[:RELATED_LIMIT]]})
         return {"entity_id": entity_id, "type": etype, "label": lab(entity_id), "groups": groups}
 
+    def connections(self, entity_id: str) -> dict[str, Any]:
+        """Q1 for a real disease: the T09 engine over the phenotype channel and gene-level claims.
+        Coverage counts are the rows this process loaded, recorded at load time."""
+        if entity_id not in self.r._labels[DISEASE]:
+            return {"results": [], "labels": {}, "coverage": None, "gap": None}
+        versions = self.r.versions
+        per_source = [
+            SourceCoverage(source="HPO genes_to_disease", version=versions.get("hpo/genes_to_disease.txt"),
+                           status=SourceStatus.ok, fetched=self.g2d_tally["rows"], screened=self.g2d_tally["claims"]),
+        ]
+        if self.ph:
+            per_source.append(SourceCoverage(source="HPO phenotype.hpoa", version=versions.get("hpo/phenotype.hpoa"),
+                                             status=SourceStatus.ok, fetched=self.ph.n_diseases,
+                                             screened=self.ph.n_diseases - self.ph._unmapped))
+        out = run_query(entity_id, self.registry, self.store.claims, dataset_version="pinned-ontologies",
+                        per_source=per_source, source_versions=versions, context={"max_candidates": RELATED_LIMIT})
+        results = [r.result.model_dump(mode="json") for r in out.ranked if r.result.candidate_id not in self.excluded]
+        labels = {r["candidate_id"]: self.r.label_of(r["candidate_id"]) for r in results}
+        for r in results:  # features named in channel matches ("shared HGNC:2074")
+            for c in r["comparisons"]:
+                for m in c["context_matches"]:
+                    for tok in re.findall(r"\b(?:HGNC|MONDO|HP|GO):\d+", m):
+                        labels.setdefault(tok, self.r.label_of(tok) or tok)
+        return {"results": results, "labels": labels, "coverage": out.coverage.model_dump(mode="json"),
+                "gap": out.gap.model_dump(mode="json") if out.gap else None}
+
+    def claim(self, claim_id: str) -> dict[str, Any] | None:
+        c = self.store.claims.get(claim_id)
+        return c.model_dump(mode="json") if c else None
+
     def entity(self, entity_id: str) -> dict[str, Any] | None:
         etype = next((t for t in ENTITY_TYPES if entity_id in self.r._labels[t]), None)
         if etype is None:
@@ -244,12 +287,6 @@ class SearchIndex:
                 "synonyms": [t for t, _ in names][:12],
                 "synonym_kinds": {t: _TIER_NAME[k] for t, k in names[:12]},
                 "source_type": "database_record", "version": self.r.versions}
-
-
-def _mondo_xref(disease_id: str) -> str:
-    """HPO file IDs (OMIM:123, ORPHA:456) -> the spelling MONDO uses in its cross-references."""
-    prefix, _, num = disease_id.partition(":")
-    return f"Orphanet:{num}" if prefix == "ORPHA" else disease_id
 
 
 def _curie(purl: str) -> str:

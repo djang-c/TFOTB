@@ -35,7 +35,9 @@ def categorize(comps: list[ChannelComparison], claims: dict[str, Claim]) -> Evid
         return EvidenceCategory.insufficient_coverage
     if any(c.contradicting_claim_ids for c in avail):
         return EvidenceCategory.conflicting_evidence
-    mech = [c for c in avail if c.channel_id in MECHANISM_CHANNELS]
+    # A mechanism channel counts only when it supports something: two diseases that both have gene
+    # claims but share no gene are not mechanism evidence, and must not demote a symptom-level lead.
+    mech = [c for c in avail if c.channel_id in MECHANISM_CHANNELS and (c.supporting_claim_ids or c.contradicting_claim_ids)]
     if not mech:
         if any(c.channel_id == "phenotype" for c in avail):
             return EvidenceCategory.symptom_level_lead

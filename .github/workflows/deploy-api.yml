@@ -6,7 +6,7 @@ name: deploy-api
 on:
   push:
     branches: [main]
-    paths: ["src/**", "data/fixtures/**", "deploy/**", "requirements.lock",
+    paths: ["src/**", "data/fixtures/**", "data/raw/CHECKSUMS.json", "scripts/fetch_for_deploy.py", "deploy/**", "requirements.lock",
             ".github/workflows/deploy-api.yml"]
   workflow_dispatch:
 
@@ -21,7 +21,8 @@ jobs:
         run: |
           mkdir space
           cp -r src space/src
-          mkdir -p space/data && cp -r data/fixtures space/data/fixtures
+          mkdir -p space/data/raw space/scripts && cp -r data/fixtures space/data/fixtures
+          cp data/raw/CHECKSUMS.json space/data/raw/ && cp scripts/fetch_for_deploy.py space/scripts/
           cp requirements.lock space/
           cp deploy/api.Dockerfile space/Dockerfile
           cp deploy/hf-space-README.md space/README.md

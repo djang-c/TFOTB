@@ -1,6 +1,6 @@
-# TFOTB API image for Hugging Face Spaces (Docker SDK). Read-only: serves the baked-in data;
+# The Flight of the Buffalo API image for Hugging Face Spaces (Docker SDK). Read-only: serves the baked-in data;
 # nothing written at runtime survives a restart. Built from the folder assembled by
-# .github/workflows/deploy-api.yml (src/, data/fixtures/, requirements.lock).
+# .github/workflows/deploy-api.yml (src/, data/fixtures/, data/raw/CHECKSUMS.json, scripts/fetch_for_deploy.py, requirements.lock).
 FROM python:3.12-slim
 
 # Spaces run the container as uid 1000.
@@ -15,6 +15,12 @@ RUN grep -viE '^(mujoco|glfw|PyOpenGL|ImageIO|imageio-ffmpeg|pytest|ruff|iniconf
 
 COPY --chown=user src ./src
 COPY --chown=user data/fixtures ./data/fixtures
+
+# Real-ontology search: fetch the pinned reference files from their publishers at build time and
+# verify them against the recorded SHA-256 (the build fails on any mismatch). ~190 MB.
+COPY --chown=user data/raw/CHECKSUMS.json ./data/raw/CHECKSUMS.json
+COPY --chown=user scripts/fetch_for_deploy.py ./scripts/fetch_for_deploy.py
+RUN python scripts/fetch_for_deploy.py && chown -R user data/raw
 
 USER user
 # PYTHONPATH (not pip install) keeps REPO_ROOT in atlas.api.settings pointing at this folder.

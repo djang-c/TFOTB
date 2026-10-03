@@ -3,6 +3,7 @@
 these once T03/T04/T09 land. Every response carries the `_synthetic` label.
 """
 
+import threading
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Any
@@ -28,8 +29,17 @@ def _demo(request: Request) -> dict[str, Any]:
     return _demo_cached(request.app.state.settings.fixtures_dir)
 
 
-@lru_cache(maxsize=2)
+_index_lock = threading.Lock()
+
+
 def _index_cached(raw_dir: Path) -> SearchIndex | None:
+    """Built once per process; the lock stops the startup warm-up and a first request building twice."""
+    with _index_lock:
+        return _build_index(raw_dir)
+
+
+@lru_cache(maxsize=2)
+def _build_index(raw_dir: Path) -> SearchIndex | None:
     if not (raw_dir / "mondo" / "mondo.json").exists():
         return None
     return SearchIndex.from_raw(raw_dir)
@@ -209,6 +219,10 @@ def entity(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/connections")
 def connections(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)
+    ix = _index(request)
+    if ix is not None and not entity_id.startswith("SYN:"):
+        out = ix.connections(entity_id)
+        return _wrap_real(results=out["results"], labels=out["labels"], coverage=out["coverage"])
     d = _demo(request)
     results = d["connections"].get(entity_id, [])
     cov_ids = {r["coverage_manifest_id"] for r in results}
@@ -238,6 +252,10 @@ def graph(request: Request, entity_id: str, max_nodes: int = 40) -> Any:
 @router.get("/entities/{entity_id}/gap")
 def gap(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)
+    ix = _index(request)
+    if ix is not None and not entity_id.startswith("SYN:"):
+        out = ix.connections(entity_id)
+        return _wrap_real(gap=out["gap"], coverage=out["coverage"] if out["gap"] else None)
     d = _demo(request)
     g = d["gaps"].get(entity_id)
     coverage = None
@@ -254,6 +272,11 @@ def entity_actions(request: Request, entity_id: str) -> Any:
 
 @router.get("/claims/{claim_id}")
 def claim(request: Request, claim_id: str) -> Any:
+    ix = _index(request)
+    real = ix.claim(claim_id) if ix is not None else None
+    if real is not None:
+        return _wrap_real(claim=real, subject_label=ix.r.label_of(real["subject_id"]),
+                          object_label=ix.r.label_of(real["object_id"]), lineage_siblings=[], contradicting_claims=[])
     d = _demo(request)
     c = next((c for c in d["claims"] if c["claim_id"] == claim_id), None)
     if c is None:
