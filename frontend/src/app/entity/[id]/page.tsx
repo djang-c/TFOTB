@@ -24,13 +24,18 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
   const [ent, conn, assets, gap, actions, graph, all, related] = data;
   const hasRelated = !!related && related.groups.length > 0;
   const e = ent.entity;
+  const synthetic = e.source_type === "synthetic_fixture";
+  // Real entries have no claims extracted from papers yet: one honest note instead of three empty sections.
+  const noEvidence = !synthetic && conn.results.length === 0 && assets.assets.length === 0 && !gap.gap && actions.cards.length === 0;
   const labels = Object.fromEntries(all.items.map((x: Entity) => [x.id, x.label]));
   const sections = [
-    ["summary", "Summary"],
+    ...(synthetic || ent.summary.length > 0 ? [["summary", "Summary"]] : []),
     ...(hasRelated ? [["related", "Connected in the source data"]] : []),
-    ["shares", "Who shares our characteristics?"],
-    ["existing", "What useful work already exists?"],
-    ["next", "What should we do next?"],
+    ...(noEvidence ? [["evidence", "Evidence from papers"]] : [
+      ["shares", "Who shares our characteristics?"],
+      ["existing", "What useful work already exists?"],
+      ["next", "What should we do next?"],
+    ]),
     ...(graph.nodes.length > 0 ? [["graph", "Graph"]] : []),
     ...(ent.claims.length > 0 ? [["sources", "Sources"]] : []),
   ];
@@ -49,15 +54,24 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
       </nav>
 
       <article className="min-w-0">
+        {synthetic && (
+          <p className="mb-5 flex items-start gap-3 rounded-md border border-rule bg-subtle px-4 py-2.5 text-sm">
+            <span aria-hidden className="tape mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full" />
+            <span><b className="font-semibold">Synthetic demo entry.</b>{" "}
+              <span className="text-muted">Placeholder names and quotes that show how the full journey works. No biological claim.</span></span>
+          </p>
+        )}
         <p className="text-sm capitalize text-muted">{e.type}</p>
         <h1 className="text-[34px] font-semibold leading-tight">{e.label}</h1>
         {e.synonyms.length > 0 && <p className="mt-1 text-muted">Also called {e.synonyms.join(", ")}</p>}
 
         <div className="lg:hidden"><Infobox e={e} ent={ent} coverage={conn.coverage ?? gap.coverage} /></div>
 
-        <Section id="summary" title="Summary">
-          <Summary sentences={ent.summary} attributes={e.attributes} />
-        </Section>
+        {(synthetic || ent.summary.length > 0) && (
+          <Section id="summary" title="Summary">
+            <Summary sentences={ent.summary} attributes={e.attributes} />
+          </Section>
+        )}
 
         {hasRelated && (
           <Section id="related" title="Connected in the source data">
@@ -68,37 +82,49 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
           </Section>
         )}
 
-        <Section id="shares" title="Who shares our characteristics?">
-          {conn.results.length === 0 ? (
-            <Empty>No connections are computed for this entry in the indexed evidence.</Empty>
-          ) : (
-            <ol className="divide-y divide-rule rounded-md border border-rule bg-white">
-              {conn.results.map((r) => <ConnectionRow key={r.candidate_id} r={r} label={labels[r.candidate_id] ?? r.candidate_id} />)}
-            </ol>
-          )}
-        </Section>
+        {noEvidence ? (
+          <Section id="evidence" title="Evidence from papers">
+            <Empty>
+              No claims have been extracted from papers for this entry yet, so there are no evidence-qualified
+              connections, reusable assets or next steps to show. What the public reference files record is
+              listed above. Missing is not the same as none: this entry has simply not been read.
+            </Empty>
+          </Section>
+        ) : (
+          <>
+          <Section id="shares" title="Who shares our characteristics?">
+            {conn.results.length === 0 ? (
+              <Empty>No connections are computed for this entry in the indexed evidence.</Empty>
+            ) : (
+              <ol className="divide-y divide-rule rounded-md border border-rule bg-white">
+                {conn.results.map((r) => <ConnectionRow key={r.candidate_id} r={r} label={labels[r.candidate_id] ?? r.candidate_id} />)}
+              </ol>
+            )}
+          </Section>
 
-        <Section id="existing" title="What useful work already exists?">
-          {assets.assets.length === 0 ? (
-            <Empty>No registries, studies or models are linked to this entry yet.</Empty>
-          ) : (
-            <>
-              <p className="mb-3 text-sm text-muted">Listed by practical fit (access, status, overlap), separately from the biology above.</p>
-              <div className="space-y-3">{assets.assets.map((a) => <AssetRow key={a.asset_id} a={a} />)}</div>
-            </>
-          )}
-        </Section>
+          <Section id="existing" title="What useful work already exists?">
+            {assets.assets.length === 0 ? (
+              <Empty>No registries, studies or models are linked to this entry yet.</Empty>
+            ) : (
+              <>
+                <p className="mb-3 text-sm text-muted">Listed by practical fit (access, status, overlap), separately from the biology above.</p>
+                <div className="space-y-3">{assets.assets.map((a) => <AssetRow key={a.asset_id} a={a} />)}</div>
+              </>
+            )}
+          </Section>
 
-        <Section id="next" title="What should we do next?">
-          {gap.gap && <GapCard gap={gap.gap} coverage={gap.coverage} />}
-          {actions.cards.length === 0 && !gap.gap && <Empty>No next step is drafted for this entry.</Empty>}
-          <div className="mt-3 space-y-4">
-            {actions.cards.map((c) => (
-              <ActionCardView key={c.card_id} card={c}
-                simulationHref={c.kind === "simulation_report" ? `/simulation/${enc("SIM:syn-pass")}` : undefined} />
-            ))}
-          </div>
-        </Section>
+          <Section id="next" title="What should we do next?">
+            {gap.gap && <GapCard gap={gap.gap} coverage={gap.coverage} />}
+            {actions.cards.length === 0 && !gap.gap && <Empty>No next step is drafted for this entry.</Empty>}
+            <div className="mt-3 space-y-4">
+              {actions.cards.map((c) => (
+                <ActionCardView key={c.card_id} card={c}
+                  simulationHref={c.kind === "simulation_report" ? `/simulation/${enc("SIM:syn-pass")}` : undefined} />
+              ))}
+            </div>
+          </Section>
+          </>
+        )}
 
         {graph.nodes.length > 0 && (
           <Section id="graph" title="Graph">

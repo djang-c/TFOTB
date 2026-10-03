@@ -219,6 +219,15 @@ export interface Related {
   groups: { kind: string; title: string; source: string; total: number; items: RelatedItem[] }[];
 }
 
+/** The real-ontology layer, present when the pinned files are loaded. */
+export interface RealMeta {
+  counts: Record<"disease" | "gene" | "phenotype", number>;
+  names: number;
+  sources: Record<string, string>;
+  seed: { id: string; label: string; type: EntityType; related: Record<string, number> }[];
+  seed_note: string;
+}
+
 /** A home-page entry point. The API derives these from the dataset; they are never hand-picked. */
 export type Featured = { id: string; label: string; type: EntityType } & (
   | { reason: "connections"; connections: number; assets: number }
@@ -229,7 +238,7 @@ export const api = {
   meta: () => get<{ dataset_version: string; as_of: string; schema_version: string;
     entities_by_type: Record<string, number>; claims: number;
     counts_by_review_state: Record<string, number>; counts_by_source_type: Record<string, number>;
-    featured?: Featured[]; simulations?: { run_id: string; label: string }[] }>("/meta"),
+    featured?: Featured[]; simulations?: { run_id: string; label: string }[]; real?: RealMeta | null }>("/meta"),
   search: (q: string) => get<{ results: SearchHit[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
   related: (id: string) => get<Related>(`/entities/${enc(id)}/related`),
   entities: () => get<{ items: Entity[] }>("/entities"),
