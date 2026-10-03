@@ -18,3 +18,4 @@ for builder agents. **Where they disagree with PLAN, PLAN wins**; proposed devia
 | 09 | [Phases (2 builders)](09-implementation-phases.md) | Timeline, cuts, agent prompts per T-task |
 | 10 | [Testing & verification](10-testing-and-verification.md) | T13 |
 | 11 | [Risks & open questions](11-risks-and-open-questions.md) | Risks, proposed decisions, open questions |
+| 12 | [Breadth layer](12-breadth-layer.md) | All-disease corpus + verified depth slice; ML channel rules; T25–T27 |

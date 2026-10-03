@@ -22,6 +22,10 @@ htmlcov/
 demo_outputs/
 *.mp4
 
+# Raw third-party data (hashes tracked in CHECKSUMS.json)
+data/raw/*
+!data/raw/CHECKSUMS.json
+
 # OS / editor
 .DS_Store
 .idea/

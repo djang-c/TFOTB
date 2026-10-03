@@ -14,12 +14,21 @@ Implements: PLAN "Goals", "Demo and submission", "The 10× hypothesis". Where th
 
 ## 2. Seed slice (T01, blocked on science review)
 
+> The seed slice is the **verified depth layer**, not the product's scope: the product also searches
+> every disease in the public bulk sources as unreviewed candidates — see [12 — Breadth layer](12-breadth-layer.md).
+
 Workload targets from PLAN: **6–10 diseases, 10–20 curated variant/transcript findings, 20–40
 claim-bearing source passages, 5–10 assets/organizations, 2 synthetic cases.**
 
-**Candidate cluster to audit first:** neuronal ceroid lipofuscinoses anchored on CLN7 disease (gene
-MFSD8; the Milasen n-of-1 ASO story), plus lysosomal neighbours (e.g. Niemann-Pick type C, CLN3,
-neuronopathic Gaucher). This is a *candidate*, not a verified choice — T01 must confirm it has:
+**Candidate cluster (re-anchored after the 2026-10-03 T01 audit, `data/manifests/cluster_audit.md`):**
+lysosomal / neuronal ceroid lipofuscinosis cluster anchored on **CLN3 disease and Niemann-Pick type C
+(NPC)** — the audit found a candidate shared-mechanism paper (eBioMedicine 2023, PMID 37245481) that
+also reports a difference (BMP) usable as the counterexample. CLN7 (gene MFSD8; Milasen n-of-1 ASO
+story) is the **stretch case**: its link to CLN3 is our own inference from two separate papers
+(hypothesis), and the Milasen/MFSD8 claims are UNVERIFIED (source pages did not open). Everything
+in the audit is `CANDIDATE` — a source was opened and a passage quoted — and **EXPERT REVIEW IS
+PENDING**; nothing is `reviewed`. The BMP direction and the paper's sample sizes are unconfirmed
+until a human reads the paper. T01 must still confirm the cluster has:
 
 | Required fixture case (PLAN) | What we'd look for in this cluster |
 |---|---|

@@ -1,4 +1,4 @@
-"""Runtime config from env / .env. Keys documented in .env.example (single source)."""
+"""Runtime config from env / .env. Keys documented in env.example (single source)."""
 
 from pathlib import Path
 
