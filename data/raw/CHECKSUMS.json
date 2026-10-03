@@ -1,0 +1,37 @@
+{
+  "hgnc/hgnc_complete_set.txt": {
+    "bytes": 16963116,
+    "note": "HGNC complete set (CC0), unversioned; date = retrieval date",
+    "retrieved": "2026-10-03",
+    "sha256": "2b4224ea847df2fc6982f5b2a52804c5d92fbb8810b134afb636f6029452dc03",
+    "url": "https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt"
+  },
+  "hpo/genes_to_disease.txt": {
+    "bytes": 1492039,
+    "note": "HPO gene-disease v2026-09-01",
+    "retrieved": "2026-10-03",
+    "sha256": "7937a1b92779dc8614e39ace623b443c7c71dd15e4de11d5e52b14e331ab5978",
+    "url": "https://github.com/obophenotype/human-phenotype-ontology/releases/download/v2026-09-01/genes_to_disease.txt"
+  },
+  "hpo/hp.json": {
+    "bytes": 21915519,
+    "note": "HPO v2026-09-01 (custom licence; see source_manifest.md)",
+    "retrieved": "2026-10-03",
+    "sha256": "a7b3a012e7b4007a35a7cf8da35f2373b54cc16907f80d13d62470d31f833501",
+    "url": "https://github.com/obophenotype/human-phenotype-ontology/releases/download/v2026-09-01/hp.json"
+  },
+  "hpo/phenotype.hpoa": {
+    "bytes": 35816037,
+    "note": "HPO annotations v2026-09-01",
+    "retrieved": "2026-10-03",
+    "sha256": "e89aa39c8f97bf5a52c5d160f9250a603681d630ade8ec2679d84ac5aece1f72",
+    "url": "https://github.com/obophenotype/human-phenotype-ontology/releases/download/v2026-09-01/phenotype.hpoa"
+  },
+  "mondo/mondo.json": {
+    "bytes": 107586061,
+    "note": "MONDO v2026-09-01 (CC BY 4.0)",
+    "retrieved": "2026-10-03",
+    "sha256": "ba19a3be2a384f21d2a09eaa726daedf6f06b9747ae011ab81d29fcd4dd8d3ee",
+    "url": "https://github.com/monarch-initiative/mondo/releases/download/v2026-09-01/mondo.json"
+  }
+}

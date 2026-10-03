@@ -42,6 +42,8 @@ T19 further omics, T18 clustering, T16 embeddings, T17 ASO/repurposing drafts �
 ahead of schedule. T15 synthetic-case UI → minimal (backend privacy already tested). Graph canvas →
 after the evidence drawer works.
 
+**Breadth layer (doc 12):** T25 broad ingestion → B (with T02/SQLite, ~3 pts, H8–11 before T12 mock-first work slips); T27 breadth UX → B inside T12; T26 graph-model channel + eval → A **only if ahead** (P1, cut first, ~4 pts). To keep totals even, T10 action cards move to A (templates over verified claims, after T09) → A ≈ 19, B ≈ 20 incl. T25/T27 (+1 pt); hours above are approximate and need re-plotting once T01 resolves.
+
 **Never cut:** claim provenance, curated DNA/RNA evidence, channel-level explanation, a useful
 action card, negative cases, honest gap card, the bounded simulation report/replay.
 

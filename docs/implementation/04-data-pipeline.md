@@ -27,6 +27,13 @@ both — this satisfies "README covering … how to reproduce the dataset".
 
 OMIM bulk files require a license — we use OMIM IDs only as xrefs via MONDO, not OMIM content.
 
+Licence conditions found by the 2026-10-03 audit (advisory, not legal advice; HUMAN REVIEW PENDING; see
+`data/manifests/source_manifest.md`): **HPO** has a custom licence (show version + date, acknowledge,
+do not alter content; commercial-use terms unresolved — highest-priority open item, the phenotype
+channel depends on it); **ChEMBL** is CC BY-SA 3.0 (share-alike on anything redistributed);
+**Orphadata** needs attribution and an AI-use disclaimer; **ClinicalTrials.gov, Monarch KG and PrimeKG**
+terms were not readable (UNVERIFIED) — do not ingest them until checked.
+
 ## 2. Pipeline steps (`scripts/pipeline/`)
 
 Each step: reads previous outputs, writes to `data/interim/NN_*.json`, is idempotent, logs counts.
@@ -34,11 +41,11 @@ Each step: reads previous outputs, writes to `data/interim/NN_*.json`, is idempo
 | # | Script | Output | Notes |
 |---|---|---|---|
 | 01 | `fetch_ontologies.py` | MONDO/HPO files in `data/raw/` w/ checksums | Version + date recorded in manifest |
-| 02 | `select_cluster.py` | disease set | Input: `data/curated/seed_diseases.yaml` (MONDO IDs + reason). Expands via MONDO subclass + gene neighbours, capped |
+| 02 | `select_cluster.py` | disease set | `--scope cluster` (default): `data/curated/seed_diseases.yaml` (MONDO IDs + reason), expanded via MONDO subclass + gene neighbours, capped. `--scope all`: every disease in the bulk sources (breadth layer, doc 12; ClinVar/PubMed/CT.gov steps stay query-capped) |
 | 03 | `fetch_genes.py` | gene nodes, gene→disease edges | HPO `genes_to_disease` + HGNC |
 | 04 | `fetch_variants.py` | variant nodes | ClinVar P/LP per gene (cap ~10 each) + demo variants |
 | 05 | `fetch_pathways.py` | mechanism nodes, gene→mechanism edges | Reactome lowest-level; map to plain labels via curated table |
-| 06 | `fetch_literature.py` | publication nodes, investigator candidates | Per disease: key reviews + ≤10 top-relevance papers; store abstracts |
+| 06 | `fetch_literature.py` | publication nodes, investigator candidates | Per disease: key reviews + ≤10 top-relevance papers. **Abstracts are cached locally in git-ignored `data/raw/` for extraction only; the public repo and snapshot carry IDs (PMID/DOI), verified short quotes with their PMID, and our derived fields, not abstract or full text** (PubMed/PMC terms, `data/manifests/source_manifest.md`) |
 | 07 | `fetch_studies.py` | study nodes, study edges | CT.gov by condition synonyms; RePORTER by gene/disease terms |
 | 08 | `extract_claims.py` | candidate `Claim`s from permitted passages | **LLM bounded extraction** (doc 06), recorded to `llm_cache/`; quote verification; ID resolution via T03 resolver; failures → quarantine |
 | 09 | `merge_curated.py` | org/asset/counterexample nodes+edges | From `data/curated/*.yaml`; every entry requires `source_url` |
