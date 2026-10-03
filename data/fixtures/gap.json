@@ -1,0 +1,13 @@
+{
+  "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
+  "kind": "no_supported_route",
+  "statement": "No supported route found in the indexed evidence as of 2026-10-03 (SYNTHETIC).",
+  "coverage_manifest_id": "COV:syn-1",
+  "known_claim_ids": [
+    "CLAIM:syn-1"
+  ],
+  "missing_information": [
+    "real indexed sources (T01/T04)"
+  ],
+  "reviewer_role": "domain expert"
+}

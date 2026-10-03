@@ -1,0 +1,23 @@
+{
+  "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
+  "claim": {
+    "claim_id": "CLAIM:syn-1",
+    "schema_version": "0.1",
+    "subject_id": "MONDO:0000001",
+    "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+    "object_id": "HP:0000001",
+    "source_url": "https://example.invalid/synthetic",
+    "source_span": "synthetic span",
+    "source_type": "synthetic_fixture",
+    "status": "reported_observation",
+    "review_state": "unreviewed",
+    "lineage_id": "STUDY:syn-1",
+    "context": {},
+    "contradicts": [],
+    "score": null,
+    "score_definition": null,
+    "contributor": null
+  },
+  "lineage_siblings": [],
+  "contradicting_claims": []
+}

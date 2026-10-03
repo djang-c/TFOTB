@@ -14,16 +14,16 @@ Evidence-qualified rare-disease connection engine + a bounded MuJoCo workflow si
 Real biological data, ID resolution, ingestion, extraction service, API, UI. LLM provider: Anthropic for now, OpenAI adapter at deployment; only an offline-tested provider-agnostic client scaffold exists (`src/atlas/llm/`), and the Anthropic adapter has never been run. Task T01 (choose and verify a disease cluster) needs a human expert first. All test fixtures are **SYNTHETIC**. The simulation is an engineering artifact: biology and hardware are `not_modeled`, and a pass never raises biological confidence.
 
 ## Quick start (any machine)
-Requires Python >= 3.10 (verified with 3.12 on macOS). From a fresh clone:
+Toolchain is pinned in `mise.toml` (Python 3.12.15, Node 22.23.3, pnpm 12.8.2). Install [mise](https://mise.jdx.dev) once (`curl https://mise.run | sh`), then from a fresh clone:
 
 ```bash
 git clone https://github.com/djang-c/TFOTB.git && cd TFOTB
-python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.lock   # pinned; includes pytest and ruff
-python -m pytest -q                # expect: 41 passed
-ruff check .                       # expect: All checks passed!
+mise trust && make setup   # tools, .venv from requirements.lock, frontend deps, .env from .env.example
+make test                  # pytest (atlas + robotics + API)
+make lint                  # ruff + eslint + tsc
+make dev                   # API :8000 (stub fixtures, SYNTHETIC) + web :3000
 ```
+Other targets: `make typegen` (OpenAPI -> `frontend/src/lib/api-types.ts`), `make e2e` (Playwright; first run `cd frontend && pnpm exec playwright install chromium`), `make lock` (re-freeze Python deps). Activate the venv for the commands below: `source .venv/bin/activate`.
 
 Run the simulation (writes to `demo_outputs/`, which is git-ignored and created on first run):
 ```bash

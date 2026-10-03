@@ -1,0 +1,9 @@
+{
+  "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
+  "run_id": "SIM:syn-1",
+  "verdict": "pass",
+  "scope": "engineering artifact; biology and hardware not_modeled",
+  "replay_url": null,
+  "replay_label": "recorded replay (not live)",
+  "report": {}
+}

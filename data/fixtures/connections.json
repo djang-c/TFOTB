@@ -1,0 +1,12 @@
+{
+  "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
+  "results": [],
+  "coverage": {
+    "manifest_id": "COV:syn-1",
+    "query": "SYNTHETIC disease A",
+    "source_versions": {},
+    "retrieved_at": "2026-10-03T00:00:00Z",
+    "filters": {},
+    "per_source": []
+  }
+}

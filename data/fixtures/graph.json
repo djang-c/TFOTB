@@ -1,0 +1,25 @@
+{
+  "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
+  "nodes": [
+    {
+      "id": "MONDO:0000001",
+      "label": "SYNTHETIC disease A",
+      "type": "disease"
+    },
+    {
+      "id": "HP:0000001",
+      "label": "SYNTHETIC phenotype 1",
+      "type": "phenotype"
+    }
+  ],
+  "edges": [
+    {
+      "source": "MONDO:0000001",
+      "target": "HP:0000001",
+      "predicate": "ASSOCIATED_WITH_PHENOTYPE",
+      "claim_id": "CLAIM:syn-1"
+    }
+  ],
+  "truncated": false,
+  "omitted": 0
+}
