@@ -3,8 +3,10 @@
 from fastapi.testclient import TestClient
 
 from atlas.api import create_app
+from atlas.api.settings import Settings
 
-client = TestClient(create_app())
+# Fixture mode: the real-ontology search is tested in test_search.py without the large files.
+client = TestClient(create_app(Settings(real_search=False)))
 
 E = "/api/entities/SYN:disease-a"
 GETS = [

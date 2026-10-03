@@ -10,6 +10,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Body, HTTPException, Request
 
 from atlas.api.fixtures import load_fixture
+from atlas.search import SearchIndex
 
 router = APIRouter()
 
@@ -27,14 +28,60 @@ def _demo(request: Request) -> dict[str, Any]:
     return _demo_cached(request.app.state.settings.fixtures_dir)
 
 
+@lru_cache(maxsize=2)
+def _index_cached(raw_dir: Path) -> SearchIndex | None:
+    if not (raw_dir / "mondo" / "mondo.json").exists():
+        return None
+    return SearchIndex.from_raw(raw_dir)
+
+
+def _index(request: Request) -> SearchIndex | None:
+    """The real-ontology search index, or None (files not fetched, or disabled in settings)."""
+    s = request.app.state.settings
+    return _index_cached(s.raw_dir) if s.real_search else None
+
+
+def _real_entity(request: Request, entity_id: str) -> dict[str, Any] | None:
+    ix = _index(request)
+    e = ix.entity(entity_id) if ix and not entity_id.startswith("SYN:") else None
+    if e is None:
+        return None
+    versions = e.pop("version")
+    source = next((v for k, v in versions.items() if k.startswith(_SOURCE_FILE[e["type"]])), None)
+    return {
+        **e, "identity_status": "resolved", "candidate_ids": [], "xrefs": [], "attributes": {},
+        "source_url": _SOURCE_URL[e["type"]].format(id=entity_id), "source_version": source,
+        "retrieved_at": "", "review_state": "unreviewed",
+    }
+
+
+_SOURCE_FILE = {"disease": "mondo/", "gene": "hgnc/", "phenotype": "hpo/hp.json"}
+_SOURCE_URL = {
+    "disease": "https://monarchinitiative.org/{id}",
+    "gene": "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/{id}",
+    "phenotype": "https://hpo.jax.org/browse/term/{id}",
+}
+
+
+REAL_NOTE = ("Not synthetic: read from pinned public files (MONDO, HGNC, HPO; versions in data/raw/CHECKSUMS.json). "
+             "Unreviewed by any expert.")
+
+
 def _wrap(request: Request, **payload: Any) -> dict[str, Any]:
     return {"_synthetic": _demo(request)["_synthetic"], **payload}
+
+
+def _wrap_real(**payload: Any) -> dict[str, Any]:
+    return {"_synthetic": REAL_NOTE, **payload}
 
 
 def _entity(request: Request, entity_id: str) -> dict[str, Any]:
     for e in _demo(request)["entities"]:
         if e["id"] == entity_id:
             return e
+    real = _real_entity(request, entity_id)
+    if real is not None:
+        return real
     raise HTTPException(status_code=404, detail=f"no indexed entity {entity_id}")
 
 
@@ -90,7 +137,24 @@ def search(request: Request, q: str = "") -> Any:
         if not t or t in e["label"].lower() or t in e["id"].lower()
         or any(t in s.lower() for s in e["synonyms"])
     ]
-    return _wrap(request, query=q, results=hits[:20], ambiguous=len(hits) > 1 and bool(t))
+    for h in hits:
+        h.update(match="demo", source_type="synthetic_fixture")
+    ix = _index(request)
+    if ix is None or not t:
+        return _wrap(request, query=q, results=hits[:20], ambiguous=len(hits) > 1 and bool(t))
+    real = ix.search(q)
+    return _wrap(request, query=q, results=(real["results"] + hits)[:20],
+                 ambiguous=real["ambiguous"] or (not real["results"] and len(hits) > 1))
+
+
+@router.get("/entities/{entity_id}/related")
+def related(request: Request, entity_id: str) -> Any:
+    """What connects to an entry in the pinned ontologies and HPO files (empty for demo entries)."""
+    _entity(request, entity_id)
+    ix = _index(request)
+    if ix is None or entity_id.startswith("SYN:"):
+        return _wrap(request, entity_id=entity_id, groups=[])
+    return _wrap_real(**ix.related(entity_id))
 
 
 @router.get("/entities")
@@ -103,6 +167,8 @@ def entities(request: Request, type: str | None = None) -> Any:
 def entity(request: Request, entity_id: str) -> Any:
     e = _entity(request, entity_id)
     d = _demo(request)
+    if e.get("source_type") == "database_record" and not entity_id.startswith("SYN:"):
+        return _wrap_real(entity=e, claims=[], claim_counts_by_predicate={}, reviewed_claims=0, summary=[])
     claims = [c for c in d["claims"] if entity_id in (c["subject_id"], c["object_id"])]
     by_pred: dict[str, int] = {}
     for c in claims:
@@ -139,7 +205,7 @@ def collaborators(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/graph")
 def graph(request: Request, entity_id: str, max_nodes: int = 40) -> Any:
     _entity(request, entity_id)
-    g = _demo(request)["graphs"][entity_id]
+    g = _demo(request)["graphs"].get(entity_id, {"nodes": [], "edges": [], "truncated": False, "omitted": 0})
     return _wrap(request, **g)
 
 
