@@ -36,3 +36,15 @@ def test_missing_channel_must_have_null_score():
             score=0.0,
             score_definition="x",
         )
+
+
+def test_new_predicates_are_accepted(mk):
+    assert mk(pred="GENE_ASSOCIATED_WITH_DISEASE", subject_id="HGNC:2074", object_id="MONDO:0000001")
+    assert mk(pred="ACCUMULATES_IN_COMPARTMENT", object_id="GO:0005764")
+
+
+@pytest.mark.parametrize("pred", ["SHARES_PATHOGENIC_PATHWAY_WITH", "CANDIDATE_THERAPY_FOR"])
+def test_hypothesis_only_predicates_cannot_be_observations(mk, pred):
+    with pytest.raises(ValidationError):
+        mk(pred=pred, status="reported_observation")
+    assert mk(pred=pred, status="inference").status.value == "inference"

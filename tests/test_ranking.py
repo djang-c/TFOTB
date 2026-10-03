@@ -77,3 +77,9 @@ def test_simulation_success_never_counts_as_biological_support(mk):
     sim = mk("CLAIM:sim", pred="SIMULATES_WORKFLOW_FOR", review_state="reviewed")
     comps = [comp("molecular_mechanisms", supporting_claim_ids=["CLAIM:sim"])]
     assert categorize(comps, {"CLAIM:sim": sim}) is EvidenceCategory.hypothesis_only
+
+
+def test_hypothesis_only_claim_never_makes_a_reviewed_mechanistic_lead(mk):
+    c1 = mk(pred="SHARES_PATHOGENIC_PATHWAY_WITH", status="inference", review_state="reviewed")
+    comps = [comp("molecular_mechanisms", supporting_claim_ids=[c1.claim_id])]
+    assert categorize(comps, {c1.claim_id: c1}) is EvidenceCategory.hypothesis_only

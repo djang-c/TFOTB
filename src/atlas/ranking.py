@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from atlas.schemas import (
+    HYPOTHESIS_ONLY_PREDICATES,
     Availability,
     ChannelComparison,
     Claim,
@@ -44,7 +45,9 @@ def categorize(comps: list[ChannelComparison], claims: dict[str, Claim]) -> Evid
         sup = [
             claims[i]
             for i in c.supporting_claim_ids
-            if i in claims and claims[i].predicate != "SIMULATES_WORKFLOW_FOR"
+            if i in claims
+            and claims[i].predicate != "SIMULATES_WORKFLOW_FOR"
+            and claims[i].predicate not in HYPOTHESIS_ONLY_PREDICATES
         ]
         if sup and all(
             s.review_state is ReviewState.reviewed and s.status is ClaimStatus.reported_observation

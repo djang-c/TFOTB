@@ -121,3 +121,13 @@ def test_replay_serves_recording_then_refuses_to_call_network(tmp_path, resolver
     other = SourceText("PMID:0000002", "https://example.org/other", TEXT + " More text.")
     with pytest.raises(LLMError, match="replay cache miss"):
         extract_claims(replay, other, resolver)
+
+
+def test_hypothesis_only_predicate_is_recorded_as_inference_not_observation(resolver):
+    s = stmt(
+        subject_mention="synthetic disease alpha", object_mention="synthetic disease beta", object_type="disease",
+        predicate="SHARES_PATHOGENIC_PATHWAY_WITH",
+        quote="synthetic disease alpha may share pathways with synthetic disease beta",
+    )
+    rep = extract_claims(FakeClient([s]), SRC, resolver)
+    assert len(rep.claims) == 1 and rep.claims[0].status.value == "inference"

@@ -34,3 +34,8 @@
 ## 2026-10-03 - Seed ID for CLN3 disease
 - Owner decision: use MONDO:0008767 ("neuronal ceroid lipofuscinosis 3") for CLN3 disease in the seed cluster. Niemann-Pick type C = MONDO:0018982. Genes: CLN3 = HGNC:2074, NPC1 = HGNC:7897, NPC2 = HGNC:14537.
 - UNREVIEWED by any expert. MONDO:0979346 (also named "juvenile CLN3 disease") was not opened and may be a valid alternative; MONDO:0019262 is a broader juvenile NCL group and is not used.
+
+## 2026-10-03 - New claim predicates (owner approved; shared schema change, tell Builder B)
+- Added GENE_ASSOCIATED_WITH_DISEASE (gene -> disease, association only), ACCUMULATES_IN_COMPARTMENT (disease -> GO component), SHARES_PATHOGENIC_PATHWAY_WITH (disease -> disease) and CANDIDATE_THERAPY_FOR (CHEBI -> disease).
+- The last two are HYPOTHESIS_ONLY: a Claim must be status `inference` or `computational_prediction`, never `reported_observation`, and they can never support a "reviewed mechanistic lead". Extraction records them as `inference`. "Possible cures" therefore always appear as hypotheses, never findings or recommendations.
+- No new strong-causal predicate was added: cause -> effect stays on the existing PERTURBS_MECHANISM / AFFECTS_TRANSCRIPT, which already require an observation. The phrase "the other relationships I asked for" was read as gene/DNA -> disease, phenotype -> disease (existing ASSOCIATED_WITH_PHENOTYPE) and therapy -> disease; owner to correct if more were meant.
