@@ -62,4 +62,4 @@ Conventions
 11. No data-use agreement is required for the sources marked GO or GO-with-conditions as far as pages opened show; OMIM commercial and Orphadata Products need agreements and are out of scope.
 
 ## Candidate cluster audit
-Cluster chosen: _unselected_.  Positive route (cited): _none_.  Counterexample (cited): _none_.  Asset + public contact (verified): _none_.  Expert reviewer: _unassigned_.
+Cluster chosen: **CLN3 disease + Niemann-Pick type C (NPC)**, GO decision by the project owner 2026-10-03 (provisional: the owner has not yet confirmed the headline paper's quotes; switch if it fails review).  Positive route (cited): CANDIDATE, see `cluster_audit.md` (PMID 37245481).  Counterexample (cited): CANDIDATE, BMP difference in the same paper, direction unconfirmed.  Asset + public contact: CANDIDATE, see `cluster_audit.md`.  Expert reviewer: _unassigned_ - nothing is `reviewed`.
