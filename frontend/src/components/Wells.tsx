@@ -16,7 +16,7 @@ const CHANNEL_NAME: Record<string, string> = {
 /** One assay-plate well per evidence channel. Missing is hatched and says "no data", never 0. */
 export function Wells({ comparisons, labels = {} }: { comparisons: ChannelComparison[]; labels?: Record<string, string> }) {
   return (
-    <div className={`grid gap-1.5 ${comparisons.length <= 2 ? "grid-cols-2" : comparisons.length === 3 ? "grid-cols-3" : "grid-cols-4"}`} role="list" aria-label="Evidence by channel">
+    <div className={`grid gap-1.5 ${comparisons.length === 1 ? "max-w-[220px] grid-cols-1" : comparisons.length === 2 ? "grid-cols-2" : comparisons.length === 3 ? "grid-cols-3" : "grid-cols-4"}`} role="list" aria-label="Evidence by channel">
       {comparisons.map((c) => (
         <Well key={c.channel_id} c={c} labels={labels} />
       ))}

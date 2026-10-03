@@ -29,6 +29,12 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
   const synthetic = e.source_type === "synthetic_fixture";
   // Real entries have no claims extracted from papers yet: one honest note instead of three empty sections.
   const noEvidence = !synthetic && conn.results.length === 0 && assets.assets.length === 0 && !gap.gap && actions.cards.length === 0;
+  // A channel with no data for every candidate says nothing per row: state it once instead.
+  // (Demo entries keep one well per channel, as docs/implementation/08 specifies.)
+  const silent = conn.results.length > 0 && !synthetic
+    ? [...new Set(conn.results.flatMap((r) => r.comparisons.map((c) => c.channel_id)))]
+        .filter((ch) => conn.results.every((r) => r.comparisons.find((c) => c.channel_id === ch)?.availability === "missing"))
+    : [];
   const labels: Record<string, string> = { ...Object.fromEntries(all.items.map((x: Entity) => [x.id, x.label])), ...conn.labels };
   const sections = [
     ...(synthetic || ent.summary.length > 0 ? [["summary", "Summary"]] : []),
@@ -45,7 +51,7 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
   return (
     <main className="mx-auto grid max-w-[1240px] gap-8 px-4 py-8 lg:grid-cols-[180px_minmax(0,1fr)_300px]">
       <nav aria-label="Contents" className="hidden lg:block">
-        <div className="sticky top-6 text-sm">
+        <div className="sticky top-20 text-sm">
           <h2 className="mb-2 font-semibold">Contents</h2>
           <ol className="space-y-1.5">
             {sections.map(([anchor, title]) => (
@@ -63,11 +69,24 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
               <span className="text-muted">Placeholder names and quotes that show how the full journey works. No biological claim.</span></span>
           </p>
         )}
-        <p className="text-sm capitalize text-muted">{e.type}</p>
-        <h1 className="text-[34px] font-semibold leading-tight">{e.label}</h1>
-        {e.synonyms.length > 0 && <p className="mt-1 text-muted">Also called {e.synonyms.join(", ")}</p>}
+        <p className="flex flex-wrap items-baseline gap-x-3 text-sm text-muted">
+          <span className="capitalize">{e.type}</span>
+          <span className="font-mono text-xs">{e.id}</span>
+        </p>
+        <h1 className="mt-0.5 text-[32px] leading-tight font-semibold tracking-tight">{e.label}</h1>
+        {e.synonyms.length > 0 && <Synonyms names={e.synonyms} />}
 
-        <div className="lg:hidden"><Infobox e={e} ent={ent} coverage={conn.coverage ?? gap.coverage} /></div>
+        {!noEvidence && (
+          <AtAGlance
+            shares={conn.results}
+            assets={assets.total ?? assets.assets.length}
+            openAssets={assets.assets.filter((a) => a.ranking_reasons.includes("open")).length}
+            assetsFailed={assets.coverage?.status === "failed"}
+            gap={gap.gap}
+            actions={actions.cards.length}
+          />
+        )}
+
 
         {(synthetic || ent.summary.length > 0) && (
           <Section id="summary" title="Summary">
@@ -98,9 +117,20 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
             {conn.results.length === 0 ? (
               <Empty>No connections are computed for this entry in the indexed evidence.</Empty>
             ) : (
-              <ol className="divide-y divide-rule rounded-md border border-rule bg-white">
-                {conn.results.map((r) => <ConnectionRow key={r.candidate_id} r={r} label={labels[r.candidate_id] ?? r.candidate_id} labels={labels} />)}
-              </ol>
+              <>
+              {silent.length > 0 && (
+                <p className="mb-3 text-sm text-muted">
+                  {silent.map((c) => CHANNEL_LABEL[c] ?? c).join(", ")}: no data recorded for this entry in the indexed files, so
+                  {silent.length === 1 ? " that channel is" : " those channels are"} left out below. Missing is not the same as no match.
+                </p>
+              )}
+              <Reveal items={conn.results} first={5} noun="connections"
+                render={(rs) => (
+                  <ol className="divide-y divide-rule rounded-lg border border-rule">
+                    {rs.map((r) => <ConnectionRow key={r.candidate_id} r={{ ...r, comparisons: r.comparisons.filter((c) => !silent.includes(c.channel_id)) }} label={labels[r.candidate_id] ?? r.candidate_id} labels={labels} />)}
+                  </ol>
+                )} />
+              </>
             )}
           </Section>
 
@@ -111,7 +141,8 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
             ) : (
               <>
                 <p className="mb-3 text-sm text-muted">Listed by practical fit (open first, then most recently updated), separately from the biology above.</p>
-                <div className="space-y-3">{assets.assets.map((a) => <AssetRow key={a.asset_id} a={a} />)}</div>
+                <Reveal items={assets.assets} first={4} noun="studies and resources"
+                  render={(xs) => <div className="divide-y divide-rule rounded-lg border border-rule">{xs.map((a) => <AssetRow key={a.asset_id} a={a} />)}</div>} />
                 {assets.attribution && (
                   <p className="mt-3 text-xs text-muted">
                     Source: {assets.attribution}. Each record&apos;s last-update date on ClinicalTrials.gov is shown with it.
@@ -154,19 +185,25 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
             ))}
           </ol>
         </Section>}
+        <div className="mt-12 lg:hidden"><Infobox e={e} ent={ent} coverage={conn.coverage ?? gap.coverage} /></div>
       </article>
 
       <div className="hidden lg:block">
-        <div className="sticky top-6"><Infobox e={e} ent={ent} coverage={conn.coverage ?? gap.coverage} /></div>
+        <div className="sticky top-20"><Infobox e={e} ent={ent} coverage={conn.coverage ?? gap.coverage} /></div>
       </div>
     </main>
   );
 }
 
+const CHANNEL_LABEL: Record<string, string> = {
+  phenotype: "Symptoms", dna: "DNA", rna: "RNA", mechanism: "Mechanism",
+  dna_variants: "Shared gene", rna_effects: "RNA", molecular_mechanisms: "Mechanism", experimental_findings: "Experiments",
+};
+
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="mt-10 scroll-mt-6">
-      <h2 className="mb-3 border-b border-rule pb-1 text-2xl font-semibold">{title}</h2>
+    <section id={id} className="mt-12 scroll-mt-20">
+      <h2 className="mb-3 text-xl font-semibold tracking-tight">{title}</h2>
       {children}
     </section>
   );
@@ -195,9 +232,9 @@ function Summary({ sentences, attributes }: { sentences: { text: string; claim_i
 
 function ConnectionRow({ r, label, labels }: { r: ConnectionResult; label: string; labels: Record<string, string> }) {
   return (
-    <li className="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+    <li className="grid gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div>
-        <Link href={`/entity/${enc(r.candidate_id)}`} className="ref text-lg font-semibold">{label}</Link>
+        <Link href={`/entity/${enc(r.candidate_id)}`} className="font-semibold hover:text-link hover:underline hover:underline-offset-2">{label}</Link>
         <div className="mt-1"><CategoryPill category={r.category} /></div>
         {r.compatibility_flags.map((f) => (
           <p key={f} className={`mt-2 text-sm ${f.startsWith("Opposite") || f.startsWith("symptoms") ? "font-medium text-ev-conflict" : "text-muted"}`}>
@@ -225,26 +262,97 @@ function SearchedLine({ c, shown, total }: { c: SourceCoverage; shown: number; t
 }
 
 function AssetRow({ a }: { a: AssetResult }) {
+  const open = a.ranking_reasons.includes("open");
+  const updated = a.ranking_reasons.find((r) => r.startsWith("last updated"));
   return (
-    <div className="rounded-md border border-rule bg-white px-4 py-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-semibold">{a.label}</h3>
-        <span className="text-xs text-muted">{a.asset_kind.replaceAll("_", " ")}</span>
-      </div>
-      <dl className="mt-2 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[130px_1fr]">
+    <details className="group px-4 py-3 [&_summary::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer list-none">
+        <span className="flex items-start justify-between gap-3">
+          <span className="font-medium group-open:text-ink">{a.label}</span>
+          {a.status && (
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${open ? "bg-ev-reviewed/10 text-ev-reviewed" : "bg-subtle text-muted"}`}>
+              {a.status}
+            </span>
+          )}
+        </span>
+        <span className="mt-0.5 block text-xs text-muted">
+          {[a.asset_kind.replaceAll("_", " "), a.reuse_limits[0], updated].filter(Boolean).join(" · ")}
+          <span className="ml-2 text-link group-open:hidden">Details</span>
+        </span>
+      </summary>
+      <dl className="mt-3 grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[120px_1fr]">
         {a.status && (<><dt className="text-muted">Status</dt><dd>{a.status} <span className="text-muted">(checked {a.status_checked_at})</span></dd></>)}
         {a.access_conditions && (<><dt className="text-muted">Access</dt><dd>{a.access_conditions}</dd></>)}
         <dt className="text-muted">Why it fits</dt>
-        <dd>{a.ranking_reasons.join(", ") || "not stated"} {a.relevance_claim_ids.map((c) => <ClaimRef key={c} id={c} />)}</dd>
-        <dt className="text-muted">Differences</dt>
-        <dd><ul className="list-disc pl-4">{a.reuse_limits.map((l) => <li key={l}>{l}</li>)}</ul></dd>
+        <dd>{a.ranking_reasons.filter((r) => r !== "open").join(", ") || "not stated"} {a.relevance_claim_ids.map((c) => <ClaimRef key={c} id={c} />)}</dd>
+        {a.reuse_limits.length > 0 && (<><dt className="text-muted">Differences</dt>
+          <dd><ul className="list-disc pl-4">{a.reuse_limits.map((l) => <li key={l}>{l}</li>)}</ul></dd></>)}
         {a.needs_expert_review.length > 0 && (<><dt className="text-muted">Needs review</dt><dd>{a.needs_expert_review.join("; ")}</dd></>)}
-        {a.contact && (<><dt className="text-muted">Contact</dt><dd><a className="ref" href={a.contact.url} target="_blank" rel="noreferrer">{a.contact.label}</a></dd></>)}
+        {a.contact && (<><dt className="text-muted">Record</dt><dd><a className="ref" href={a.contact.url} target="_blank" rel="noreferrer">{a.contact.label}</a></dd></>)}
       </dl>
-    </div>
+    </details>
   );
 }
 
+/** Shows the first few items; the rest sit behind one "Show all" disclosure. */
+function Reveal<T>({ items, first, noun, render }: { items: T[]; first: number; noun: string; render: (xs: T[]) => React.ReactNode }) {
+  if (items.length <= first + 1) return <>{render(items)}</>;
+  return (
+    <>
+      {render(items.slice(0, first))}
+      <details className="group mt-2 [&_summary::-webkit-details-marker]:hidden">
+        <summary className="cursor-pointer list-none py-1 text-sm text-link hover:underline group-open:hidden">
+          Show all {items.length} {noun}
+        </summary>
+        <div className="mt-2">{render(items.slice(first))}</div>
+      </details>
+    </>
+  );
+}
+
+function Synonyms({ names }: { names: string[] }) {
+  const shown = names.slice(0, 4);
+  return (
+    <p className="mt-1.5 text-sm text-muted">
+      Also called {shown.join(" · ")}
+      {names.length > shown.length && (
+        <details className="inline [&_summary::-webkit-details-marker]:hidden">
+          <summary className="ml-1 inline cursor-pointer list-none text-link hover:underline">+{names.length - shown.length} more</summary>
+          <span> · {names.slice(shown.length).join(" · ")}</span>
+        </details>
+      )}
+    </p>
+  );
+}
+
+/** Summary first: the three questions, answered in one line each, linking to the detail below. */
+function AtAGlance({ shares, assets, openAssets, assetsFailed, gap, actions }: {
+  shares: ConnectionResult[]; assets: number; openAssets: number; assetsFailed: boolean; gap: GapResult | null; actions: number;
+}) {
+  const byCat = shares.reduce<Record<string, number>>((m, r) => ({ ...m, [r.category]: (m[r.category] ?? 0) + 1 }), {});
+  const catLine = Object.entries(byCat).map(([c, n]) => `${n} ${c}`).join(" · ");
+  const tiles = [
+    { href: "#shares", q: "Who shares our characteristics?",
+      a: shares.length ? `${shares.length} related ${shares.length === 1 ? "disease" : "diseases"}` : "None computed", sub: catLine || "No connection in the indexed evidence" },
+    { href: "#existing", q: "What useful work already exists?",
+      a: assetsFailed ? "Source unavailable" : assets ? `${assets} ${assets === 1 ? "study or resource" : "studies and resources"}` : "None found",
+      sub: assetsFailed ? "Not the same as none" : assets ? `${openAssets} open now` : "Nothing lists this disease by name" },
+    { href: "#next", q: "What should we do next?",
+      a: actions ? `${actions} drafted ${actions === 1 ? "step" : "steps"}` : gap ? "An open question" : "Not drafted yet",
+      sub: gap ? (GAP_KIND[gap.kind] ?? gap.kind) : actions ? "Each needs review before use" : "Needs the evidence above to be reviewed" },
+  ];
+  return (
+    <div className="mt-6 grid gap-px overflow-hidden rounded-lg border border-rule bg-rule sm:grid-cols-3">
+      {tiles.map((t) => (
+        <a key={t.href} href={t.href} className="bg-sheet px-4 py-3 transition-colors hover:bg-subtle">
+          <span className="block text-xs text-muted">{t.q}</span>
+          <span className="mt-1 block font-semibold">{t.a}</span>
+          <span className="mt-0.5 block text-xs text-muted">{t.sub}</span>
+        </a>
+      ))}
+    </div>
+  );
+}
 
 function GapCard({ gap, coverage }: { gap: GapResult; coverage: CoverageManifest | null }) {
   return (
@@ -317,7 +425,7 @@ function Infobox({ e, ent, coverage }: { e: Entity; ent: Awaited<ReturnType<type
               <dd>
                 {coverage.per_channel.map((c) => (
                   <span key={c.channel_id} className="mr-2 whitespace-nowrap">
-                    {c.channel_id} {c.availability === "available" ? "✓" : "—"}
+                    {CHANNEL_LABEL[c.channel_id] ?? c.channel_id} {c.availability === "available" ? "✓" : "—"}
                   </span>
                 ))}
               </dd>
