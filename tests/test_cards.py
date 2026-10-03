@@ -5,7 +5,14 @@ from datetime import UTC, date, datetime
 import pytest
 from tests.conftest import make_claim
 
-from atlas.cards import CardError, asset_reuse, evidence_brief, gap_followup, outreach_note
+from atlas.cards import (
+    CardError,
+    asset_reuse,
+    evidence_brief,
+    gap_followup,
+    outreach_note,
+    simulation_report,
+)
 from atlas.channels.base import ChannelRegistry
 from atlas.channels.claims import build_claim_channels
 from atlas.connections import run_query
@@ -158,3 +165,80 @@ def test_brief_with_nothing_cited_never_mentions_reviewed_claims():
     # "confirm the reviewed claims", implying reviewed evidence that does not exist.
     card = evidence_brief(outcome(PublicStore()), {}, now=NOW)
     assert "reviewed claims" not in card.this_week and "no claim is cited" in card.this_week
+
+
+def test_brief_shows_readable_routes_with_footnotes_and_labels_hypothesis_only_ones():
+    store = shared_store()
+    store.add(make_claim("CLAIM:h", "SHARES_PATHOGENIC_PATHWAY_WITH", subject_id=Q, object_id=A, status="inference"))
+    card = evidence_brief(outcome(store), store.claims, label_of=lambda i: {"GO:0005764": "lysosome"}.get(i, ""), now=NOW)
+    routes = [x for x in card.body_markdown.splitlines() if "→" in x]
+    assert any("lysosome" in x and "hypothesis only" not in x and "[^c:CLAIM:q]" in x for x in routes)
+    assert any("**hypothesis only**" in x and "[^c:CLAIM:h]" in x for x in routes)
+
+
+def test_brief_says_when_no_route_exists_without_claiming_absence():
+    from atlas.channels.base import EvidenceChannel
+    from atlas.schemas import ChannelComparison
+
+    class Phen(EvidenceChannel):
+        channel_id, version = "phenotype", "1"
+
+        def retrieve_candidates(self, query_id, context):
+            return [A]
+
+        def compare(self, query_id, candidate_id, context):
+            return ChannelComparison(
+                channel_id="phenotype", channel_version="1", query_id=query_id, candidate_id=candidate_id,
+                availability="available", score=0.4, score_definition="test similarity",
+            )
+
+    reg = ChannelRegistry()
+    reg.register(Phen())
+    out = run_query(Q, reg, {}, dataset_version="t", per_source=[], now=NOW)
+    body = evidence_brief(out, {}, now=NOW).body_markdown
+    assert "none of up to 4 steps" in body and "not proof of absence" in body
+
+
+def _sim(**kw):
+    base = {
+        "run_id": "run-abc", "experiment_spec_hash": "a" * 64, "scene_hash": "b" * 64, "simulator_name": "mujoco",
+        "simulator_version": "3.14.0", "random_seed": 0, "review_state": "generic_fixture_unreviewed",
+        "overall": "pass", "scope_label": "Workflow simulation only; not wet-lab validated", "failures": [],
+        "checks": [
+            {"check_name": "joint_limits", "status": "pass", "reason": ""},
+            {"check_name": "biology", "status": "not_modeled", "reason": "not simulated"},
+            {"check_name": "physical_execution", "status": "not_modeled", "reason": "no hardware"},
+        ],
+    }
+    return {**base, **kw}
+
+
+def test_simulation_card_states_scope_hashes_and_that_biology_is_not_modelled():
+    card = simulation_report(_sim(), {}, now=NOW)
+    b = card.body_markdown
+    assert card.kind == "simulation_report" and "not wet-lab validated" in b and "a" * 64 in b
+    assert "does not show that any biological idea is right" in b and "not_modeled" in b
+    assert card.responsible_human == "lab-automation engineer (unassigned)" and card.claim_ids == ()
+
+
+def test_simulation_card_reports_failures_verbatim_and_asks_for_a_fix():
+    fail = [{"op_index": 2, "check": "modeled_collision", "reason": "unexpected contact ['a', 'b']"}]
+    card = simulation_report(_sim(overall="fail", failures=fail), {}, now=NOW)
+    assert "FAIL" in card.body_markdown and "unexpected contact ['a', 'b']" in card.body_markdown
+    assert "fix or reject" in card.this_week
+
+
+def test_simulation_card_refuses_a_report_that_does_not_mark_biology_not_modelled():
+    bad = _sim(checks=[{"check_name": "biology", "status": "pass", "reason": ""}])
+    with pytest.raises(CardError, match="not_modeled"):
+        simulation_report(bad, {}, now=NOW)
+    with pytest.raises(CardError, match="missing"):
+        simulation_report({"run_id": "x"}, {}, now=NOW)
+
+
+def test_simulation_card_cites_source_claims_only_if_they_are_stored():
+    store = shared_store()
+    card = simulation_report(_sim(), store.claims, source_claim_ids=("CLAIM:q",), now=NOW)
+    assert "[^c:CLAIM:q]" in card.body_markdown and card.claim_ids == ("CLAIM:q",)
+    with pytest.raises(CardError, match="not in the store"):
+        simulation_report(_sim(), store.claims, source_claim_ids=("CLAIM:nope",), now=NOW)

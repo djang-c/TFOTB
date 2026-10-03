@@ -240,3 +240,9 @@ def test_source_scoped_alias_overrides_the_plain_match_only_for_that_source(r, t
 def test_real_jncl_means_cln3_disease_only_in_the_paper_that_defines_it(real_extraction):
     assert real_extraction.resolve("JNCL", DISEASE).resolved_id == "MONDO:0019262"  # MONDO's own meaning
     assert real_extraction.resolve("JNCL", DISEASE, "PMID:37245481").resolved_id == "MONDO:0008767"
+
+
+def test_real_plural_late_endosomes_resolves_by_owner_alias_in_the_extraction_profile_only(real, real_extraction):
+    hit = real_extraction.resolve("late endosomes", "compartment")
+    assert hit.resolved_id == "GO:0005770" and "owner-approved alias" in hit.method
+    assert real_extraction.resolve("late endosome", "compartment").resolved_id == "GO:0005770"

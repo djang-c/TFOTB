@@ -5,7 +5,7 @@ checks that every footnote resolves to a cited claim, that a responsible human i
 dosing / eligibility language is present. Nothing here invents an asset, a contact or a claim:
 a card that needs one raises CardError instead.
 
-Not built (spec P0 but blocked): `simulation_report` (T20/T23). Not built (P1): variant_evidence,
+Not built (P1): variant_evidence,
 aso_checklist, repurposing_paths, phenopacket_example. Plain f-strings replace the spec's Jinja2
 (an unreviewed package); the output is the same Markdown.
 """
@@ -17,6 +17,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 
 from atlas.connections import REVIEWER_ROLE, QueryOutcome, RankedConnection
+from atlas.graph import find_paths
 from atlas.schemas import (
     ActionCard,
     AssetResult,
@@ -78,7 +79,7 @@ def evidence_brief(
         lines += ["No connected candidates were found by any channel in the indexed evidence.", ""]
     lines += _known_about_query(outcome.query_id, claims, label_of, cited)
     for i, rc in enumerate(shown, 1):
-        lines += _connection_section(i, rc, claims, label_of, cited)
+        lines += _connection_section(i, rc, claims, label_of, cited, outcome.query_id)
     lines += ["## What is missing", ""]
     missing = _missing_lines(outcome)
     lines += missing or ["- Nothing recorded as missing for the channels that ran."]
@@ -125,8 +126,23 @@ def _known_about_query(query_id: str, claims: dict[str, Claim], label_of: Label,
     return [*lines, ""]
 
 
+def _route_lines(claims: dict[str, Claim], a: str, b: str, label_of: Label, cited: list[str]) -> list[str]:
+    """Readable claim-graph routes between the query and a candidate (explanation, not a score)."""
+    out = find_paths(claims, a, b)
+    if not out.paths:
+        return ["", "Routes in stored claims: none of up to 4 steps (a gap in the indexed evidence, not proof of absence)."]
+    lines = ["", "Routes in stored claims (explanation only; each step is one or more claims):"]
+    for p in out.paths:
+        chain = " → ".join(_name(label_of, n) for n in p.nodes)
+        tag = "**hypothesis only**" if p.hypothesis_only else "observed or reported steps"
+        ids = list(p.claim_ids)
+        cited.extend(ids)
+        lines.append(f"- {chain} ({tag}) {_cite(ids)}")
+    return lines
+
+
 def _connection_section(
-    n: int, rc: RankedConnection, claims: dict[str, Claim], label_of: Label, cited: list[str]
+    n: int, rc: RankedConnection, claims: dict[str, Claim], label_of: Label, cited: list[str], query_id: str
 ) -> list[str]:
     r = rc.result
     lines = [f"## {n}. {_name(label_of, r.candidate_id)}", "", f"Evidence category: **{r.category.value}**"]
@@ -148,6 +164,7 @@ def _connection_section(
         if c.missing_fields:
             parts.append("missing: " + ", ".join(c.missing_fields))
         lines.append(f"- {c.channel_id}: " + " | ".join(parts))
+    lines += _route_lines(claims, query_id, r.candidate_id, label_of, cited)
     path = [i for i in r.path_claim_ids if i in claims]
     if path:
         lines += ["", "Supporting claims:"]
@@ -306,6 +323,92 @@ def outreach_note(
         contact=c,
         reuse_limits=asset.reuse_limits,
         limitations=("A draft only. The relevance is stated by unreviewed claims where marked.",),
+        generated_by="template",
+        created_at=now,
+    )
+
+
+_REPORT_KEYS = (
+    "run_id", "experiment_spec_hash", "scene_hash", "simulator_name", "simulator_version", "random_seed",
+    "review_state", "overall", "checks", "failures", "scope_label",
+)
+_ALWAYS_NOT_MODELED = ("biology", "physical_execution")
+SIM_REVIEWER = "lab-automation engineer (unassigned)"
+
+
+def simulation_report(
+    report: dict, claims: dict[str, Claim], *, source_claim_ids: tuple[str, ...] = (),
+    audience: str = "science", now: datetime | None = None,
+) -> ActionCard:
+    """Readable card for one recorded simulation run (an engineering check, never biological evidence).
+
+    The report is the dict `robotics/simulate.py` writes. The card restates it; it never reruns
+    anything, and it refuses a report that does not mark biology and physical execution `not_modeled`.
+    """
+    now = now or datetime.now(UTC)
+    missing = [k for k in _REPORT_KEYS if k not in report]
+    if missing:
+        raise CardError(f"simulation report is missing {missing}")
+    status = {c["check_name"]: c["status"] for c in report["checks"]}
+    wrong = [n for n in _ALWAYS_NOT_MODELED if status.get(n) != "not_modeled"]
+    if wrong:
+        raise CardError(f"report does not mark {wrong} as not_modeled; refusing to present it")
+    absent = [i for i in source_claim_ids if i not in claims]
+    if absent:
+        raise CardError(f"source claims not in the store: {absent}")
+    lines = [
+        f"# Simulation report: run `{report['run_id']}`",
+        "",
+        f"> {report['scope_label']}",
+        "",
+        (
+            "This is an engineering check of a proposed liquid-handling workflow in a simplified model. It is "
+            "not an experiment result. It does not show that any biological idea is right and it does not "
+            "raise any similarity, claim or ranking."
+        ),
+        "",
+        f"- Overall: **{str(report['overall']).upper()}**",
+        f"- Specification hash: `{report['experiment_spec_hash']}`; scene hash: `{report['scene_hash']}`",
+        f"- Simulator: {report['simulator_name']} {report['simulator_version']}; seed {report['random_seed']}",
+        f"- Review state of the specification: {report['review_state']}",
+        "",
+        "## Checks",
+        "",
+        "| check | status | reason |",
+        "|---|---|---|",
+    ]
+    lines += [f"| {c['check_name']} | {c['status']} | {c.get('reason', '')} |" for c in report["checks"]]
+    lines += ["", "## Failures", ""]
+    lines += [
+        f"- operation {f['op_index']}: **{f['check']}**: {f['reason']}" for f in report["failures"]
+    ] or ["- none recorded"]
+    if source_claim_ids:
+        lines += ["", "## Claims the specification traces to (unreviewed unless marked)", ""]
+        lines += [_claim_line(claims[i], lambda _id: "") for i in source_claim_ids]
+    lines += [
+        "",
+        (
+            "Not modelled: biological outcomes (`biology`) and real-world execution (`physical_execution`: "
+            "no hardware, calibration or real-liquid validation)."
+        ),
+    ]
+    failed = report["overall"] != "pass"
+    return ActionCard(
+        card_id=_card_id("simulation_report", str(report["run_id"]), audience),
+        kind="simulation_report",
+        audience=audience,  # type: ignore[arg-type]
+        this_week=(
+            "Have a lab-automation engineer read the failed checks and fix or reject the specification."
+            if failed
+            else "Have a lab-automation engineer and the protocol author review the specification before any real use."
+        ),
+        responsible_human=SIM_REVIEWER,
+        body_markdown="\n".join(lines),
+        claim_ids=tuple(source_claim_ids),
+        limitations=(
+            "Simplified kinematic model; no liquid dynamics, calibration or hardware validation.",
+            "A pass is not evidence for any biological claim; a fail is reported, never clipped or hidden.",
+        ),
         generated_by="template",
         created_at=now,
     )

@@ -33,6 +33,12 @@
       "mention": "NPC disease",
       "id": "MONDO:0018982",
       "note": "seed cluster"
+    },
+    {
+      "type": "compartment",
+      "mention": "late endosomes",
+      "id": "GO:0005770",
+      "note": "plural of the exact GO label 'late endosome'; the model wrote the plural on PMID:37245481 in two runs"
     }
   ]
 }
