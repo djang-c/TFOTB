@@ -70,7 +70,8 @@ class Resolver:
         self._index: dict[str, dict[str, list[tuple[str, str, int]]]] = {t: {} for t in _ALL_TYPES}
         self._xrefs: dict[str, set[str]] = {}
         self._tokens: dict[str, dict[str, set[str]]] = {t: {} for t in _ALL_TYPES}  # token -> norm names
-        self._aliases: dict[tuple[str, str], tuple[str, str]] = {}  # (type, normalized) -> (id, note)
+        # (type, normalized) -> [(id, note, source_ids)]; empty source_ids = a general cluster alias
+        self._aliases: dict[tuple[str, str], list[tuple[str, str, frozenset[str]]]] = {}
 
     # ---- building ----
     def add(self, entity_type: str, entity_id: str, label: str, names: list[tuple[str, int]], xrefs: list[str] = ()):
@@ -118,12 +119,15 @@ class Resolver:
 
     def load_aliases(self, path: Path) -> int:
         """Owner-approved aliases (data/aliases.json). Each must point at an ID that exists in the
-        pinned files, and applies ONLY when the plain name match would not resolve."""
+        pinned files. A general alias applies only when the plain name match does not resolve. An
+        alias with "sources" applies only to those sources and OVERRIDES the plain match there
+        (the paper itself defines the term, e.g. JNCL = juvenile CLN3 disease)."""
         count = 0
         for a in json.loads(Path(path).read_text())["aliases"]:
             if a["id"] not in self._labels[a["type"]]:
                 raise ValueError(f"alias {a['mention']!r} -> {a['id']} is not in the pinned {a['type']} file")
-            self._aliases[(a["type"], normalize(a["mention"]))] = (a["id"], a["note"])
+            entry = (a["id"], a["note"], frozenset(a.get("sources", ())))
+            self._aliases.setdefault((a["type"], normalize(a["mention"])), []).append(entry)
             count += 1
         return count
 
@@ -165,7 +169,7 @@ class Resolver:
         return r
 
     # ---- resolving ----
-    def resolve(self, mention: str, entity_type: str) -> Resolution:
+    def resolve(self, mention: str, entity_type: str, source_id: str | None = None) -> Resolution:
         if entity_type not in _ALL_TYPES:
             raise ValueError(f"unknown entity_type {entity_type!r}")
         mention = mention.strip()
@@ -174,7 +178,7 @@ class Resolver:
         if ":" in mention and re.fullmatch(r"[A-Za-z]+:\S+", mention):
             return self._resolve_curie(mention, entity_type)
 
-        plain = self._resolve_name(mention, entity_type)
+        plain = self._resolve_name(mention, entity_type, source_id)
         if plain.status == "resolved":
             return plain
         # "Niemann-Pick Type C (NPC) disease": the text outside the brackets is the name and the
@@ -182,7 +186,7 @@ class Resolver:
         # resolve are the bracketed parts tried, and then they must agree on one entity.
         pieces = _bracket_pieces(mention)
         if pieces:
-            outer = self._resolve_name(pieces[0], entity_type)
+            outer = self._resolve_name(pieces[0], entity_type, source_id)
             if outer.status == "resolved":
                 return Resolution(
                     mention, entity_type, "resolved", outer.resolved_id,
@@ -190,7 +194,7 @@ class Resolver:
                 )
             hits = {}
             for piece in pieces[1:]:
-                r = self._resolve_name(piece, entity_type)
+                r = self._resolve_name(piece, entity_type, source_id)
                 if r.status == "resolved" and r.resolved_id:
                     hits[r.resolved_id] = (piece, r)
             if len(hits) == 1:
@@ -207,20 +211,28 @@ class Resolver:
                 )
         return plain if plain.status != "unresolved" else self._from_fuzzy(mention, entity_type)
 
-    def _resolve_name(self, mention: str, entity_type: str) -> Resolution:
-        """Exact name match, then an owner-approved alias if the exact match did not resolve."""
-        entries = self._index[entity_type].get(normalize(mention), [])
+    def _resolve_name(self, mention: str, entity_type: str, source_id: str | None = None) -> Resolution:
+        """Source-scoped alias (overrides), else exact name match, else a general alias."""
+        norm = normalize(mention)
+        aliases = self._aliases.get((entity_type, norm), [])
+        scoped = [(i, n) for i, n, srcs in aliases if source_id and source_id in srcs]
+        if scoped:
+            return self._alias_result(mention, entity_type, *scoped[0], scope=f"source {source_id}")
+        entries = self._index[entity_type].get(norm, [])
         res = self._from_exact(mention, entity_type, entries) if entries else Resolution(
             mention, entity_type, "unresolved", None, "no exact match"
         )
-        alias = self._aliases.get((entity_type, normalize(mention)))
-        if res.status != "resolved" and alias:
-            rid, note = alias
-            return Resolution(
-                mention, entity_type, "resolved", rid, f"owner-approved alias ({note})",
-                [self._candidate(entity_type, rid, mention, TIER_EXACT)],
-            )
+        general = [(i, n) for i, n, srcs in aliases if not srcs]
+        if res.status != "resolved" and general:
+            return self._alias_result(mention, entity_type, *general[0])
         return res
+
+    def _alias_result(self, mention: str, entity_type: str, rid: str, note: str, scope: str = "") -> Resolution:
+        where = f"; scoped to {scope}" if scope else ""
+        return Resolution(
+            mention, entity_type, "resolved", rid, f"owner-approved alias ({note}{where})",
+            [self._candidate(entity_type, rid, mention, TIER_EXACT)],
+        )
 
     def ids_for_xref(self, xref: str) -> set[str]:
         return set(self._xrefs.get(xref.strip().casefold(), ()))

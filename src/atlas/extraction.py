@@ -134,7 +134,7 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
     haystack = _squash(source.text)
     seen: set[str] = set()
     for s in result.parsed.statements:  # type: ignore[attr-defined]
-        reject = _reject_reason(s, haystack, resolver)
+        reject = _reject_reason(s, haystack, resolver, source.source_id)
         if isinstance(reject, str):
             report.quarantined.append({"statement": s.model_dump(), "reason": reject})
             continue
@@ -175,7 +175,7 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
     return report
 
 
-def _reject_reason(s: ExtractedStatement, haystack: str, resolver: Resolver) -> str | tuple[str, str, str | None]:
+def _reject_reason(s: ExtractedStatement, haystack: str, resolver: Resolver, source_id: str | None = None) -> str | tuple[str, str, str | None]:
     if _squash(s.quote) not in haystack:
         return "quote not found verbatim in source text"
     if s.predicate == NONE_FITS:
@@ -189,13 +189,13 @@ def _reject_reason(s: ExtractedStatement, haystack: str, resolver: Resolver) -> 
         return f"{s.predicate} needs a substance (the chemical that accumulates)"
     ids = []
     for mention, kind in ((s.subject_mention, s.subject_type), (s.object_mention, s.object_type)):
-        res = resolver.resolve(mention, kind)
+        res = resolver.resolve(mention, kind, source_id)
         if res.status != "resolved" or res.resolved_id is None:
             return f"{kind} mention {mention!r} is {res.status}: {res.method}"
         ids.append(res.resolved_id)
     substance = None
     if s.predicate in NEEDS_SUBSTANCE:
-        res = resolver.resolve(s.substance_mention or "", "chemical")
+        res = resolver.resolve(s.substance_mention or "", "chemical", source_id)
         if res.status != "resolved" or res.resolved_id is None:
             return f"chemical mention {s.substance_mention!r} is {res.status}: {res.method}"
         substance = res.resolved_id

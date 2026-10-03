@@ -220,3 +220,23 @@ def test_real_go_and_chebi_resolve_the_seed_paper_terms(real_extraction):
     assert real.resolve("lysosome", CHEMICAL).status != "resolved"
     assert real.resolve("Niemann-Pick Type C (NPC) disease", DISEASE).resolved_id == "MONDO:0018982"
     assert real.resolve("juvenile CLN3 disease (JNCL)", DISEASE).resolved_id == "MONDO:0008767"
+
+
+def test_source_scoped_alias_overrides_the_plain_match_only_for_that_source(r, tmp_path):
+    # Regression from the first v2 live run: a paper's own definition of "SDA" must win in that paper,
+    # while the ontology's unique synonym still applies everywhere else.
+    f = tmp_path / "aliases.json"
+    f.write_text(json.dumps({"aliases": [
+        {"type": "disease", "mention": "SDA", "id": "MONDO:0000002", "sources": ["PMID:1"], "note": "defined by the paper"},
+    ]}))
+    r.load_aliases(f)
+    assert r.resolve("SDA", DISEASE).resolved_id == "MONDO:0000001"  # no source: ontology synonym
+    assert r.resolve("SDA", DISEASE, "PMID:2").resolved_id == "MONDO:0000001"  # other source: unchanged
+    scoped = r.resolve("SDA", DISEASE, "PMID:1")
+    assert scoped.resolved_id == "MONDO:0000002" and "scoped to source PMID:1" in scoped.method
+
+
+@pytest.mark.skipif(not (RAW / "go" / "go-basic.json").exists(), reason="GO/ChEBI not downloaded")
+def test_real_jncl_means_cln3_disease_only_in_the_paper_that_defines_it(real_extraction):
+    assert real_extraction.resolve("JNCL", DISEASE).resolved_id == "MONDO:0019262"  # MONDO's own meaning
+    assert real_extraction.resolve("JNCL", DISEASE, "PMID:37245481").resolved_id == "MONDO:0008767"

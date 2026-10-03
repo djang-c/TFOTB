@@ -1,11 +1,20 @@
 {
-  "_readme": "Owner-approved aliases for the CLN3 + NPC seed cluster only. Each applies ONLY when the plain name match does not resolve (a unique exact label or synonym always wins). The IDs are the seed IDs the owner chose on 2026-10-03 (docs/DECISIONS.md); this table is NOT expert-reviewed. Delete an entry to restore the strict behaviour (ambiguous stays ambiguous).",
+  "_readme": "Owner-approved aliases for the CLN3 + NPC seed cluster only. Each applies ONLY when the plain name match does not resolve (a unique exact label or synonym always wins). The IDs are the seed IDs the owner chose on 2026-10-03 (docs/DECISIONS.md); this table is NOT expert-reviewed. Delete an entry to restore the strict behaviour (ambiguous stays ambiguous). An entry with 'sources' applies only to those sources and overrides the plain match there, because the paper itself defines the term.",
   "aliases": [
     {
       "type": "disease",
       "mention": "juvenile CLN3 disease",
       "id": "MONDO:0008767",
       "note": "seed cluster: MONDO also lists this name on MONDO:0979346; owner chose MONDO:0008767"
+    },
+    {
+      "type": "disease",
+      "mention": "JNCL",
+      "id": "MONDO:0008767",
+      "sources": [
+        "PMID:37245481"
+      ],
+      "note": "PMID:37245481 defines 'juvenile CLN3 disease (JNCL)'; MONDO lists JNCL as an exact synonym of the broader MONDO:0019262"
     },
     {
       "type": "disease",
