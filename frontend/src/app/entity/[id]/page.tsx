@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { api, ApiError, enc, type AssetResult, type ConnectionResult, type CoverageManifest, type Entity, type GapResult } from "@/lib/api";
+import { api, ApiError, enc, type SourceCoverage, type AssetResult, type ConnectionResult, type CoverageManifest, type Entity, type GapResult } from "@/lib/api";
 import { ActionCardView } from "@/components/ActionCardView";
 import { ApiDown } from "@/components/ApiDown";
 import { CategoryPill, GAP_KIND, ReviewBadge, SourceBadge, StatusMark } from "@/components/Badges";
@@ -105,12 +105,19 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
           </Section>
 
           <Section id="existing" title="What useful work already exists?">
+            {assets.coverage && <SearchedLine c={assets.coverage} shown={assets.assets.length} total={assets.total ?? null} />}
             {assets.assets.length === 0 ? (
               <Empty>No registries, studies or models are linked to this entry yet.</Empty>
             ) : (
               <>
-                <p className="mb-3 text-sm text-muted">Listed by practical fit (access, status, overlap), separately from the biology above.</p>
+                <p className="mb-3 text-sm text-muted">Listed by practical fit (open first, then most recently updated), separately from the biology above.</p>
                 <div className="space-y-3">{assets.assets.map((a) => <AssetRow key={a.asset_id} a={a} />)}</div>
+                {assets.attribution && (
+                  <p className="mt-3 text-xs text-muted">
+                    Source: {assets.attribution}. Each record&apos;s last-update date on ClinicalTrials.gov is shown with it.
+                    Our changes: {assets.modifications}
+                  </p>
+                )}
               </>
             )}
           </Section>
@@ -200,6 +207,20 @@ function ConnectionRow({ r, label, labels }: { r: ConnectionResult; label: strin
       </div>
       <Wells comparisons={r.comparisons} labels={labels} />
     </li>
+  );
+}
+
+/** What a source search returned and how much survived the name check, from recorded counts. */
+function SearchedLine({ c, shown, total }: { c: SourceCoverage; shown: number; total: number | null }) {
+  if (c.status !== "ok") {
+    return <p className="mb-3 text-sm text-ev-conflict">{c.source} could not be searched just now ({c.error ?? c.status}). This is not the same as no studies.</p>;
+  }
+  return (
+    <p className="mb-3 text-sm text-muted">
+      Searched {c.source} ({c.version}): {c.fetched} records returned, {c.screened} list this disease by name
+      {c.fetched !== null && c.screened !== null && c.fetched > c.screened && "; the rest name related or broader conditions"}
+      {total !== null && total > shown && `. Showing ${shown}`}.
+    </p>
   );
 }
 

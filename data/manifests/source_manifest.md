@@ -39,7 +39,7 @@ Conventions
 - Orphadata: GO-with-conditions (Orphadata Science only; CC BY 4.0 attribution, change notice, AI-use disclaimer; exclude Orphadata Products).
 - PubMed: GO-with-conditions for metadata/IDs; abstracts text redistribution UNVERIFIED (README terms not read). Do not commit abstract text.
 - PMC: GO-with-conditions (per-article licence, OA subset only, commercial-allowed CC types only, permitted retrieval services only; no full-text in repo by default).
-- ClinicalTrials.gov: UNVERIFIED (official terms unreadable; secondary says public domain). Treat as GO-with-conditions only after a human reads the terms page.
+- ClinicalTrials.gov: terms READ by the owner 2026-10-03 (page last updated 2023-01-31): free to all; attribute, keep current, show processing date, state modifications, no proprietary claims, no email marketing; third-party copyright possible on some content. GO with those conditions (see DECISIONS.md).
 - NIH RePORTER: GO-with-conditions (1 request/s, off-peak for large jobs; licence sentence not seen, confirm).
 - GO / QuickGO: GO-with-conditions (CC BY 4.0 for GO with release date + DOI; QuickGO annotations may inherit third-party terms; current release UNVERIFIED).
 - ChEMBL: GO-with-conditions (CC BY-SA 3.0 share-alike on any redistributed derivative; keep separate; optional source - skip if time-limited).

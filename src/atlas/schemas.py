@@ -321,6 +321,7 @@ class AssetKind(str, Enum):
     cell_model = "cell_model"
     biomarker = "biomarker"
     biobank = "biobank"
+    clinical_study = "clinical_study"  # added 2026-10-03: ClinicalTrials.gov records (DECISIONS.md)
 
 
 _VERSIONED_HGVS = re.compile(r"[A-Z]{2}_\d+\.\d+:[cgnpr]\..+")
