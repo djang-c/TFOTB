@@ -15,7 +15,7 @@ setup:
 	$(PY) -m pip install -q -r requirements.lock
 	$(PY) -m pip install -q --no-deps -e .
 	$(WEB) install --frozen-lockfile
-	test -f .env || cp .env.example .env
+	test -f .env || cp env.example .env
 
 dev:
 	$(MAKE) -j2 api web
