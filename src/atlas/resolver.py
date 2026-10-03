@@ -21,7 +21,9 @@ from atlas.schemas import validate_curie
 
 DISEASE, GENE, PHENOTYPE = "disease", "gene", "phenotype"
 COMPARTMENT, CHEMICAL = "compartment", "chemical"  # GO cellular component; ChEBI compound
-ENTITY_TYPES = (DISEASE, GENE, PHENOTYPE, COMPARTMENT, CHEMICAL)
+ENTITY_TYPES = (DISEASE, GENE, PHENOTYPE)  # the types public search and the API use
+EXTRACTION_ONLY_TYPES = (COMPARTMENT, CHEMICAL)  # loaded only for extraction (from_raw include_extraction_refs)
+_ALL_TYPES = ENTITY_TYPES + EXTRACTION_ONLY_TYPES
 _PREFIX_FOR_TYPE = {DISEASE: "MONDO", GENE: "HGNC", PHENOTYPE: "HP", COMPARTMENT: "GO", CHEMICAL: "CHEBI"}
 _ID_DIGITS = {"CHEBI": r"\d+"}  # every other prefix here uses 7 digits
 _BRACKETED = re.compile(r"\(([^()]*)\)")
@@ -64,10 +66,10 @@ class Resolution:
 class Resolver:
     def __init__(self, versions: dict[str, str] | None = None):
         self.versions = versions or {}
-        self._labels: dict[str, dict[str, str]] = {t: {} for t in ENTITY_TYPES}  # id -> label
-        self._index: dict[str, dict[str, list[tuple[str, str, int]]]] = {t: {} for t in ENTITY_TYPES}
+        self._labels: dict[str, dict[str, str]] = {t: {} for t in _ALL_TYPES}  # id -> label
+        self._index: dict[str, dict[str, list[tuple[str, str, int]]]] = {t: {} for t in _ALL_TYPES}
         self._xrefs: dict[str, set[str]] = {}
-        self._tokens: dict[str, dict[str, set[str]]] = {t: {} for t in ENTITY_TYPES}  # token -> norm names
+        self._tokens: dict[str, dict[str, set[str]]] = {t: {} for t in _ALL_TYPES}  # token -> norm names
         self._aliases: dict[tuple[str, str], tuple[str, str]] = {}  # (type, normalized) -> (id, note)
 
     # ---- building ----
@@ -141,7 +143,10 @@ class Resolver:
         return count
 
     @classmethod
-    def from_raw(cls, raw_dir: Path, include_hpo: bool = True) -> "Resolver":
+    def from_raw(cls, raw_dir: Path, include_hpo: bool = True, include_extraction_refs: bool = False) -> "Resolver":
+        """`include_extraction_refs` adds GO components, ChEBI chemicals and the owner alias table.
+        Off by default: public search and the API must see strict, un-aliased names and must not
+        pay to load ~200,000 chemical names."""
         raw = Path(raw_dir)
         checks = raw / "CHECKSUMS.json"
         versions = {k: v["note"] for k, v in json.loads(checks.read_text()).items()} if checks.exists() else {}
@@ -150,17 +155,18 @@ class Resolver:
         r.load_hgnc(raw / "hgnc" / "hgnc_complete_set.txt")
         if include_hpo:
             r.load_obo_json(raw / "hpo" / "hp.json", PHENOTYPE)
-        for rel, kind in (("go/go-basic.json", COMPARTMENT), ("chebi/chebi_lite.json", CHEMICAL)):
-            if (raw / rel).exists():  # optional: older checkouts have neither file
-                r.load_obo_json(raw / rel, kind)
-        aliases = raw.parent / "aliases.json"
-        if aliases.exists():
-            r.load_aliases(aliases)
+        if include_extraction_refs:
+            for rel, kind in (("go/go-basic.json", COMPARTMENT), ("chebi/chebi_lite.json", CHEMICAL)):
+                if (raw / rel).exists():  # optional: older checkouts have neither file
+                    r.load_obo_json(raw / rel, kind)
+            aliases = raw.parent / "aliases.json"
+            if aliases.exists():
+                r.load_aliases(aliases)
         return r
 
     # ---- resolving ----
     def resolve(self, mention: str, entity_type: str) -> Resolution:
-        if entity_type not in ENTITY_TYPES:
+        if entity_type not in _ALL_TYPES:
             raise ValueError(f"unknown entity_type {entity_type!r}")
         mention = mention.strip()
         if not mention:

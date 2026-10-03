@@ -118,7 +118,12 @@ def test_variants_need_assembly_and_versioned_transcript():
 
 @pytest.fixture(scope="module")
 def real() -> Resolver:
-    return Resolver.from_raw(RAW)
+    return Resolver.from_raw(RAW)  # the public profile: strict names, no aliases, no GO/ChEBI
+
+
+@pytest.fixture(scope="module")
+def real_extraction() -> Resolver:
+    return Resolver.from_raw(RAW, include_extraction_refs=True)
 
 
 @pytest.mark.skipif(not (RAW / "mondo" / "mondo.json").exists(), reason="pinned ontology files not downloaded")
@@ -132,21 +137,21 @@ class TestRealFiles:
         assert real.resolve("NPC1", GENE).resolved_id == "HGNC:7897"
         assert real.resolve("NPC2", GENE).resolved_id == "HGNC:14537"
 
-    def test_paper_disease_name_is_ambiguous_between_two_cln3_entries(self, real, monkeypatch):
+    def test_paper_disease_name_is_ambiguous_between_two_cln3_entries(self, real):
         # PMID 37245481 studies "juvenile CLN3 disease"; MONDO uses that string for two entries.
-        # Without the owner alias a human must pick; the resolver must not.
-        monkeypatch.setattr(real, "_aliases", {})
+        # In the public profile (no owner alias) a human must pick; the resolver must not.
         out = real.resolve("Juvenile CLN3 Disease", DISEASE)
         assert out.status == "ambiguous" and out.resolved_id is None
         assert {"MONDO:0008767", "MONDO:0979346"} <= {c.id for c in out.candidates}
 
-    def test_owner_aliases_settle_the_two_seed_names_and_say_so(self, real):
-        out = real.resolve("juvenile CLN3 disease", DISEASE)
+    def test_owner_aliases_apply_only_in_the_extraction_profile_and_say_so(self, real, real_extraction):
+        out = real_extraction.resolve("juvenile CLN3 disease", DISEASE)
         assert out.resolved_id == "MONDO:0008767" and "owner-approved alias" in out.method
-        assert real.resolve("NPC", DISEASE).resolved_id == "MONDO:0018982"
+        assert real_extraction.resolve("NPC", DISEASE).resolved_id == "MONDO:0018982"
+        assert real.resolve("NPC", DISEASE).status == "ambiguous"  # public search must still see the ambiguity
+        assert real.resolve("cholesterol", CHEMICAL).status == "unresolved"  # chemicals are not loaded publicly
 
-    def test_npc_abbreviation_is_ambiguous_not_a_guess(self, real, monkeypatch):
-        monkeypatch.setattr(real, "_aliases", {})
+    def test_npc_abbreviation_is_ambiguous_not_a_guess(self, real):
         out = real.resolve("NPC", DISEASE)
         assert out.status == "ambiguous" and out.resolved_id is None
         assert {"MONDO:0018982", "MONDO:0011775"} <= {c.id for c in out.candidates}
@@ -208,8 +213,8 @@ def test_alias_to_an_id_missing_from_the_ontology_is_rejected(r, tmp_path):
 
 
 @pytest.mark.skipif(not (RAW / "go" / "go-basic.json").exists(), reason="GO/ChEBI not downloaded")
-def test_real_go_and_chebi_resolve_the_seed_paper_terms():
-    real = Resolver.from_raw(RAW)
+def test_real_go_and_chebi_resolve_the_seed_paper_terms(real_extraction):
+    real = real_extraction
     assert real.resolve("lysosome", COMPARTMENT).resolved_id == "GO:0005764"
     assert real.resolve("cholesterol", CHEMICAL).resolved_id == "CHEBI:16113"
     assert real.resolve("lysosome", CHEMICAL).status != "resolved"

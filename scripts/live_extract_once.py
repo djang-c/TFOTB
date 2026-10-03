@@ -82,7 +82,7 @@ def main() -> int:
         return 2
 
     client = CachedClient(AnthropicClient(max_tokens=args.max_tokens), ROOT / "data" / "cache" / "llm", mode="record")
-    resolver = Resolver.from_raw(ROOT / "data" / "raw")
+    resolver = Resolver.from_raw(ROOT / "data" / "raw", include_extraction_refs=True)
     report = extract_claims(client, SourceText(source_id, url, text), resolver)
 
     print(f"status={report.status} prompt={PROMPT_VERSION} reason={report.reason!r}")
