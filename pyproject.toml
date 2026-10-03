@@ -3,10 +3,11 @@ name = "tfotb"
 version = "0.1.0"
 description = "Hackathon MVP: evidence-backed rare-disease connection explorer + bounded robotics workflow simulation. Research-support only; not a clinical system."
 requires-python = ">=3.10"
-dependencies = ["pydantic>=2", "pydantic-settings", "networkx", "fastapi", "uvicorn", "numpy", "mujoco", "jsonschema"]
+dependencies = ["pydantic>=2", "pydantic-settings", "networkx", "fastapi", "uvicorn", "numpy", "jsonschema"]
 
 [project.optional-dependencies]
 dev = ["pytest", "httpx", "ruff"]
+sim = ["mujoco"]  # replay rendering only; the API image does not need it (requirements.lock still pins it)
 llm = ["anthropic"]  # optional; not installed/pinned yet - needs review (see docs/DECISIONS.md)
 
 [tool.setuptools.packages.find]

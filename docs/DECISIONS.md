@@ -8,6 +8,13 @@
 - **Volume-ledger tolerance (2026-10-03): `LEDGER_TOL_UL = 1e-9` uL** in `robotics/compile_workflow.py` so valid splits like 0.1 + 0.2 from a 0.3 uL aspirate are not rejected by float round-off (QA finding F1). Real overdraws still fail. Verdicts of the five fixtures are unchanged.
 - **Uploads cannot overwrite claims (2026-10-03):** `ingest_lab_finding` quarantines a payload whose `claim_id` already exists (QA finding F2).
 - **`fastapi` and `networkx` stay declared though not yet imported:** docs/implementation/02 and 05 plan the API and graph code that will use them.
+- **T02 contracts, schema 0.2.0 (2026-10-03, Builder B):**
+  - Storage is stdlib `sqlite3` (STRICT tables: indexed columns + validated JSON body) plus a deterministic JSONL snapshot with per-file SHA-256 (`src/atlas/db.py`). No ORM. Postgres is the later path behind the same interface.
+  - `GapResult.kind` uses doc 03's enum (`no_supported_route`). PLAN's "supported research route" is a result category, not a gap.
+  - Internal ID prefixes: `ORG:` `INV:` `COV:` `CARD:` `RUN:` `SIM:`, and `UNRESOLVED:` for unresolved or ambiguous entities. External prefixes follow Bioregistry spelling.
+  - Action-card footnotes are `[^c:<claim_id>]` (doc 07).
+  - `Claim` gains optional PLAN provenance fields (`published_at`, `retrieved_at`, `extraction_method`, `source_reported_classification`, `review_notes`, `derived_from`) and the Biolink `knowledge_level` / `agent_type` enums (default `not_provided`). The KGX export is deferred.
+  - `mujoco` moved to the `sim` extra so the API image stays slim. `SimulationRun` and `ExperimentProposal` models are still to come (T20/T23).
 - **Seed cluster (2026-10-03, project owner): GO on CLN3 disease + Niemann-Pick type C (CLN7 as stretch).** Provisional: made on the agent-drafted audit (`data/manifests/cluster_audit.md`); the headline paper (PMID 37245481) has not yet been read by a human, and no expert reviewer is assigned. All its claims remain `CANDIDATE`/`unreviewed`; nothing may be labelled `reviewed`. Switch cluster if the paper's quotes, the BMP direction or the sample sizes fail a human check, or if no route + counterexample survives.
 
 ## 2026-10-03 - No expert reviewer; roles

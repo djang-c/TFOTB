@@ -4,12 +4,13 @@
   "kind": "evidence_brief",
   "this_week": "SYNTHETIC: review the cited claim with a domain expert.",
   "responsible_human": "domain expert",
-  "body_markdown": "SYNTHETIC brief [^CLAIM:syn-1]",
+  "body_markdown": "SYNTHETIC brief [^c:CLAIM:syn-1]",
   "claim_ids": [
     "CLAIM:syn-1"
   ],
   "limitations": [
     "synthetic fixture"
   ],
-  "generated_by": "template"
+  "generated_by": "template",
+  "audience": "science"
 }

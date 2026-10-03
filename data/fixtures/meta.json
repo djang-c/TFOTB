@@ -1,7 +1,7 @@
 {
   "_synthetic": "SYNTHETIC fixture for UI/contract development. Format-valid placeholder IDs; makes NO biological claim.",
   "dataset_version": "synthetic-0",
-  "schema_version": "0.1",
+  "schema_version": "0.2.0",
   "source_versions": {},
   "counts_by_source_type": {
     "synthetic_fixture": 1

@@ -8,7 +8,8 @@
     "xrefs": [],
     "attributes": {},
     "source_url": "https://example.invalid/synthetic",
-    "retrieved_at": "2026-10-03"
+    "retrieved_at": "2026-10-03",
+    "source_type": "synthetic_fixture"
   },
   "candidates": [],
   "ambiguous": false
