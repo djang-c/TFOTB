@@ -18,3 +18,8 @@
 ## 2026-10-03 - Ontology files downloaded (owner-approved)
 - MONDO v2026-09-01, HPO v2026-09-01 (hp.json, phenotype.hpoa, genes_to_disease.txt) and the HGNC complete set were fetched by `scripts/fetch_ontologies.py` into the git-ignored raw-data folder; SHA-256 is recorded in `CHECKSUMS.json` there.
 - HPO commercial-use terms remain UNRESOLVED; the owner approved the download for the hackathon demo only.
+
+## 2026-10-03 - T03 resolver rules (deviations from doc 06 draft)
+- Fuzzy matches never auto-resolve (doc 06 accepted a single hit at ratio >= 90). Reason: names like "type C1" vs "type C2" score high but are different diseases. Suggestions only; stdlib difflib used instead of rapidfuzz (not installed; no new package).
+- A unique label resolves; a synonym or abbreviation resolves only if no other entity uses it at any tier. Found on real MONDO: "NPC" is a synonym of Niemann-Pick type C, nasopharyngeal carcinoma and a susceptibility entry, so it stays ambiguous.
+- Real finding for T01: "Juvenile CLN3 Disease" (the paper's disease) matches two MONDO entries (MONDO:0008767 and MONDO:0979346), and MONDO:0019262 is a broader "juvenile NCL" group. The seed fixture needs a human choice of which ID to use; the resolver will not pick.

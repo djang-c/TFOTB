@@ -7,7 +7,7 @@ import hashlib
 import json
 import sys
 import urllib.request
-from datetime import date
+from datetime import UTC, datetime
 from pathlib import Path
 
 RAW = Path(__file__).resolve().parent.parent / "data" / "raw"
@@ -49,7 +49,7 @@ def main() -> int:
             "note": note,
             "sha256": sha256(dest),
             "bytes": dest.stat().st_size,
-            "retrieved": manifest.get(rel, {}).get("retrieved", date.today().isoformat()),
+            "retrieved": manifest.get(rel, {}).get("retrieved", datetime.now(UTC).date().isoformat()),
         }
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return 0
