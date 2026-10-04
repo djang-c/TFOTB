@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic import ValidationError
 
 from atlas.extraction import ExtractionReport
+from atlas.privacy import contains_private_marker
 from atlas.schemas import Claim, ClaimStatus, ReviewState, SourceType
 
 
@@ -73,6 +75,8 @@ class PublicStore:
         try:
             if not forced.get("contributor"):
                 raise ValueError("contributor attribution required")
+            if contains_private_marker(json.dumps(forced, ensure_ascii=False, default=str)):
+                raise ValueError("private or synthetic case data cannot enter the public store")
             claim = Claim(**forced)
             if claim.claim_id in self.claims:
                 raise ValueError(f"claim_id {claim.claim_id} already exists; uploads cannot overwrite")

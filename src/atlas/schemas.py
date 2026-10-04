@@ -199,6 +199,15 @@ class Claim(BaseModel):
     def _ids(cls, v: str) -> str:
         return validate_curie(v)
 
+    @field_validator("source_url")
+    @classmethod
+    def _safe_source_url(cls, v: str) -> str:
+        # A source is a web page or an internal pointer. `javascript:` / `data:` addresses must never be stored,
+        # because a source link is rendered to readers.
+        if not v.startswith(("https://", "http://", "atlas:", "local:")):
+            raise ValueError("source_url must start with https://, http://, atlas: or local:")
+        return v
+
     @field_validator("primary_knowledge_source")
     @classmethod
     def _infores(cls, v: str | None) -> str | None:

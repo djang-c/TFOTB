@@ -15,6 +15,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
+from atlas.privacy import contains_private_marker
 from atlas.schemas import (
     SCHEMA_VERSION,
     ActionCard,
@@ -90,7 +91,7 @@ class AtlasDB:
         table = _BY_MODEL[type(record)]
         _, pk, cols = TABLES[table]
         body = canonical(record)
-        if PRIVATE_MARKER in body:
+        if PRIVATE_MARKER in body or contains_private_marker(body):
             raise ValueError("private/synthetic case data cannot enter the public store")
         self._check_refs(record)
         dumped = record.model_dump(mode="json")

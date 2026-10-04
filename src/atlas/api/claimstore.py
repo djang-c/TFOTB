@@ -12,6 +12,7 @@ import sqlite3
 from functools import lru_cache
 from pathlib import Path
 
+from atlas.privacy import contains_private_marker
 from atlas.schemas import Claim, SourceCoverage, SourceStatus
 
 
@@ -24,6 +25,8 @@ def _load(path: str, mtime_ns: int) -> dict[str, Claim]:  # mtime is part of the
         conn.close()
     out: dict[str, Claim] = {}
     for (raw,) in rows:
+        if contains_private_marker(raw):
+            continue  # defence in depth: a private-case marker is never served from the public store
         try:
             c = Claim.model_validate_json(raw)
         except ValueError:  # one stale or invalid row must not take every endpoint down
