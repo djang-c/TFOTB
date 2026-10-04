@@ -316,6 +316,27 @@ export interface Cluster {
   }[];
 }
 
+export interface ClusterGroup {
+  kind: "mechanism" | "gene" | "direct" | "symptoms";
+  feature: string;
+  label: string;
+  members: {
+    id: string;
+    label: string;
+    category: EvidenceCategory;
+    claim_ids: string[];
+    score?: number;
+    shared?: string[];
+  }[];
+}
+
+export interface EntityClusters {
+  entity_id: string;
+  groups: ClusterGroup[];
+  mechanism_clusters: Cluster[];
+  note: string;
+}
+
 export interface Routes {
   source: string;
   target: string;
@@ -419,6 +440,7 @@ export const api = {
       claims: Claim[];
       summary: { text: string; claim_ids: string[]; source?: string }[];
       summary_method?: string;
+      labels?: Record<string, string>;
       papers?: TermPaper[];
       verification?: { by: string; reason: string };
     }>(`/entities/${enc(id)}`),
@@ -454,5 +476,6 @@ export const api = {
     request<{ total: number; items: { id: string; label: string; type: string }[] }>("/terms"),
   symptoms: (q: string) => request<SymptomSearch>(`/symptoms?q=${enc(q)}`),
   clusters: () => request<{ clusters: Cluster[]; total: number; note: string }>("/clusters"),
+  entityClusters: (id: string) => request<EntityClusters>(`/entities/${enc(id)}/clusters`),
   simulation: (id: string) => request<SimRun>(`/simulations/${enc(id)}`),
 };

@@ -68,23 +68,24 @@ try {
     .filter({ hasText: /ceroid/i })
     .waitFor({ timeout: 15000 });
   check("dossier: opens the disease", true);
-  await page.waitForSelector("canvas", { timeout: 15000 });
-  const box = await page.locator("canvas").first().boundingBox();
   check(
-    "dossier: the 3D graph canvas is present and tall enough to read",
-    !!box && box.height >= 400 && box.width >= 400,
-    box ? `${Math.round(box.width)}x${Math.round(box.height)}` : "no canvas",
+    "dossier: is a document, not a second graph (no 3D canvas)",
+    (await page.locator("canvas").count()) === 0,
   );
-  await page.waitForTimeout(2500); // let WebGL draw before the screenshot
+  check(
+    "dossier: links to the graph and to clusters",
+    (await page.getByRole("link", { name: /Show in graph/ }).count()) === 1 &&
+      (await page.getByRole("link", { name: /^Clusters$/ }).count()) >= 1,
+  );
+  await page.getByText("Related diseases").first().waitFor({ timeout: 20000 });
+  check("dossier: lists related diseases", true);
   await shot("02-dossier");
 
-  // 3. Related diseases (the first tab of a disease dossier): the core journey, CLN3 <-> Niemann-Pick type C, with an evidence label
-  check(
-    "dossier: a disease opens on its related diseases",
-    (await page.getByRole("tab", { name: /Related diseases/ }).getAttribute("aria-selected")) ===
-      "true",
-  );
-  const npc = page.locator("li", { hasText: /Niemann-Pick disease type C/ }).first();
+  // 3. The core journey, CLN3 <-> Niemann-Pick type C, with an evidence label
+  const npc = page
+    .locator("li", { hasText: /Niemann-Pick disease type C/ })
+    .filter({ has: page.getByRole("button", { name: /Show route/ }) })
+    .first();
   await npc.waitFor({ timeout: 20000 });
   check("connections: Niemann-Pick type C is listed", true);
   check(
@@ -100,7 +101,6 @@ try {
   await shot("03-connections-route");
 
   // 4. A claim tab -> evidence drawer: origin label, verbatim passage, DOI link
-  await page.getByRole("tab", { name: /Mechanistic leads/ }).click();
   const claimBtn = page.getByRole("button", { name: /PMID-/ }).first();
   await claimBtn.waitFor({ timeout: 15000 });
   await claimBtn.click();
@@ -141,18 +141,31 @@ try {
   );
   await shot("05-treatment-ideas");
 
-  // 5b. The explorer (graph with inspector): opens, offers the dossier, lists related diseases and a path explorer
+  // 5b. The graph page: big, one search box, a small panel about the selected node, no route to the dossier
   await page.goto(`${BASE}/explorer?id=MONDO:0008767`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: /Open dossier/ }).waitFor({ timeout: 15000 });
-  const insp = page.getByRole("complementary", { name: "Entity inspector" });
-  await insp.getByText("Related diseases").first().waitFor({ timeout: 20000 });
+  await page.waitForSelector("canvas", { timeout: 15000 });
+  const gbox = await page.locator("canvas").first().boundingBox();
   check(
-    "explorer: inspector lists related diseases with evidence labels",
-    /literature-supported lead|symptom-level lead/.test(await insp.innerText()),
+    "graph: fills the screen",
+    !!gbox && gbox.height >= 700 && gbox.width >= 900,
+    gbox ? `${Math.round(gbox.width)}x${Math.round(gbox.height)}` : "no canvas",
   );
-  check("explorer: has a path explorer", (await insp.getByText("Path explorer").count()) > 0);
+  check(
+    "graph: exactly one search box on the page",
+    (await page.getByRole("combobox").count()) === 1,
+  );
+  check(
+    "graph: no way into the dossier from the graph",
+    (await page.getByRole("link", { name: /dossier/i }).count()) === 0,
+  );
+  const nodePanel = page.getByRole("complementary", { name: "Selected node" });
+  await nodePanel.getByText("Links in this view").waitFor({ timeout: 15000 });
+  check(
+    "graph: the panel lists the selected node's links with their sources",
+    (await nodePanel.getByRole("button", { name: /Open the evidence/ }).count()) > 0,
+  );
   await page.waitForTimeout(2500);
-  await shot("05b-explorer");
+  await shot("05b-graph");
 
   // 6. Symptoms page: described symptoms, absence, candidates
   await page.goto(`${BASE}/symptoms`, { waitUntil: "networkidle" });
@@ -174,13 +187,28 @@ try {
   check("symptoms: 'no hearing loss' is understood as absent, not as a match", true);
   await shot("06-symptoms");
 
-  // 7. Clusters page
-  await page.goto(`${BASE}/clusters`, { waitUntil: "networkidle" });
+  // 7. Clusters follow the search: groups around the entry being looked into
+  await page.goto(`${BASE}/clusters?id=MONDO:0008767`, { waitUntil: "networkidle" });
+  await page.getByText(/Groups around/).waitFor({ timeout: 15000 });
   await page
-    .getByText(/lysosome/i)
+    .getByText(/Share an observed mechanism: lysosome \(cholesterol\)/)
     .first()
-    .waitFor({ timeout: 15000 });
-  check("clusters: shows the shared lysosome feature", true);
+    .waitFor({ timeout: 20000 });
+  check("clusters: groups around the searched disease, named by the shared feature", true);
+  check(
+    "clusters: Niemann-Pick type C is in its mechanism group",
+    /Niemann-Pick disease type C/.test(await text("article")),
+  );
+  await shot("07-clusters");
+  const sideGraph = await page
+    .getByRole("navigation", { name: "Pages" })
+    .getByRole("link", { name: "Graph" })
+    .getAttribute("href");
+  check(
+    "sidebar: the Graph page follows the entry being looked into",
+    /id=MONDO(%3A|:)0008767/.test(sideGraph ?? ""),
+    sideGraph ?? "",
+  );
 
   // 8. Simulation page: a pass and the intended failure, from the API
   await page.goto(`${BASE}/simulation`, { waitUntil: "networkidle" });

@@ -12,6 +12,7 @@ export const useEntity = (id: string) =>
     queryFn: () => api.entity(id),
     retry: noRetryOn404,
     staleTime: 60_000,
+    enabled: id.length > 0,
   });
 export const useGraph = (id: string, max = 40) =>
   useQuery({

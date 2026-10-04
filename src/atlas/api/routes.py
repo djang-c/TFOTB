@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from atlas.api import termviews
 from atlas.api.claimstore import load_claims, paper_coverage
 from atlas.api.fixtures import load_fixture
-from atlas.clusters import mechanism_clusters
+from atlas.clusters import GROUP_NOTE, groups_for, mechanism_clusters
 from atlas.collaborators import NOTE as COLLABORATOR_NOTE
 from atlas.collaborators import collaborators_for, load_papers
 from atlas.graph import find_paths, neighborhood
@@ -294,6 +294,23 @@ def clusters(request: Request) -> Any:
             "note": "An organisational view of the evidence, not a statement that diseases share a treatment or cause."}
 
 
+@router.get("/entities/{entity_id}/clusters")
+def entity_clusters(request: Request, entity_id: str) -> Any:
+    """The groups one entry belongs to (shared mechanism, shared gene, direct link, similar symptoms), from its
+    connections, plus the store-wide mechanism clusters that contain it. Organisation only, never a shared cause."""
+    _entity(request, entity_id)
+    label = _label_of(request)
+    ix = _index(request)
+    results = ix.connections(entity_id)["results"] if ix is not None and not entity_id.startswith("SYN:") and not termviews.is_term_id(entity_id) else []
+    every = mechanism_clusters(_stored_claims(request), label_of=label)
+    store = [c for c in every if any(d["id"] == entity_id for d in c["diseases"])]
+    # the claims behind each observed feature (evidential claims only), so a mechanism group never cites a hypothesis
+    feature_claims = {f["feature"]: f["claim_ids"] for c in every for f in c["shared_features"]}
+    return {"_synthetic": STORE_NOTE, "entity_id": entity_id,
+            "groups": groups_for(entity_id, results, label_of=label, feature_claims=feature_claims),
+            "mechanism_clusters": store, "note": GROUP_NOTE}
+
+
 @router.get("/symptoms")
 def symptoms(request: Request, q: str = "") -> Any:
     """Candidate diseases for symptoms described in words or HPO IDs; research hypotheses, never a diagnosis."""
@@ -336,7 +353,9 @@ def entity(request: Request, entity_id: str) -> Any:
         by_pred: dict[str, int] = {}
         for c in mine:
             by_pred[c.predicate] = by_pred.get(c.predicate, 0) + 1
-        return _wrap_real(entity=e, claims=[c.model_dump(mode="json") for c in mine], claim_counts_by_predicate=by_pred,
+        lab = _label_of(request)
+        names = {i: lab(i) for c in mine for i in (c.subject_id, c.object_id) if lab(i)}
+        return _wrap_real(entity=e, claims=[c.model_dump(mode="json") for c in mine], claim_counts_by_predicate=by_pred, labels=names,
                           reviewed_claims=sum(c.review_state.value == "reviewed" for c in mine),
                           summary=ix.summary(entity_id) if ix else [], summary_method="template")
     claims = [c for c in d["claims"] if entity_id in (c["subject_id"], c["object_id"])]

@@ -62,7 +62,7 @@ function SimulationPage() {
       </p>
     );
   return (
-    <div className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1440px] border-x border-border">
+    <div className="min-h-screen">
       <header className="flex flex-col gap-4 border-b border-border px-5 py-6 lg:flex-row lg:items-end lg:px-7">
         <div>
           <p className="section-kicker">
@@ -122,7 +122,7 @@ function SimulationPage() {
               />
             </div>
           </div>
-          <div>
+          <div className="xl:max-h-[calc(100vh-14rem)] xl:overflow-y-auto">
             {steps.map((item, index) => (
               <Button
                 key={item.id}

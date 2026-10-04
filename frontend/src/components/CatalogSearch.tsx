@@ -28,8 +28,10 @@ export function CatalogSearch({
   compact = false,
   className = "",
   autoFocus = false,
+  placeholder,
 }: {
   onSelect: (entity: Pick<SearchHit, "id" | "label" | "type">) => void;
+  placeholder?: string;
   compact?: boolean;
   unified?: boolean;
   className?: string;
@@ -139,13 +141,13 @@ export function CatalogSearch({
         ref={input}
         type="search"
         role="combobox"
-        aria-label={PLACEHOLDER}
+        aria-label={placeholder ?? PLACEHOLDER}
         aria-expanded={open && Boolean(query.trim())}
         aria-controls={showList ? listId : undefined}
         aria-activedescendant={showList && results[active] ? `${listId}-${active}` : undefined}
         autoFocus={autoFocus}
         value={query}
-        placeholder={compact ? "Search the catalog" : PLACEHOLDER}
+        placeholder={placeholder ?? (compact ? "Search the catalog" : PLACEHOLDER)}
         className={`w-full border border-border/70 bg-background placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/10 [&::-webkit-search-cancel-button]:hidden ${compact ? "h-9 rounded-md pr-12 pl-8 text-sm" : "h-14 rounded-xl pr-16 pl-12 text-base shadow-sm"}`}
         onChange={(event) => {
           setQuery(event.target.value);

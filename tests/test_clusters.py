@@ -70,3 +70,40 @@ def test_the_endpoint_serves_clusters_from_the_store(tmp_path):
     db.close()
     r = TestClient(create_app(Settings(real_search=False, store_path=path))).get("/api/clusters").json()
     assert r["total"] == 1 and "not a statement" in r["note"]
+
+
+def _cmp(channel, matches=(), score=None, refs=(), availability="available"):
+    return {"channel_id": channel, "availability": availability, "score": score, "context_matches": list(matches),
+            "supporting_claim_ids": list(refs), "contradicting_claim_ids": []}
+
+
+def test_groups_around_one_entry_name_the_shared_feature_and_keep_the_evidence():
+    from atlas.clusters import groups_for
+
+    names = {"GO:0005764": "lysosome", "CHEBI:16113": "cholesterol", "HGNC:2074": "CLN3", "MONDO:2": "B", "MONDO:3": "C"}
+    results = [
+        {"candidate_id": "MONDO:2", "category": "literature-supported lead", "comparisons": [
+            _cmp("molecular_mechanisms", ["shared GO:0005764[CHEBI:16113]", "directly links the two diseases: SHARES_PATHOGENIC_PATHWAY_WITH (CLAIM:x)"], refs=["CLAIM:a"]),
+            _cmp("phenotype", ["HP:0000709 Psychosis"], score=0.41),
+        ]},
+        {"candidate_id": "MONDO:3", "category": "symptom-level lead", "comparisons": [
+            _cmp("dna_variants", ["shared HGNC:2074"], refs=["CLAIM:g"]),
+            _cmp("phenotype", score=0.2),  # below the similarity floor: not a symptom-group member
+            _cmp("molecular_mechanisms", ["shared GO:0005764[CHEBI:16113]"], availability="missing"),  # missing never counts
+        ]},
+    ]
+    g = groups_for("MONDO:1", results, label_of=lambda i: names.get(i, ""))
+    assert [(x["kind"], x["label"]) for x in g] == [
+        ("mechanism", "lysosome (cholesterol)"), ("gene", "CLN3"), ("direct", "SHARES_PATHOGENIC_PATHWAY_WITH"),
+        ("symptoms", "similar recorded symptoms")]
+    assert g[0]["members"] == [{"id": "MONDO:2", "label": "B", "category": "literature-supported lead", "claim_ids": ["CLAIM:a"]}]
+    assert g[2]["members"][0]["claim_ids"] == ["CLAIM:x"]  # a direct link cites the claim that states it, nothing else
+    own = groups_for("MONDO:1", results, label_of=lambda i: names.get(i, ""), feature_claims={"GO:0005764[CHEBI:16113]": ["CLAIM:obs"]})
+    assert own[0]["members"][0]["claim_ids"] == ["CLAIM:obs"]  # a mechanism group cites only that feature's observed claims
+    assert [m["id"] for m in g[3]["members"]] == ["MONDO:2"] and g[3]["members"][0]["shared"] == ["Psychosis"]
+
+
+def test_no_connections_means_no_groups():
+    from atlas.clusters import groups_for
+
+    assert groups_for("MONDO:1", []) == []
