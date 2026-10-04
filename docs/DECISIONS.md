@@ -147,4 +147,4 @@
 ## 2026-10-04 (final): OpenAI only, GPT models (owner decision)
 - The owner has an OpenAI key. OpenAI is the only provider: the other adapter, its tests and its optional package extra were deleted, and the factory accepts only `LLM_PROVIDER=openai` (or unset). Models come from `OPENAI_MODEL_FAST` (extraction) and `OPENAI_MODEL_REASONING` (hypotheses); no name is hard-coded.
 - Vendor names of the earlier development model were removed from the docs at the owner's request. The run records above keep their facts (paper, prompt, yields) and now say "the development model".
-- The stored claims are not relabelled. They are re-read with a GPT model (fresh store, same PMIDs, same prompt), so each claim's `extraction_method` names the GPT model that actually read it. Counts in the README and `SUBMISSION.md` are updated from that run.
+- The stored claims are not relabelled. New papers are read by GPT-5 mini (first run: 8 papers, 13 claims kept, 49 quarantined). Re-reading the earlier claims (`scripts/reread_with_openai.sh`) was judged too much for now (owner, 2026-10-04); they keep the model that read them.

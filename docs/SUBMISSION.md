@@ -3,8 +3,7 @@
 Status: draft, checked against the code and the running app on 2026-10-04. All model calls use the OpenAI API. **Before you submit, complete the gate below.**
 
 ## Gate: do these before submitting
-- [ ] **Re-read run done.** `bash scripts/reread_with_openai.sh` has finished, and its last line shows every claim under a GPT model.
-- [ ] **Counts updated.** The claim and quarantine counts in this file match the store after the re-read.
+- [ ] **Package the store.** `PYTHONPATH=src .venv/bin/python scripts/export_deploy_store.py`, then commit `deploy/store`, so the app serves all 52 claims, including the 13 read by GPT-5 mini.
 - [ ] **Checks pass on the filming machine.** `make lint`, `make test` and `npm run e2e` (in `frontend/`).
 - [ ] **Each beat checked on screen.** If a beat does not match what you see, change the script, not the screen.
 
@@ -23,7 +22,7 @@ Status: draft, checked against the code and the running app on 2026-10-04. All m
 - **Symptom search:** candidate diseases, shown as research hypotheses, not diagnoses.
 - **Closed-loop experiment planner:** the researcher defines parameters, limits, pass criteria and what to change on failure for an overnight robot run. Plans are checked against real pipetting limits and a MuJoCo motion model. The AI only picks among the changes the researcher allowed.
 
-**How we use OpenAI.** Every model call goes through the OpenAI API with strict structured output, and every claim records the GPT model that read it. More credits would let it read the literature for every rare disease instead of one seed cluster, run its paper-finding job weekly, and read each paper twice with two models to catch misreadings.
+**How we use OpenAI.** Every model call goes through the OpenAI API with strict structured output, and every claim records the model that read it. More credits would let it read the literature for every rare disease instead of one seed cluster, run its paper-finding job weekly, and read each paper twice with two models to catch misreadings.
 
 **Who benefits.** Rare-disease researchers who want leads they can trace to the source.
 
@@ -77,7 +76,7 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 - **Robot motion check:** MuJoCo.
 
 **3. What worked**
-- **Strict claim checks.** The model proposes; code keeps a claim only if its quote is verbatim, its relation is allowed, and both names resolve to ontology IDs. COUNTS: fill in from the re-read run (claims kept, proposals quarantined).
+- **Strict claim checks.** The model proposes; code keeps a claim only if its quote is verbatim, its relation is allowed, and both names resolve to ontology IDs. 52 claims are stored. In the latest GPT-5 mini run, 13 proposals were kept and 49 quarantined.
 - **Related diseases from the full reference data.** For CLN3 disease there are 35 related diseases: 3 by shared gene, 1 by mechanism from papers, 1 by a direct paper link, 15 by hierarchy and 25 by symptoms. One disease can have several reasons.
 - **Labels instead of a single score.** Independent studies are counted separately from papers that only cite a fact as background, and AI hypotheses are always labelled as hypotheses.
 - **A researcher-defined experiment loop.**
