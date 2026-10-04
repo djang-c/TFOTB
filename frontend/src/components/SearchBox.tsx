@@ -67,7 +67,7 @@ export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: bool
         aria-expanded={open && hits.length > 0}
         aria-controls={listId}
         aria-activedescendant={open && hits[active] ? `${listId}-${active}` : undefined}
-        aria-label="Search diseases, genes, phenotypes"
+        aria-label="Search a disease, gene, symptom or mechanism"
         autoFocus={autoFocus}
         value={q}
         placeholder={PLACEHOLDER}
@@ -109,7 +109,7 @@ export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: bool
                   >
                     <span className="text-xs text-muted capitalize">{h.type}</span>
                     <span className="min-w-0 truncate">
-                      <Highlight text={h.label} q={q} />
+                      <Highlight text={h.label} q={q} />{" "}
                       {h.match === "close spelling" && <span className="ml-2 rounded bg-subtle px-1.5 py-0.5 text-[11px] text-muted ring-1 ring-rule">did you mean</span>}
                       {h.source_type === "synthetic_fixture" && <span className="ml-2 rounded bg-synthetic/30 px-1.5 py-0.5 text-[11px] text-ink">Synthetic</span>}
                       {h.matched && h.matched !== h.label && <span className="ml-2 text-muted">matches “{h.matched}”</span>}
