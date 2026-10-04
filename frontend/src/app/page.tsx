@@ -6,6 +6,10 @@ import { GAP_KIND } from "@/components/Badges";
 import { SearchBox } from "@/components/SearchBox";
 import { ExampleQuery } from "@/components/ExampleQuery";
 
+// Rendered per request: a build-time render would bake in whatever the API answered during the
+// build (or "could not load", if it was unreachable) until the next deploy.
+export const dynamic = "force-dynamic";
+
 const GROUPS: [EntityType, string][] = [
   ["disease", "Diseases"],
   ["gene", "Genes"],
