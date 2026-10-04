@@ -3,7 +3,7 @@
   "live_extraction": true,
   "max_papers_per_run": 10,
   "max_chars_per_paper": 120000,
-  "max_output_tokens": 4096,
+  "max_output_tokens": 16000,
   "seed_entities": ["MONDO:0008767", "MONDO:0018982"],
   "extra_queries": ["CLN3 disease", "Batten disease", "Niemann-Pick type C"],
   "hide_drug_claims": false,
