@@ -21,7 +21,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
-from atlas.llm.base import LLMError, LLMRefusal, LLMResult, ModelTier
+from atlas.llm.base import LLMError, LLMRefusal, LLMResult, ModelTier, wrap_untrusted
 
 T = TypeVar("T", bound=BaseModel)
 API_BASE = "https://api.openai.com/v1"
@@ -82,7 +82,7 @@ class OpenAIClient:
             "model": model,
             "messages": [
                 {"role": "system", "content": system},
-                {"role": "user", "content": f"<untrusted_data>\n{input_text}\n</untrusted_data>"},
+                {"role": "user", "content": wrap_untrusted(input_text)},
             ],
             "response_format": {
                 "type": "json_schema",

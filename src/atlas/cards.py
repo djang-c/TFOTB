@@ -17,7 +17,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 
 from atlas.connections import REVIEWER_ROLE, QueryOutcome, RankedConnection
-from atlas.graph import find_paths
+from atlas.graph import build_graph, find_paths
 from atlas.schemas import (
     ActionCard,
     AssetResult,
@@ -91,9 +91,10 @@ def evidence_brief(
     lines.append("")
     if not shown:
         lines += ["No connected candidates were found by any channel in the indexed evidence.", ""]
+    graph = build_graph(claims)  # once for the whole brief, not once per candidate
     lines += _known_about_query(outcome.query_id, claims, label_of, cited)
     for i, rc in enumerate(shown, 1):
-        lines += _connection_section(i, rc, claims, label_of, cited, outcome.query_id)
+        lines += _connection_section(i, rc, claims, label_of, cited, outcome.query_id, graph)
     lines += ["## What is missing", ""]
     missing = _missing_lines(outcome)
     lines += missing or ["- Nothing recorded as missing for the channels that ran."]
@@ -140,15 +141,17 @@ def _known_about_query(query_id: str, claims: dict[str, Claim], label_of: Label,
     return [*lines, ""]
 
 
-def _route_lines(claims: dict[str, Claim], a: str, b: str, label_of: Label, cited: list[str]) -> list[str]:
+def _route_lines(claims: dict[str, Claim], a: str, b: str, label_of: Label, cited: list[str], graph) -> list[str]:
     """Readable claim-graph routes between the query and a candidate (explanation, not a score)."""
-    out = find_paths(claims, a, b)
+    out = find_paths(claims, a, b, graph=graph)
     if not out.paths:
         return ["", "Routes in stored claims: none of up to 4 steps (a gap in the indexed evidence, not proof of absence)."]
     lines = ["", "Routes in stored claims (explanation only; each step is one or more claims):"]
     for p in out.paths:
         chain = " → ".join(_name(label_of, n) for n in p.nodes)
         tag = "**hypothesis only**" if p.hypothesis_only else "observed or reported steps"
+        if p.shared_feature_stops:
+            tag += "; passes through a shared cell feature, which links the diseases by a common site, not by a shown mechanism"
         ids = list(p.claim_ids)
         cited.extend(ids)
         lines.append(f"- {chain} ({tag}) {_cite(ids)}")
@@ -156,7 +159,7 @@ def _route_lines(claims: dict[str, Claim], a: str, b: str, label_of: Label, cite
 
 
 def _connection_section(
-    n: int, rc: RankedConnection, claims: dict[str, Claim], label_of: Label, cited: list[str], query_id: str
+    n: int, rc: RankedConnection, claims: dict[str, Claim], label_of: Label, cited: list[str], query_id: str, graph
 ) -> list[str]:
     r = rc.result
     lines = [f"## {n}. {_name(label_of, r.candidate_id)}", "", f"Evidence category: **{r.category.value}**"]
@@ -181,7 +184,7 @@ def _connection_section(
         if c.missing_fields:
             parts.append("missing: " + ", ".join(c.missing_fields))
         lines.append(f"- {c.channel_id}: " + " | ".join(parts))
-    lines += _route_lines(claims, query_id, r.candidate_id, label_of, cited)
+    lines += _route_lines(claims, query_id, r.candidate_id, label_of, cited, graph)
     path = [i for i in r.path_claim_ids if i in claims]
     if path:
         lines += ["", "Supporting claims:"]

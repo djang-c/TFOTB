@@ -156,3 +156,14 @@ def test_a_missing_recorded_response_fails_that_paper_only_and_the_run_continues
 
     rep = run(["1", "2"], resolver, AtlasDB(), Flaky())
     assert [r.status for r in rep.runs] == ["failed", "ingested"] and "replay cache miss" in rep.runs[0].reason
+
+
+def test_the_publication_date_comes_from_the_record_and_a_bad_date_is_left_unknown(resolver):
+    from dataclasses import replace
+
+    db = AtlasDB()
+    run(["1"], resolver, db, fetch=source(**{"1": replace(paper("1"), published="2023-05-26")}))
+    assert db.all(Claim)[0].published_at.isoformat() == "2023-05-26"
+    db2 = AtlasDB()
+    run(["2"], resolver, db2, fetch=source(**{"2": replace(paper("2"), published="not a date")}))
+    assert db2.all(Claim)[0].published_at is None

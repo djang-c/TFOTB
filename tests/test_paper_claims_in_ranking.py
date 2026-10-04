@@ -92,3 +92,8 @@ def test_real_seed_pair_is_listed_both_ways_when_the_seed_paper_is_stored(tmp_pa
     for q, other in (("MONDO:0008767", "MONDO:0018982"), ("MONDO:0018982", "MONDO:0008767")):
         rows = {r["candidate_id"]: r for r in c.get(f"/api/entities/{q}/connections").json()["results"]}
         assert other in rows and rows[other]["category"] == "literature-supported lead"
+
+    # the entry page's data lists the paper claims that name it, so the page can show its sources
+    page = c.get("/api/entities/MONDO:0008767").json()
+    assert [x["claim_id"] for x in page["claims"]] == ["CLAIM:PMID-37245481-a"]
+    assert page["claim_counts_by_predicate"] == {"ACCUMULATES_IN_COMPARTMENT": 1}

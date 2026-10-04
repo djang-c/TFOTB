@@ -96,3 +96,35 @@ def test_neighbourhood_of_an_unknown_entity_is_empty_not_an_error():
     assert neighborhood({}, D1) == {"nodes": [], "edges": [], "truncated": False, "omitted": 0}
     with pytest.raises(ValueError):
         neighborhood({}, D1, max_nodes=0)
+
+
+def test_a_hop_backed_only_by_an_ai_hypothesis_a_prediction_or_a_simulation_is_not_supported_evidence():
+    from atlas.simulation import link_claim, run_from_report
+
+    for kw in (
+        {"pred": "ASSOCIATED_WITH_PHENOTYPE", "status": "computational_prediction"},
+        {"pred": "SHARES_PATHOGENIC_PATHWAY_WITH", "status": "inference", "source_type": "ai_generated"},
+    ):
+        cs = claims(("CLAIM:a", D1, D2, kw))
+        assert find_paths(cs, D1, D2).paths[0].hypothesis_only, kw
+    # an observed claim next to an AI claim on the same hop is enough support for that hop
+    cs = claims(("CLAIM:a", D1, D2, {"pred": "SHARES_PATHOGENIC_PATHWAY_WITH", "status": "inference", "source_type": "ai_generated"}),
+                ("CLAIM:b", D1, D2, {"source_type": "published"}))
+    assert not find_paths(cs, D1, D2).paths[0].hypothesis_only
+    assert run_from_report and link_claim  # simulation records are excluded by `is_evidential` (covered in test_ranking)
+
+
+def test_a_route_through_a_shared_compartment_is_flagged_as_a_shared_feature_not_a_mechanism():
+    cs = claims(
+        ("CLAIM:a", D1, "GO:0005764", {"pred": "ACCUMULATES_IN_COMPARTMENT"}),
+        ("CLAIM:b", D2, "GO:0005764", {"pred": "ACCUMULATES_IN_COMPARTMENT"}),
+    )
+    p = find_paths(cs, D1, D2).paths[0]
+    assert p.shared_feature_stops == ("GO:0005764",)
+    via_gene = find_paths(claims(("CLAIM:a", G1, D1, {}), ("CLAIM:b", G1, D2, {})), D1, D2).paths[0]
+    assert via_gene.shared_feature_stops == ()  # a shared gene is not a generic hub
+
+
+def test_a_prebuilt_graph_gives_the_same_paths():
+    cs = claims(("CLAIM:a", G1, D1, {}), ("CLAIM:b", G1, D2, {}))
+    assert find_paths(cs, D1, D2, graph=build_graph(cs)) == find_paths(cs, D1, D2)

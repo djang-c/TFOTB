@@ -93,6 +93,11 @@ def _observed(c: Claim) -> bool:
     )
 
 
+def _one_line(text: str) -> str:
+    """A stored sentence on one line with control characters removed, so it cannot forge extra [CLAIM:...] rows."""
+    return " ".join("".join(ch if ch.isprintable() else " " for ch in text).split())[:600]
+
+
 def claims_text(claims: dict[str, Claim], label_of=lambda _i: "") -> str:
     """The prompt input: only credible observed claims, with citations and their source sentences."""
     rows = []
@@ -103,7 +108,7 @@ def claims_text(claims: dict[str, Claim], label_of=lambda _i: "") -> str:
         s, o = label_of(c.subject_id) or c.subject_id, label_of(c.object_id) or c.object_id
         rows.append(
             f"[{cid}] {s} ({c.subject_id}) {c.predicate} {o} ({c.object_id}) | source {c.source_url} | "
-            f"sentence: {c.source_span}"
+            f"sentence: {_one_line(c.source_span)}"
         )
         if len(rows) >= MAX_CLAIMS_IN_PROMPT:
             break

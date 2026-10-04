@@ -96,3 +96,45 @@ def test_drug_claims_can_be_hidden_by_policy_and_are_shown_otherwise(tmp_path):
 
     assert ids(show) == ({"CLAIM:drug", "CLAIM:gene"}, 200)
     assert ids(hide) == ({"CLAIM:gene"}, 404)
+
+
+def test_a_real_entry_page_data_lists_the_paper_claims_that_name_it(tmp_path):
+    from atlas.db import AtlasDB
+
+    path = tmp_path / "atlas.db"
+    db = AtlasDB(path)
+    db.put(make_claim("CLAIM:one", "ACCUMULATES_IN_COMPARTMENT", subject_id="MONDO:0008767", object_id="GO:0005764", source_type="published"))
+    db.close()
+    # the entity must exist in the (synthetic) fixture index to be served, so use the demo entity id with a claim attached to it
+    db = AtlasDB(tmp_path / "b.db")
+    db.put(make_claim("CLAIM:two", "ACCUMULATES_IN_COMPARTMENT", subject_id=A, object_id="GO:0005764", source_type="published"))
+    db.close()
+    c = TestClient(create_app(Settings(real_search=False, store_path=tmp_path / "b.db")))
+    # SYN entries keep serving their demo claims; the store is consulted for real (database_record) entries only
+    body = c.get(f"/api/entities/{A}").json()
+    assert "claims" in body and all(x["claim_id"] != "CLAIM:two" for x in body["claims"])
+
+
+def test_graph_and_routes_use_the_label_sidecar_for_go_terms_the_public_index_does_not_hold(tmp_path):
+    import json
+
+    from atlas.db import AtlasDB
+
+    store = tmp_path / "store"
+    store.mkdir()
+    db = AtlasDB(store / "atlas.db")
+    db.put(make_claim("CLAIM:one", "ACCUMULATES_IN_COMPARTMENT", subject_id=A, object_id="GO:0005764", source_type="published"))
+    db.put(make_claim("CLAIM:two", "ACCUMULATES_IN_COMPARTMENT", subject_id=B, object_id="GO:0005764", source_type="published"))
+    db.close()
+    (store / "labels.json").write_text(json.dumps({"GO:0005764": "lysosome"}))
+    c = TestClient(create_app(Settings(real_search=False, store_path=store / "atlas.db")))
+    nodes = {n["id"]: n for n in c.get(f"/api/entities/{A}/graph").json()["nodes"]}
+    assert nodes["GO:0005764"]["label"] == "lysosome" and nodes["GO:0005764"]["type"] == "compartment"
+    route = c.get(f"/api/entities/{A}/routes", params={"to": B}).json()["paths"][0]
+    assert [n["label"] for n in route["nodes"]][1] == "lysosome"
+    assert [s["label"] for s in route["shared_feature_stops"]] == ["lysosome"]  # flagged as a shared feature
+
+
+def test_ready_reports_whether_the_index_is_built(tmp_path):
+    c = TestClient(create_app(Settings(real_search=False, store_path=tmp_path / "x.db")))
+    assert c.get("/api/ready").json() == {"ready": True, "index": "disabled"}

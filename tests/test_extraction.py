@@ -268,3 +268,11 @@ def test_the_ontology_label_or_a_bracketed_part_of_the_mention_can_satisfy_the_q
     rep = gate(resolver, "Gene SYNA is linked to synthetic disease alpha in patients.", object_mention="alpha disease (synthetic disease alpha)")
     # "alpha disease" is not in the quote, but the bracketed part is, and the ontology label is too
     assert len(rep.claims) == 1
+
+
+def test_the_papers_publication_date_is_recorded_on_the_claim_and_unknown_stays_unknown(resolver):
+    from datetime import date
+
+    dated = SourceText("PMID:0000001", "https://doi.org/10.1/x", TEXT, date(2023, 5, 26))
+    assert extract_claims(FakeClient([stmt()]), dated, resolver).claims[0].published_at == date(2023, 5, 26)
+    assert extract_claims(FakeClient([stmt()]), SRC, resolver).claims[0].published_at is None

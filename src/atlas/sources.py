@@ -21,6 +21,7 @@ from dataclasses import dataclass
 
 API = "https://www.ebi.ac.uk/europepmc/webservices/rest"
 Fetch = Callable[[str], bytes]
+MAX_RESPONSE_BYTES = 25_000_000  # a full-text article is a few MB; anything this large is not one
 
 
 class SourceError(RuntimeError):
@@ -39,6 +40,7 @@ class FullText:
     journal: str = ""
     year: str = ""
     pub_types: tuple[str, ...] = ()
+    published: str = ""  # first publication date from the record, ISO (YYYY-MM-DD), or ""
     authors: tuple[dict, ...] = ()  # {"name", "orcid" or None, "affiliation" or None}, as the paper's record lists them
 
     @property
@@ -50,7 +52,10 @@ class FullText:
 def _get(url: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": "tfotb-fetch/1.0 (research; contact via repo)"})
     with urllib.request.urlopen(req, timeout=60) as resp:
-        return resp.read()
+        data = resp.read(MAX_RESPONSE_BYTES + 1)
+    if len(data) > MAX_RESPONSE_BYTES:  # a runaway or hostile response must not fill memory
+        raise OSError(f"response from {url.split('?')[0]} is larger than {MAX_RESPONSE_BYTES} bytes")
+    return data
 
 
 def _text(el: ET.Element) -> str:
@@ -155,5 +160,5 @@ def fetch_full_text(pmid: str, fetch: Fetch = _get) -> FullText:
         text="\n".join(paras), url=url, doi=rec.get("doi", ""),
         journal=rec["journalInfo"]["journal"]["title"], year=str(rec.get("pubYear", "")),
         pub_types=tuple((rec.get("pubTypeList") or {}).get("pubType", [])),
-        authors=authors_of(rec),
+        authors=authors_of(rec), published=str(rec.get("firstPublicationDate") or ""),
     )

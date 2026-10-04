@@ -11,6 +11,7 @@ from atlas.api.jobs import JobManager
 from atlas.api.research_routes import router as research_router
 from atlas.api.routes import router
 from atlas.api.settings import Settings
+from atlas.store import PublicStore
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -27,6 +28,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="The Flight of the Buffalo API", version=__version__, lifespan=lifespan)
     app.state.settings = settings
     app.state.jobs = JobManager(max_per_hour=settings.research_max_jobs_per_hour)
+    app.state.uploads = PublicStore()  # in memory: a demo session; lost on restart, never merged into the paper store
     app.state.research_runner = None  # tests replace this; None means the real pipeline
     app.add_middleware(
         CORSMiddleware,

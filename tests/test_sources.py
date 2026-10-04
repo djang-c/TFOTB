@@ -81,3 +81,21 @@ def test_the_citation_comes_from_the_record_never_from_the_model():
 def test_preprints_retractions_editorials_and_journal_less_records_are_rejected(kw, why):
     with pytest.raises(SourceError, match=why):
         fetch_full_text("1", fake(**kw))
+
+
+def test_an_oversized_remote_response_is_refused_not_read_into_memory(monkeypatch):
+    import io
+
+    from atlas import sources
+
+    class Big(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(sources, "MAX_RESPONSE_BYTES", 10)
+    monkeypatch.setattr(sources.urllib.request, "urlopen", lambda *a, **k: Big(b"x" * 100))
+    with pytest.raises(OSError, match="larger than"):
+        sources._get("https://example.invalid/x?y=1")

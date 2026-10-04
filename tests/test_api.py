@@ -23,7 +23,7 @@ GETS = [
     "/api/claims/CLAIM:syn-1",
     "/api/simulations/SIM:syn-pass",
 ]
-POSTS = ["/api/explain", "/api/actions", "/api/uploads"]
+POSTS = ["/api/explain", "/api/actions"]
 
 
 def test_health():
@@ -39,10 +39,6 @@ def test_all_stub_endpoints_serve_synthetic_fixtures():
         r = client.post(path, json={})
         assert r.status_code == 200, path
         assert "SYNTHETIC" in r.json()["_synthetic"], path
-
-
-def test_upload_stub_is_quarantined():
-    assert client.post("/api/uploads", json={}).json()["quarantined"] is True
 
 
 def test_unknown_ids_404():

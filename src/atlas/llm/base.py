@@ -11,6 +11,12 @@ T = TypeVar("T", bound=BaseModel)
 ModelTier = Literal["fast", "reasoning"]
 
 
+def wrap_untrusted(text: str) -> str:
+    """Delimit text that is DATA. A literal closing tag inside it is defused so the text cannot end its own wrapper."""
+    safe = text.replace("</untrusted_data>", "<\\/untrusted_data>").replace("<untrusted_data>", "<\\untrusted_data>")
+    return f"<untrusted_data>\n{safe}\n</untrusted_data>"
+
+
 class LLMError(RuntimeError):
     """Provider failure, or a replay-mode cache miss with no live fallback."""
 

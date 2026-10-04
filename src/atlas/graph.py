@@ -2,6 +2,8 @@
 
 Rules:
 - Every edge is one claim and carries its `claim_id`; nothing here creates an edge.
+- A hop counts as evidence only if one of its claims is a reported observation (`ranking.is_evidential`): an AI
+  hypothesis, an inference, a prediction or a simulation record never makes a hop "supported".
 - Paths are for explanation only. Each hop lists the claims that support it. A hop supported only by
   `inference` claims makes the whole path "hypothesis only". A missing arrow is never filled: if no
   route exists the caller gets a scoped `GapResult` (kind `no_supported_route`), never a guess.
@@ -21,6 +23,7 @@ from typing import Any
 
 import networkx as nx
 
+from atlas.ranking import is_evidential
 from atlas.schemas import Claim, ClaimStatus, GapResult, ReviewState
 
 MAX_HOPS = 4
@@ -58,8 +61,11 @@ class Hop:
 class PathResult:
     nodes: tuple[str, ...]
     hops: tuple[Hop, ...]
-    hypothesis_only: bool  # at least one hop rests only on inference
+    hypothesis_only: bool  # at least one hop has no observed, credible claim behind it
     reviewed_claims: int
+    # Intermediate stops that are shared cell compartments or chemicals (GO / ChEBI). Such a stop is a shared
+    # feature, not a mechanism link: "both diseases store material in the lysosome" does not tie their genes together.
+    shared_feature_stops: tuple[str, ...] = ()
 
     @property
     def claim_ids(self) -> tuple[str, ...]:
@@ -92,9 +98,9 @@ def _hop_claims(g: nx.MultiDiGraph, a: str, b: str) -> list[str]:
 
 def find_paths(
     claims: dict[str, Claim], source: str, target: str, *, k: int = DEFAULT_K, max_hops: int = MAX_HOPS,
-    coverage_manifest_id: str = "COV:none", as_of: date | None = None,
+    coverage_manifest_id: str = "COV:none", as_of: date | None = None, graph: nx.MultiDiGraph | None = None,
 ) -> PathOutcome:
-    g = build_graph(claims)
+    g = graph if graph is not None else build_graph(claims)  # callers that ask many pairs build it once
     s = _simple(g)
     found: list[PathResult] = []
     if source in s and target in s and source != target:
@@ -109,12 +115,13 @@ def find_paths(
             hops = []
             for a, b in pairwise(nodes):
                 ids = _hop_claims(g, a, b)
-                only_inf = all(claims[i].status is ClaimStatus.inference for i in ids)
-                hops.append(Hop(a, b, tuple(ids), only_inf))
+                no_evidence = not any(is_evidential(claims[i]) and claims[i].status is ClaimStatus.reported_observation for i in ids)
+                hops.append(Hop(a, b, tuple(ids), no_evidence))
             reviewed = sum(
                 1 for h in hops for i in h.claim_ids if claims[i].review_state is ReviewState.reviewed
             )
-            found.append(PathResult(tuple(nodes), tuple(hops), any(h.hypothesis_only for h in hops), reviewed))
+            stops = tuple(n for n in nodes[1:-1] if node_type(n) in {"compartment", "chemical"})
+            found.append(PathResult(tuple(nodes), tuple(hops), any(h.hypothesis_only for h in hops), reviewed, stops))
     found.sort(key=lambda p: (p.hypothesis_only, len(p.hops), -p.reviewed_claims, p.nodes))
     paths = tuple(found[:k])
     gap = None

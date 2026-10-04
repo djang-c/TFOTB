@@ -13,10 +13,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from atlas.api.claimstore import load_claims, paper_coverage
 from atlas.api.fixtures import load_fixture
+from atlas.clusters import mechanism_clusters
 from atlas.collaborators import NOTE as COLLABORATOR_NOTE
 from atlas.collaborators import collaborators_for, load_papers
 from atlas.graph import find_paths, neighborhood
 from atlas.policy import IngestPolicy, load_policy
+from atlas.research import load_labels
 from atlas.search import SearchIndex
 from atlas.simulation import link_claim, run_from_report
 
@@ -113,7 +115,9 @@ def _stored_claims(request: Request) -> dict[str, Any]:
 
 def _label_of(request: Request) -> Any:
     ix = _index(request)
-    return (lambda i: ix.r.label_of(i) or "") if ix is not None else (lambda _i: "")
+    sidecar = load_labels(request.app.state.settings.store_path.parent)  # names for GO terms and chemicals
+    base = (lambda i: ix.r.label_of(i) or "") if ix is not None else (lambda _i: "")
+    return lambda i: base(i) or sidecar.get(i, "")
 
 
 STORE_NOTE = ("Not synthetic: claims extracted from papers into the local store by scripts/ingest_papers.py. "
@@ -142,6 +146,17 @@ def _entity(request: Request, entity_id: str) -> dict[str, Any]:
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@router.get("/ready")
+def ready(request: Request) -> Any:
+    """Whether the real-ontology search index is built. /health says the process is up; the first search after a
+    cold start can take about ten seconds, so a load balancer or a demo script should wait for this."""
+    s = request.app.state.settings
+    if not s.real_search:
+        return {"ready": True, "index": "disabled"}
+    built = _build_index.cache_info().currsize > 0
+    return {"ready": built, "index": "loaded" if built else "building"}
 
 
 @router.get("/meta")
@@ -229,6 +244,14 @@ def search(request: Request, q: str = "") -> Any:
                 ambiguous=real["ambiguous"] or (not real["results"] and len(hits) > 1))
 
 
+@router.get("/clusters")
+def clusters(request: Request) -> Any:
+    """Groups of diseases that share an observed mechanism feature, from the stored paper claims. Organisation only."""
+    found = mechanism_clusters(_stored_claims(request), label_of=_label_of(request))
+    return {"_synthetic": STORE_NOTE, "clusters": found, "total": len(found),
+            "note": "An organisational view of the evidence, not a statement that diseases share a treatment or cause."}
+
+
 @router.get("/symptoms")
 def symptoms(request: Request, q: str = "") -> Any:
     """Candidate diseases for symptoms described in words or HPO IDs; research hypotheses, never a diagnosis."""
@@ -263,7 +286,13 @@ def entity(request: Request, entity_id: str) -> Any:
     d = _demo(request)
     if e.get("source_type") == "database_record" and not entity_id.startswith("SYN:"):
         ix = _index(request)
-        return _wrap_real(entity=e, claims=[], claim_counts_by_predicate={}, reviewed_claims=0,
+        # claims read from papers that name this entry (the page lists them under Sources)
+        mine = [c for c in _stored_claims(request).values() if entity_id in (c.subject_id, c.object_id)]
+        by_pred: dict[str, int] = {}
+        for c in mine:
+            by_pred[c.predicate] = by_pred.get(c.predicate, 0) + 1
+        return _wrap_real(entity=e, claims=[c.model_dump(mode="json") for c in mine], claim_counts_by_predicate=by_pred,
+                          reviewed_claims=sum(c.review_state.value == "reviewed" for c in mine),
                           summary=ix.summary(entity_id) if ix else [], summary_method="template")
     claims = [c for c in d["claims"] if entity_id in (c["subject_id"], c["object_id"])]
     by_pred: dict[str, int] = {}
@@ -361,6 +390,7 @@ def routes(request: Request, entity_id: str, to: str) -> Any:
                      for h in p.hops],
             "hypothesis_only": p.hypothesis_only,
             "reviewed_claims": p.reviewed_claims,
+            "shared_feature_stops": [{"id": n, "label": label(n) or n} for n in p.shared_feature_stops],
         }
         for p in out.paths
     ]
@@ -455,9 +485,43 @@ def actions(request: Request, body: EntityBody | None = None) -> Any:
     return _wrap(request, cards=_demo(request)["cards"].get(eid, []))
 
 
+MAX_UPLOAD_BYTES = 64 * 1024
+
+
+class UploadBody(BaseModel):
+    """A research finding offered by a contributor. Every field is bounded; unknown fields are refused."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    claim_id: str = Field(max_length=120)
+    subject_id: str = Field(max_length=60)
+    predicate: str = Field(max_length=60)
+    object_id: str = Field(max_length=60)
+    source_url: str = Field(max_length=500)
+    source_span: str = Field(min_length=1, max_length=2000)
+    lineage_id: str = Field(max_length=120)
+    contributor: str = Field(min_length=1, max_length=200)
+    context: dict[str, str] = Field(default_factory=dict, max_length=20)
+
+
 @router.post("/uploads")
-def uploads(request: Request) -> Any:
-    return _fx(request, "upload")
+def uploads(request: Request, body: UploadBody) -> Any:
+    """A contributor's finding. It is ALWAYS stored as lab_reported and unreviewed (a payload cannot change that),
+    never as a published claim, and never enters ranking or the public graph. Held in memory for this demo session.
+    A finding that fails any check is quarantined with its reason."""
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"Upload larger than {MAX_UPLOAD_BYTES} bytes.")
+    store = request.app.state.uploads
+    before = len(store.quarantine)
+    claim = store.ingest_lab_finding(body.model_dump())
+    err = store.quarantine[-1]["error"] if len(store.quarantine) > before else None
+    return {
+        "_synthetic": "Demo session: uploads are held in memory and reset when the server restarts. A finding stays "
+                      "lab_reported and unreviewed; it is never promoted to a published claim.",
+        "claim": claim.model_dump(mode="json") if claim else None, "quarantined": claim is None,
+        "unresolved_ids": [], "missing_fields": [], "error": err,
+    }
 
 
 @router.get("/simulations/{run_id}")

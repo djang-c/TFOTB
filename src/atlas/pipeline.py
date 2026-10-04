@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 from xml.etree.ElementTree import ParseError
 
@@ -63,6 +64,13 @@ class IngestReport:
             else:
                 out.append(SourceCoverage(source=r.source_id, status=SourceStatus.failed, error=r.reason))
         return out
+
+
+def _iso_date(text: str) -> date | None:
+    try:
+        return date.fromisoformat(text[:10]) if text else None
+    except ValueError:
+        return None  # an unusable date is left unknown, never guessed
 
 
 def _licence_allowed(licence: str, allowed: Iterable[str]) -> bool:
@@ -125,7 +133,7 @@ def ingest_papers(
             )
             continue
         try:
-            ex = extract_claims(client, SourceText(sid, ft.citation_url, ft.text), resolver)
+            ex = extract_claims(client, SourceText(sid, ft.citation_url, ft.text, _iso_date(ft.published)), resolver)
         except LLMError as exc:  # e.g. replay-only run and no recorded response for this paper
             report.runs.append(PaperRun(sid, "failed", f"model call not made or failed: {exc}"[:300], ft.license))
             continue

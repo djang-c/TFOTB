@@ -15,7 +15,7 @@ from typing import TypeVar
 
 from pydantic import BaseModel
 
-from atlas.llm.base import LLMError, LLMRefusal, LLMResult, ModelTier
+from atlas.llm.base import LLMError, LLMRefusal, LLMResult, ModelTier, wrap_untrusted
 
 T = TypeVar("T", bound=BaseModel)
 DEFAULT_MODELS = {"reasoning": "claude-opus-5-5", "fast": "claude-sonnet-5-5"}
@@ -50,7 +50,7 @@ class AnthropicClient:
     ) -> LLMResult:
         model = self.model_for(model_tier)
         # Untrusted text is delimited and declared to be data, not instructions.
-        user = f"<untrusted_data>\n{input_text}\n</untrusted_data>"
+        user = wrap_untrusted(input_text)
         resp = self._client.messages.parse(
             model=model,
             max_tokens=self.max_tokens,

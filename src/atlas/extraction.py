@@ -15,6 +15,7 @@ import hashlib
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -93,6 +94,7 @@ class SourceText:
     source_id: str  # e.g. "PMID:37245481"
     source_url: str
     text: str  # cached locally for extraction only; never committed (licence terms)
+    published_at: date | None = None  # from the paper's own record; stable, so re-ingesting never conflicts
 
 
 @dataclass
@@ -170,6 +172,7 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
                 ),
                 review_state=ReviewState.unreviewed,
                 extraction_method=f"llm:{result.model}@{result.prompt_version}",
+                published_at=source.published_at,
                 lineage_id=f"STUDY:{source.source_id.replace(':', '-')}",
                 context={
                     k: v

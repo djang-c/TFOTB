@@ -21,6 +21,7 @@ from atlas.llm.factory import has_key
 from atlas.pipeline import ingest_papers, ledger_rows
 from atlas.policy import IngestPolicy
 from atlas.resolver import Resolver
+from atlas.schemas import Claim
 from atlas.sources import FullText, fetch_full_text
 
 
@@ -37,6 +38,28 @@ def load_extraction_resolver(raw_dir: Path) -> Resolver:
             "(run scripts/fetch_ontologies.py)"
         )
     return Resolver.from_raw(raw_dir, include_extraction_refs=True)
+
+
+def write_labels(store_dir: Path, entity_ids: Iterable[str], resolver: Resolver) -> int:
+    """Names for the entities in stored claims (GO terms and ChEBI chemicals are not in the public search
+    index, so without this the graph and routes would show raw IDs). Only labels the ontologies actually
+    give are written; an ID with no label is left out, never invented."""
+    path = store_dir / "labels.json"
+    have: dict[str, str] = json.loads(path.read_text()) if path.exists() else {}
+    for eid in entity_ids:
+        label = resolver.label_of(eid)
+        if label:
+            have[eid] = label
+    path.write_text(json.dumps(have, indent=1, sort_keys=True) + "\n")
+    return len(have)
+
+
+def load_labels(store_dir: Path) -> dict[str, str]:
+    path = store_dir / "labels.json"
+    try:
+        return json.loads(path.read_text()) if path.exists() else {}
+    except ValueError:
+        return {}
 
 
 def already_ingested(store_dir: Path) -> set[str]:
@@ -92,6 +115,8 @@ def run_research(
             for r in report.runs:
                 if r.status == "ingested" and r.meta:
                     f.write(json.dumps(r.meta) + "\n")
+        ids = {i for c in db.all(Claim) for i in (c.subject_id, c.object_id)}
+        write_labels(store_dir, ids, resolver)
         manifest = export_snapshot(db, store_dir / "snapshot", dataset_version=f"local-{now[:10]}", built_at=now)
     finally:
         db.close()
