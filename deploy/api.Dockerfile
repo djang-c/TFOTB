@@ -7,15 +7,18 @@ FROM python:3.12-slim
 RUN useradd -m -u 1000 user
 WORKDIR /home/user/app
 
-# Pinned deps from the lockfile minus simulation/render and dev tools (not used by the API).
+# Pinned deps from the lockfile minus rendering and dev tools. MuJoCo stays: the Simulation page's plan check runs
+# the robot motion check on the server.
 COPY requirements.lock ./
-RUN grep -viE '^(mujoco|glfw|PyOpenGL|ImageIO|imageio-ffmpeg|pytest|ruff|iniconfig|pluggy|Pygments)==' \
+RUN grep -viE '^(glfw|PyOpenGL|ImageIO|imageio-ffmpeg|pytest|ruff|iniconfig|pluggy|Pygments)==' \
         requirements.lock > requirements.api.txt \
     && pip install --no-cache-dir -r requirements.api.txt
 
 COPY --chown=user src ./src
 COPY --chown=user data/fixtures ./data/fixtures
 COPY --chown=user config ./config
+# The robot scene and workflow compiler the motion check imports (atlas.experiment.motion_check).
+COPY --chown=user robotics ./robotics
 # The packaged claim store (scripts/export_deploy_store.py); the folder may be empty if none was packaged.
 COPY --chown=user deploy_store ./deploy_store
 COPY --chown=user scripts/load_deploy_store.py ./scripts/load_deploy_store.py
@@ -26,6 +29,9 @@ RUN PYTHONPATH=src python scripts/load_deploy_store.py && chown -R user data
 COPY --chown=user data/raw/CHECKSUMS.json ./data/raw/CHECKSUMS.json
 COPY --chown=user scripts/fetch_for_deploy.py ./scripts/fetch_for_deploy.py
 RUN python scripts/fetch_for_deploy.py && chown -R user data/raw
+
+# Fail the build, not the demo, if the motion check cannot run in this image.
+RUN PYTHONPATH=src python -c "from atlas import experiment as ex; p = ex.plan(ex.example_definition()); assert p['robot'], p['checks']"
 
 USER user
 # PYTHONPATH (not pip install) keeps REPO_ROOT in atlas.api.settings pointing at this folder.

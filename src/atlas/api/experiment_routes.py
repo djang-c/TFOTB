@@ -11,6 +11,9 @@ from __future__ import annotations
 
 import math
 import re
+import threading
+import time
+from collections import deque
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -63,7 +66,25 @@ def _policy(request: Request) -> IngestPolicy:
         return IngestPolicy()
 
 
-def _client(request: Request, wanted: bool) -> tuple[Any, str]:
+_LOCK = threading.Lock()
+
+
+def _take_ai_budget(request: Request, calls: int) -> bool:
+    """Reserve `calls` model calls from the server's hourly budget; False when they do not fit."""
+    cap = request.app.state.settings.experiment_ai_calls_per_hour
+    with _LOCK:
+        used: deque[tuple[float, int]] = getattr(request.app.state, "experiment_ai_used", None) or deque()
+        request.app.state.experiment_ai_used = used
+        now = time.monotonic()
+        while used and now - used[0][0] > 3600:
+            used.popleft()
+        if sum(n for _, n in used) + calls > cap:
+            return False
+        used.append((now, calls))
+        return True
+
+
+def _client(request: Request, wanted: bool, calls: int = 1) -> tuple[Any, str]:
     if not wanted:
         return None, "rules"
     if not has_key():
@@ -71,6 +92,8 @@ def _client(request: Request, wanted: bool) -> tuple[Any, str]:
     pol = _policy(request)
     if not pol.live_extraction:
         return None, "rules (live AI calls are switched off on this server)"
+    if not _take_ai_budget(request, calls):
+        return None, "rules (this server's hourly limit on AI review is reached, so your rules decided)"
     return make_client(max_tokens=pol.max_output_tokens), "ai_review"
 
 
@@ -105,7 +128,7 @@ def step(request: Request, body: StepBody) -> dict[str, Any]:
 
 @router.post("/experiments/overnight")
 def overnight(request: Request, body: OvernightBody) -> dict[str, Any]:
-    client, mode = _client(request, body.ai)
+    client, mode = _client(request, body.ai, calls=body.definition.max_runs)
     out = ex.overnight(body.definition, seed=body.seed, client=client)
     out["decided_note"] = mode
     return out

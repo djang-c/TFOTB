@@ -152,3 +152,21 @@ def test_api_runs_a_step_with_measured_or_synthetic_readings_and_labels_them(tmp
     assert c.post("/api/experiments/step", json={"definition": d, "readings": {"Z9": 1.0}}).status_code == 422
     night = c.post("/api/experiments/overnight", json={"definition": d}).json()
     assert night["status"] == "done" and night["label"].startswith("SYNTHETIC")
+
+
+def test_ai_review_has_an_hourly_server_cap_and_then_the_rules_decide(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from atlas.api import create_app
+    from atlas.api.settings import Settings
+
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-not-real")
+    c = TestClient(create_app(Settings(real_search=False, store_path=tmp_path / "atlas.db", experiment_ai_calls_per_hour=2)))
+    calls = []
+    monkeypatch.setattr("atlas.api.experiment_routes.make_client", lambda **k: calls.append(1) or None)
+    d = c.get("/api/experiments/example").json()["definition"]
+    notes = [c.post("/api/experiments/step", json={"definition": d, "synthetic_seed": 1, "ai": True}).json()["decided_note"]
+             for _ in range(3)]
+    assert notes[:2] == ["ai_review", "ai_review"] and "hourly limit" in notes[2] and len(calls) == 2
+    over = c.post("/api/experiments/overnight", json={"definition": d, "seed": 1, "ai": True}).json()
+    assert "hourly limit" in over["decided_note"]  # an overnight run needs one call per run, which no longer fits

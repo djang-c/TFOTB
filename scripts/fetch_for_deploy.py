@@ -11,7 +11,9 @@ from pathlib import Path
 
 RAW = Path(__file__).resolve().parent.parent / "data" / "raw"
 NEEDED = ("mondo/mondo.json", "hpo/hp.json", "hpo/phenotype.hpoa", "hpo/genes_to_disease.txt",
-          "hgnc/hgnc_complete_set.txt")
+          "hgnc/hgnc_complete_set.txt",
+          # GO and ChEBI: only paper reading needs these (POST /api/research), ~260 MB more
+          "go/go-basic.json", "chebi/chebi_lite.json")
 
 
 def main() -> int:

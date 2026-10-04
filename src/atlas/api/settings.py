@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     research_enabled: bool = False
     research_token: str = ""
     research_max_jobs_per_hour: int = 6
+    # AI review in the experiment loop is open to every visitor, so the server caps its model calls per hour
+    # (an overnight run counts as one call per run). Past the cap the researcher's rules decide.
+    experiment_ai_calls_per_hour: int = 60
     policy_path: Path = REPO_ROOT / "config" / "ingest_policy.json"
     # Search the pinned ontologies when scripts/fetch_ontologies.py has been run.
     real_search: bool = True

@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths: ["src/**", "config/**", "data/fixtures/**", "data/raw/CHECKSUMS.json", "scripts/fetch_for_deploy.py",
-            "scripts/load_deploy_store.py", "deploy/**", "requirements.lock", ".github/workflows/deploy-api.yml"]
+            "scripts/load_deploy_store.py", "robotics/**", "deploy/**", "requirements.lock", ".github/workflows/deploy-api.yml"]
   workflow_dispatch:
 
 permissions:
@@ -39,6 +39,7 @@ jobs:
           cp -r src space/src
           mkdir -p space/data/raw space/scripts && cp -r data/fixtures space/data/fixtures
           cp -r config space/config
+          mkdir space/robotics && cp robotics/*.py robotics/*.json robotics/scene.xml space/robotics/ && cp -r robotics/fixtures space/robotics/fixtures && rm space/robotics/render_replay.py
           mkdir -p space/deploy_store && touch space/deploy_store/.keep && if [ -d deploy/store ]; then cp -r deploy/store/. space/deploy_store/; fi
           cp data/raw/CHECKSUMS.json space/data/raw/ && cp scripts/fetch_for_deploy.py scripts/load_deploy_store.py space/scripts/
           cp requirements.lock space/
