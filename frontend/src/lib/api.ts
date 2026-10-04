@@ -3,7 +3,9 @@
 
 const rawBase = (import.meta.env["VITE_API_BASE"] as string | undefined)?.trim().replace(/\/$/, "");
 export const API_BASE = rawBase
-  ? (rawBase.endsWith("/api") ? rawBase : `${rawBase}/api`)
+  ? rawBase.endsWith("/api")
+    ? rawBase
+    : `${rawBase}/api`
   : "http://localhost:8000/api";
 
 export type EntityType =
