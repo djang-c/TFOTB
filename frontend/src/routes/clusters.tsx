@@ -1,13 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Boxes } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { CatalogSearch } from "@/components/CatalogSearch";
 import { ClaimChip } from "@/components/EvidenceDrawer";
-import { api, type ClusterGroup } from "@/lib/api";
-import { useFocusId } from "@/lib/focus";
-import { CATEGORY_CLASS, clean, plain } from "@/lib/labels";
-import { isLocalId } from "@/lib/localTerms";
-import { useEntity, useStarters } from "@/lib/queries";
+import { Reveal } from "@/components/explorer/Common";
+import { clustersOf, type Cluster } from "@/lib/clusters";
+import { clean, EVIDENCE_BADGE, plain } from "@/lib/labels";
+import { useEntity, useRelatedDiseases } from "@/lib/queries";
 
 export const Route = createFileRoute("/clusters")({
   ssr: false,
@@ -16,177 +14,173 @@ export const Route = createFileRoute("/clusters")({
   component: ClustersPage,
 });
 
-const KIND: Record<ClusterGroup["kind"], { title: (label: string) => string; why: string }> = {
-  mechanism: {
-    title: (l) => `Share an observed mechanism: ${l}`,
-    why: "Published claims place both diseases on the same compartment and substance.",
-  },
-  gene: {
-    title: (l) => `Share the gene ${l}`,
-    why: "Both are linked to this gene. Gene level only: not variant-level evidence and not a shared cause.",
-  },
-  direct: {
-    title: (l) => `Linked directly: ${plain(l)}`,
-    why: "A stored claim links the two diseases directly. Relationships of this kind are recorded as hypotheses.",
-  },
-  symptoms: {
-    title: () => "Similar recorded symptoms",
-    why: "Symptom similarity of 0.4 or more (0 to 1). Similarity, not a shared cause, and not a probability.",
-  },
-};
-
 function ClustersPage() {
   const { id } = Route.useSearch();
-  const focus = useFocusId();
-  const { items: starters } = useStarters();
-  const target =
-    id ??
-    (focus && !isLocalId(focus) ? focus : undefined) ??
-    starters.find((s) => s.type === "disease")?.id;
-  const entity = useEntity(target ?? "");
-  const q = useQuery({
-    queryKey: ["entityClusters", target],
-    queryFn: () => api.entityClusters(target ?? ""),
-    enabled: !!target,
-    retry: 1,
-  });
-  const all = useQuery({ queryKey: ["clusters"], queryFn: api.clusters, retry: 1 });
-  const groups = q.data?.groups ?? [];
-  const name = entity.data ? clean(entity.data.entity.label) : target;
+  if (!id) return <NeedSearch />;
+  return <Clusters key={id} id={id} />;
+}
 
+function NeedSearch() {
+  const navigate = useNavigate();
+  return (
+    <div className="mx-auto max-w-xl px-6 py-24 text-center">
+      <h1 className="text-2xl font-semibold">Search a disease first</h1>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        A cluster only means something next to the disease you are looking into, so this page opens
+        after a search.
+      </p>
+      <CatalogSearch
+        className="mt-6 text-left"
+        onSelect={(e) => void navigate({ to: "/clusters", search: { id: e.id } })}
+        placeholder="Search a disease"
+      />
+    </div>
+  );
+}
+
+function Clusters({ id }: { id: string }) {
+  const entity = useEntity(id);
+  const q = useRelatedDiseases(id);
+  const name = entity.data ? clean(entity.data.entity.label) : id;
+  const d = q.data;
+  const clusters = d?.applies ? clustersOf(d) : [];
   return (
     <div className="px-5 py-8 lg:px-10">
       <header className="border-b border-border pb-6">
         <p className="section-kicker">Clusters</p>
-        <h1 className="mt-2 text-3xl font-semibold">
-          {target ? <>Groups around {name}</> : "Clusters"}
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-          {q.data?.note ??
-            "Each group is the diseases that share one named feature with this entry. Use the search on the left to choose another entry."}
-        </p>
+        <h1 className="mt-2 text-3xl font-semibold">Clusters around {name}</h1>
       </header>
 
-      {!target && (
-        <p className="mt-8 text-sm text-muted-foreground">
-          Search for a disease on the left to see the groups it belongs to.
-        </p>
-      )}
-      {q.isPending && target && <p className="mt-8 text-sm text-muted-foreground">Loading…</p>}
-      {q.isError && (
-        <p role="alert" className="mt-8 text-sm text-destructive">
-          Clusters could not be loaded. Check that the API is running.
-        </p>
-      )}
-      {q.data && groups.length === 0 && (
-        <p className="mt-8 rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
-          No group is computed for {name}. Groups come from its connections, which exist only for
-          diseases. Missing is not the same as none: it may simply not have been read yet.
-        </p>
-      )}
-
-      {groups.length > 0 && (
-        <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {groups.map((g) => (
-            <article
-              key={`${g.kind}-${g.feature}`}
-              className="flex flex-col rounded-lg border border-border bg-card p-5"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="text-sm font-semibold leading-5">{KIND[g.kind].title(g.label)}</h2>
-                <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                  {g.members.length + 1} diseases
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{KIND[g.kind].why}</p>
-              <ul className="mt-3 space-y-1.5">
-                <li className="flex items-center gap-2 text-xs">
-                  <span className="size-2 shrink-0 rounded-full bg-primary" />
-                  <span className="font-medium">{name}</span>
-                  <span className="text-[10px] text-muted-foreground">this entry</span>
-                </li>
-                {g.members.map((m) => (
-                  <li key={m.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                    <span className="size-2 shrink-0 rounded-full entity-dot-disease" />
-                    <Link
-                      to="/clusters"
-                      search={{ id: m.id }}
-                      className="min-w-0 hover:text-primary hover:underline"
-                    >
-                      {clean(m.label)}
-                    </Link>
-                    {m.score !== undefined && (
-                      <span className="font-mono text-[10px] text-muted-foreground">
-                        {m.score.toFixed(2)}
-                      </span>
-                    )}
-                    <span className={`evidence-badge ${CATEGORY_CLASS[m.category]}`}>
-                      {m.category}
-                    </span>
-                    {m.claim_ids.slice(0, 3).map((c) => (
-                      <ClaimChip key={c} id={c} />
-                    ))}
-                    {m.shared && m.shared.length > 0 && (
-                      <span className="w-full pl-4 text-[10px] text-muted-foreground">
-                        shares {m.shared.join(", ")}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-      )}
-
-      <section className="mt-12 border-t border-border pt-8">
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <Boxes className="size-4" />
-          Every mechanism cluster in the stored papers
-        </h2>
-        <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">
-          {all.data?.note ?? ""} Select a disease to see the groups around it.
-        </p>
-        {all.data && all.data.clusters.length === 0 && (
-          <p className="mt-4 text-xs text-muted-foreground">
-            No two diseases share an observed mechanism feature in the claims stored so far.
+      <section
+        aria-label="What is a cluster"
+        className="mt-6 grid gap-6 rounded-lg border border-border bg-muted/30 p-6 text-sm leading-6 lg:grid-cols-3"
+      >
+        <div>
+          <h2 className="font-semibold">What is a cluster?</h2>
+          <p className="mt-1 text-muted-foreground">
+            A cluster is a group of diseases that have <strong>one specific thing</strong> in common
+            with {name}: the same gene, the same mechanism reported in papers, the same parent
+            disease, or a similar set of symptoms. Each cluster below is named after that one shared
+            thing. A disease can sit in several clusters at once.
           </p>
-        )}
-        <div className="mt-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {all.data?.clusters.map((c) => (
-            <article
-              key={c.diseases.map((d) => d.id).join("|")}
-              className={`rounded-lg border p-5 ${c.diseases.some((d) => d.id === target) ? "border-primary/60 bg-accent/30" : "border-border bg-card"}`}
-            >
-              <p className="flex flex-wrap gap-1.5">
-                {c.diseases.map((d) => (
-                  <Link
-                    key={d.id}
-                    to="/clusters"
-                    search={{ id: d.id }}
-                    className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] hover:border-primary/50 hover:text-primary"
-                  >
-                    {clean(d.label)}
-                  </Link>
-                ))}
-              </p>
-              <ul className="mt-3 space-y-1.5 text-xs">
-                {c.shared_features.map((f) => (
-                  <li key={f.feature} className="flex flex-wrap items-center gap-1.5">
-                    <b>{f.label}</b>{" "}
-                    <span className="text-muted-foreground">
-                      in {f.studies} {f.studies === 1 ? "study" : "studies"}
-                    </span>
-                    {f.claim_ids.slice(0, 3).map((id2) => (
-                      <ClaimChip key={id2} id={id2} />
-                    ))}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
+        </div>
+        <div>
+          <h2 className="font-semibold">Why it is useful</h2>
+          <p className="mt-1 text-muted-foreground">
+            Diseases in the same cluster are candidates for shared research. A lab model, a test or
+            a treatment idea studied in one of them may be worth checking in the others. Rare
+            diseases have few papers each, so a cluster pools what is known.
+          </p>
+        </div>
+        <div>
+          <h2 className="font-semibold">What it is not</h2>
+          <p className="mt-1 text-muted-foreground">
+            Being in a cluster does not mean the diseases have the same cause, the same treatment or
+            the same outcome. Clusters marked as hypotheses come from a suggestion by a paper or an
+            AI, not from a finding. Nothing here is a diagnosis.
+          </p>
         </div>
       </section>
+
+      {q.isPending && (
+        <p className="mt-8 text-sm text-muted-foreground">
+          Comparing {name} against every disease in the reference files…
+        </p>
+      )}
+      {q.isError && (
+        <p role="alert" className="mt-8 text-sm text-destructive">
+          Clusters could not be loaded.
+        </p>
+      )}
+      {d && !d.applies && (
+        <p className="mt-8 text-sm text-muted-foreground">
+          Clusters are built for diseases. {name} is not a disease: open its{" "}
+          <Link to="/entity/$id" params={{ id }} className="text-primary underline">
+            dossier
+          </Link>{" "}
+          to see the diseases linked to it.
+        </p>
+      )}
+      {d?.applies && d.none && (
+        <div className="mt-8 rounded-md border border-dashed border-border p-5">
+          <p className="text-sm font-semibold">No clusters: no similarities found.</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{d.note}</p>
+        </div>
+      )}
+      {clusters.length > 0 && (
+        <>
+          <p className="mt-8 text-xs text-muted-foreground">
+            {clusters.length} clusters · {d?.total} diseases in total
+          </p>
+          <div className="mt-3 gap-4 md:columns-2 2xl:columns-3">
+            {clusters.map((c) => (
+              <ClusterCard key={c.key} c={c} entryName={name} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
+  );
+}
+
+function ClusterCard({ c, entryName }: { c: Cluster; entryName: string }) {
+  const badge = EVIDENCE_BADGE[c.members[0]!.reason.evidence];
+  return (
+    <article className="mb-4 flex max-h-[28rem] break-inside-avoid flex-col rounded-lg border border-border bg-card">
+      <div className="border-b border-border p-5">
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="text-sm font-semibold leading-5">{c.title}</h2>
+          <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+            {c.members.length + 1} diseases
+          </span>
+        </div>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{c.why}</p>
+        <span className={`evidence-badge mt-2 inline-block ${badge.cls}`}>{badge.text}</span>
+      </div>
+      <ul className="flex-1 space-y-2 overflow-y-auto p-5 text-xs leading-5">
+        <li className="flex items-center gap-2">
+          <span className="size-2 rounded-full bg-primary" />
+          <strong>{entryName}</strong>
+          <span className="text-muted-foreground">the disease you searched</span>
+        </li>
+        <Reveal
+          items={c.members}
+          first={10}
+          noun="diseases"
+          render={(xs) =>
+            xs.map((m) => (
+              <li key={m.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="size-2 rounded-full bg-reviewed" />
+                <Link
+                  to="/entity/$id"
+                  params={{ id: m.id }}
+                  className="font-medium hover:text-primary hover:underline"
+                >
+                  {clean(m.label)}
+                </Link>
+                {m.reason.kind === "symptoms" && (
+                  <span className="font-mono text-muted-foreground">
+                    {m.reason.score?.toFixed(2)}
+                  </span>
+                )}
+                {m.reason.claim_ids.slice(0, 2).map((cid) => (
+                  <ClaimChip key={cid} id={cid} />
+                ))}
+                {m.reason.kind === "symptoms" && m.reason.shared?.length ? (
+                  <span className="block w-full pl-4 text-[11px] text-muted-foreground">
+                    shares {m.reason.shared.join(", ")}
+                  </span>
+                ) : null}
+                {(m.reason.kind === "paper_link" || m.reason.kind === "ai_hypothesis") && (
+                  <span className="block w-full pl-4 text-[11px] text-muted-foreground">
+                    {plain(m.reason.label)}: “{m.reason.detail}”
+                  </span>
+                )}
+              </li>
+            ))
+          }
+        />
+      </ul>
+    </article>
   );
 }

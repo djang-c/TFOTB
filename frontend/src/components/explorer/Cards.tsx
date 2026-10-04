@@ -30,9 +30,11 @@ export function Cards({ id }: { id: string }) {
           <Empty>No action cards are drafted for this entry yet.</Empty>
         </div>
       )}
-      {cards.data?.cards.map((c) => (
-        <CardView key={c.card_id} card={c} />
-      ))}
+      <div className="grid xl:grid-cols-2">
+        {cards.data?.cards.map((c) => (
+          <CardView key={c.card_id} card={c} />
+        ))}
+      </div>
       {assets.data && assets.data.assets.length > 0 && (
         <Section
           title="Reusable assets and studies"
@@ -118,19 +120,23 @@ function CardView({ card }: { card: ActionCard }) {
         For {card.audience === "family" ? "families" : "researchers"}
       </p>
       <p className="mt-3 text-xs font-medium">This week: {card.this_week}</p>
-      <div className="mt-2">
-        <Markdown md={md} />
-      </div>
       {card.kind === "simulation_report" && (
         <Link to="/simulation" className="mt-2 block text-xs underline underline-offset-2">
           Open the simulation
         </Link>
       )}
-      <ul className="mt-3 list-disc pl-4 text-[10px] leading-4 text-muted-foreground">
-        {card.limitations.map((l) => (
-          <li key={l}>{l}</li>
-        ))}
-      </ul>
+      {/* The full card is long (every comparison it rests on); it opens on request, so it never makes the page long. */}
+      <details className="mt-2 text-xs">
+        <summary className="cursor-pointer text-primary">Read the full card</summary>
+        <div className="mt-2 max-h-[32rem] overflow-y-auto">
+          <Markdown md={md} />
+          <ul className="mt-3 list-disc pl-4 text-[10px] leading-4 text-muted-foreground">
+            {card.limitations.map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+        </div>
+      </details>
       <p className="mt-2 text-[10px] text-muted-foreground">
         Reviewed before use by: {card.responsible_human}
       </p>

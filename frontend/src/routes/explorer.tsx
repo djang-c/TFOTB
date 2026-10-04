@@ -120,7 +120,7 @@ function GraphView({ centerId }: { centerId: string }) {
 
   return (
     <section
-      className="relative h-[calc(100svh-3.5rem)] min-h-[560px] overflow-hidden bg-workspace lg:h-screen"
+      className="relative h-[calc(100svh-6.25rem)] min-h-[560px] overflow-hidden bg-workspace"
       aria-label="Evidence graph"
     >
       {graph.isPending && (

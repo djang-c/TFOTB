@@ -5,7 +5,7 @@ import { lazy, Suspense, useState } from "react";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { Button } from "@/components/ui/button";
 import { api, type EntityType } from "@/lib/api";
-import { clean, isHypothesis } from "@/lib/labels";
+import { clean, REASON_ORDER, REASON_SHORT } from "@/lib/labels";
 import { useMeta, useStarters } from "@/lib/queries";
 
 const DnaBackdrop = lazy(() =>
@@ -37,12 +37,6 @@ export const Route = createFileRoute("/")({
 
 const n = (v: number | undefined) => (v === undefined ? "—" : v.toLocaleString("en-US"));
 
-const BLURB: Partial<Record<EntityType, string>> = {
-  disease: "Related diseases, shared mechanisms and the paper behind each link.",
-  gene: "Diseases linked to this gene and what papers report about it.",
-  phenotype: "Diseases that record this symptom.",
-};
-
 /** The design's hero artwork when its image file is present; otherwise the animated DNA drawing from the same design. */
 function HeroArt() {
   const [missing, setMissing] = useState(false);
@@ -73,12 +67,12 @@ function Index() {
   const real = meta.data?.real;
   const store = meta.data?.store;
   const terms = useQuery({ queryKey: ["terms"], queryFn: api.terms, staleTime: 60_000, retry: 0 });
-  const seedCluster = starters.slice(0, 3);
-  const seedData = useQueries({
-    queries: seedCluster.map((s) => ({
-      queryKey: ["entity", s.id],
-      queryFn: () => api.entity(s.id),
-      staleTime: 60_000,
+  const examples = starters.filter((s) => s.type === "disease").slice(0, 3);
+  const exampleData = useQueries({
+    queries: examples.map((s) => ({
+      queryKey: ["related-diseases", s.id],
+      queryFn: () => api.relatedDiseases(s.id),
+      staleTime: 300_000,
       retry: 0,
     })),
   });
@@ -200,19 +194,18 @@ function Index() {
           ))}
         </div>
 
-        {seedCluster.length > 0 && (
+        {examples.length > 0 && (
           <div className="mt-12">
             <p className="section-kicker">Start here</p>
-            <h2 className="mt-2 text-xl font-semibold">Seed cluster</h2>
+            <h2 className="mt-2 text-xl font-semibold">Example diseases</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Key entry points into the evidence graph, with live counts of what has been read from
-              papers.
-              {meta.data?.real?.seed_note ? ` ${meta.data.real.seed_note}` : ""}
+              The rare diseases this project started from, picked by the project owner as examples.
+              Open one to see every disease related to it and why.
             </p>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {seedCluster.map((s, i) => {
-                const claims = seedData[i]?.data?.claims ?? [];
-                const hypotheses = claims.filter(isHypothesis).length;
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {examples.map((s, i) => {
+                const r = exampleData[i]?.data;
+                const pending = exampleData[i]?.isPending;
                 return (
                   <Link
                     key={s.id}
@@ -221,27 +214,30 @@ function Index() {
                     className="group rounded-lg border border-border/60 bg-background p-6 transition-colors hover:border-primary/50"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {s.type}
-                        </div>
-                        <h3 className="mt-1 font-semibold group-hover:text-primary">
-                          {clean(s.label)}
-                        </h3>
-                      </div>
+                      <h3 className="font-semibold group-hover:text-primary">{clean(s.label)}</h3>
                       <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
                     </div>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                      {BLURB[s.type] ?? "Evidence and sources for this entry."}
+                      {pending
+                        ? "Finding related diseases…"
+                        : !r
+                          ? "Related diseases could not be loaded."
+                          : r.none
+                            ? "No similarities found in the data we hold."
+                            : `${r.total} related diseases`}
                     </p>
-                    <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
-                      <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 font-mono">
-                        {seedData[i]?.isPending ? "…" : claims.length} claims from papers
-                      </span>
-                      <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 font-mono">
-                        {seedData[i]?.isPending ? "…" : hypotheses} hypotheses
-                      </span>
-                    </div>
+                    {r && !r.none && (
+                      <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+                        {REASON_ORDER.filter((k) => r.counts[k]).map((k) => (
+                          <span
+                            key={k}
+                            className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5"
+                          >
+                            {r.counts[k]} {REASON_SHORT[k]}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </Link>
                 );
               })}

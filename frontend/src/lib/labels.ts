@@ -1,7 +1,7 @@
 // Plain-language wording and origin labels. Every rule here exists so the page never claims more than the data does:
 // an AI finding is labelled as one, a hypothesis is never shown as a finding, and a drug is a "treatment idea".
 
-import type { Claim, EvidenceCategory } from "@/lib/api";
+import type { Claim, EvidenceCategory, ReasonKind, RelatedReason } from "@/lib/api";
 
 /** Plain-language reading of each relationship. Wording never claims more than the predicate does. */
 export const PREDICATE_PLAIN: Record<string, string> = {
@@ -180,3 +180,36 @@ export function humanize(text: string, name: (id: string) => string): string {
     .replace(/\b(?:HGNC|MONDO|HP|GO|CHEBI):\d+/g, (id) => name(id))
     .replace(/^shared /, "");
 }
+
+/** Related-disease reasons, strongest first, in plain words. The badge says where each reason comes from. */
+export const REASON_ORDER = [
+  "gene",
+  "mechanism",
+  "paper_link",
+  "family",
+  "ai_hypothesis",
+  "symptoms",
+] as const satisfies readonly ReasonKind[];
+export const REASON_SHORT: Record<ReasonKind, string> = {
+  gene: "share a gene",
+  mechanism: "share a mechanism in papers",
+  paper_link: "linked by a paper",
+  family: "same disease family",
+  ai_hypothesis: "AI hypotheses",
+  symptoms: "similar symptoms",
+};
+export const REASON_TITLE: Record<ReasonKind, string> = {
+  gene: "Same gene",
+  mechanism: "Same mechanism, observed in papers",
+  paper_link: "Linked by a paper",
+  family: "Same disease family",
+  ai_hypothesis: "AI hypothesis",
+  symptoms: "Similar symptoms",
+};
+export const EVIDENCE_BADGE: Record<RelatedReason["evidence"], { text: string; cls: string }> = {
+  reference: { text: "reference data", cls: "evidence-database" },
+  paper: { text: "from a paper", cls: "evidence-literature" },
+  paper_hypothesis: { text: "hypothesis in a paper", cls: "evidence-hypothesis" },
+  ai_hypothesis: { text: "AI-generated hypothesis", cls: "evidence-hypothesis" },
+  similarity: { text: "computed similarity", cls: "evidence-symptom" },
+};

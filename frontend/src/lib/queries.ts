@@ -51,3 +51,10 @@ export function useStarters() {
   const meta = useMeta();
   return { meta, items: meta.data?.real?.seed ?? meta.data?.featured ?? [] };
 }
+export const useRelatedDiseases = (id: string) =>
+  useQuery({
+    queryKey: ["related-diseases", id],
+    queryFn: () => api.relatedDiseases(id),
+    retry: 0,
+    staleTime: 300_000,
+  });

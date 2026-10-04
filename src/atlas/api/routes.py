@@ -12,10 +12,10 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
+from atlas import related as related_mod
 from atlas.api import termviews
 from atlas.api.claimstore import load_claims, paper_coverage
 from atlas.api.fixtures import load_fixture
-from atlas.clusters import GROUP_NOTE, groups_for, mechanism_clusters
 from atlas.collaborators import NOTE as COLLABORATOR_NOTE
 from atlas.collaborators import collaborators_for, load_papers
 from atlas.graph import find_paths, neighborhood
@@ -243,7 +243,7 @@ def _real_meta(request: Request) -> dict[str, Any] | None:
         "names": ix.size,
         "sources": ix.r.versions,
         "seed": seed,
-        "seed_note": "Seed cluster chosen by the project owner on 2026-10-03; provisional and unreviewed.",
+        "seed_note": "Example entries chosen by the project owner on 2026-10-03 to start from; not a cluster and not reviewed.",
     }
 
 
@@ -286,29 +286,25 @@ def search(request: Request, q: str = "") -> Any:
                 ambiguous=real["ambiguous"] or (not real["results"] and len(hits) > 1))
 
 
-@router.get("/clusters")
-def clusters(request: Request) -> Any:
-    """Groups of diseases that share an observed mechanism feature, from the stored paper claims. Organisation only."""
-    found = mechanism_clusters(_stored_claims(request), label_of=_label_of(request))
-    return {"_synthetic": STORE_NOTE, "clusters": found, "total": len(found),
-            "note": "An organisational view of the evidence, not a statement that diseases share a treatment or cause."}
-
-
-@router.get("/entities/{entity_id}/clusters")
-def entity_clusters(request: Request, entity_id: str) -> Any:
-    """The groups one entry belongs to (shared mechanism, shared gene, direct link, similar symptoms), from its
-    connections, plus the store-wide mechanism clusters that contain it. Organisation only, never a shared cause."""
-    _entity(request, entity_id)
-    label = _label_of(request)
+@router.get("/entities/{entity_id}/related-diseases")
+def entity_related_diseases(request: Request, entity_id: str) -> Any:
+    """Related diseases for a disease: one row per disease with every reason that links it (shared gene, MONDO family,
+    shared mechanism in papers, paper or AI hypothesis, similar symptoms). `none` is true when nothing links it."""
+    e = _entity(request, entity_id)
+    if e["type"] != "disease":
+        return {"entity_id": entity_id, "applies": False, "diseases": [], "total": 0, "none": True,
+                "note": "Related diseases are listed for diseases only."}
     ix = _index(request)
-    results = ix.connections(entity_id)["results"] if ix is not None and not entity_id.startswith("SYN:") and not termviews.is_term_id(entity_id) else []
-    every = mechanism_clusters(_stored_claims(request), label_of=label)
-    store = [c for c in every if any(d["id"] == entity_id for d in c["diseases"])]
-    # the claims behind each observed feature (evidential claims only), so a mechanism group never cites a hypothesis
-    feature_claims = {f["feature"]: f["claim_ids"] for c in every for f in c["shared_features"]}
-    return {"_synthetic": STORE_NOTE, "entity_id": entity_id,
-            "groups": groups_for(entity_id, results, label_of=label, feature_claims=feature_claims),
-            "mechanism_clusters": store, "note": GROUP_NOTE}
+    label = _label_of(request)
+    stored = _stored_claims(request)
+    real = ix is not None and not entity_id.startswith("SYN:") and not termviews.is_term_id(entity_id)
+    parts = [related_mod.from_store(entity_id, stored, label_of=label)]
+    if real:
+        parts.insert(0, related_mod.from_reference(ix, entity_id))
+    out = related_mod.related_diseases(
+        entity_id, *parts, label_of=label, hierarchy_note=ix.hierarchy_note if real else (lambda _a, _b: None),
+        ai_stored=sum(c.source_type.value == "ai_generated" for c in stored.values()))
+    return {"_synthetic": STORE_NOTE, "applies": True, **out}
 
 
 @router.get("/symptoms")

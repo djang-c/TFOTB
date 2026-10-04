@@ -305,36 +305,37 @@ export interface Collaborators {
   note: string;
 }
 
-export interface Cluster {
-  diseases: { id: string; label: string }[];
-  shared_features: {
-    feature: string;
-    label: string;
-    diseases: string[];
-    claim_ids: string[];
-    studies: number;
-  }[];
+export type ReasonKind =
+  "gene" | "mechanism" | "paper_link" | "family" | "ai_hypothesis" | "symptoms";
+
+/** One reason two diseases are related, with where it comes from. */
+export interface RelatedReason {
+  kind: ReasonKind;
+  key: string;
+  label: string;
+  evidence: "reference" | "paper" | "paper_hypothesis" | "ai_hypothesis" | "similarity";
+  claim_ids: string[];
+  detail: string;
+  score?: number;
+  shared?: string[];
+  derived_from?: string[];
 }
 
-export interface ClusterGroup {
-  kind: "mechanism" | "gene" | "direct" | "symptoms";
-  feature: string;
-  label: string;
-  members: {
+export interface RelatedDiseases {
+  entity_id: string;
+  applies: boolean;
+  diseases: {
     id: string;
     label: string;
-    category: EvidenceCategory;
-    claim_ids: string[];
-    score?: number;
-    shared?: string[];
+    reasons: RelatedReason[];
+    kinds: ReasonKind[];
+    hierarchy: string | null;
   }[];
-}
-
-export interface EntityClusters {
-  entity_id: string;
-  groups: ClusterGroup[];
-  mechanism_clusters: Cluster[];
+  total: number;
+  counts: Record<ReasonKind, number>;
+  none: boolean;
   note: string;
+  ai?: { stored_for_this_disease: number; stored_total: number; note: string };
 }
 
 export interface Routes {
@@ -475,7 +476,7 @@ export const api = {
   terms: () =>
     request<{ total: number; items: { id: string; label: string; type: string }[] }>("/terms"),
   symptoms: (q: string) => request<SymptomSearch>(`/symptoms?q=${enc(q)}`),
-  clusters: () => request<{ clusters: Cluster[]; total: number; note: string }>("/clusters"),
-  entityClusters: (id: string) => request<EntityClusters>(`/entities/${enc(id)}/clusters`),
+  relatedDiseases: (id: string) =>
+    request<RelatedDiseases>(`/entities/${enc(id)}/related-diseases`),
   simulation: (id: string) => request<SimRun>(`/simulations/${enc(id)}`),
 };

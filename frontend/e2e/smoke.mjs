@@ -73,32 +73,39 @@ try {
     (await page.locator("canvas").count()) === 0,
   );
   check(
-    "dossier: links to the graph and to clusters",
-    (await page.getByRole("link", { name: /Show in graph/ }).count()) === 1 &&
-      (await page.getByRole("link", { name: /^Clusters$/ }).count()) >= 1,
+    "dossier: links to the graph",
+    (await page.getByRole("link", { name: /Show in graph/ }).count()) === 1,
   );
-  await page.getByText("Related diseases").first().waitFor({ timeout: 20000 });
+  const related = page.getByRole("region", { name: "Related diseases" });
+  await related.getByRole("group", { name: "Filter by reason" }).waitFor({ timeout: 30000 });
   check("dossier: lists related diseases", true);
   await shot("02-dossier");
 
-  // 3. The core journey, CLN3 <-> Niemann-Pick type C, with an evidence label
-  const npc = page
-    .locator("li", { hasText: /Niemann-Pick disease type C/ })
-    .filter({ has: page.getByRole("button", { name: /Show route/ }) })
-    .first();
+  // 3. The core journey, CLN3 <-> Niemann-Pick type C: one row per disease with every reason and its origin
+  const npc = related.locator("li", { hasText: /^Niemann-Pick disease type C/ }).first();
   await npc.waitFor({ timeout: 20000 });
-  check("connections: Niemann-Pick type C is listed", true);
+  const npcText = await npc.innerText();
+  check("related: Niemann-Pick type C is listed", true);
   check(
-    "connections: it carries the literature-supported lead label",
-    /literature-supported lead/.test(await npc.innerText()),
+    "related: it shares a mechanism observed in papers, labelled as from a paper",
+    /Same mechanism, observed in papers/.test(npcText) && /from a paper/.test(npcText),
   );
-  await npc.getByRole("button", { name: /Show route/ }).click();
-  await page
-    .getByText(/Shared feature, not a causal step/)
-    .first()
-    .waitFor({ timeout: 15000 });
-  check("connections: a route shows 'shared feature, not a causal step'", true);
-  await shot("03-connections-route");
+  check(
+    "related: the paper's direct link is labelled as a hypothesis",
+    /hypothesis in a paper/.test(npcText),
+  );
+  check(
+    "related: reference data is used (shared gene, disease family, similar symptoms)",
+    /Same disease family/.test(await related.innerText()) &&
+      /Similar symptoms/.test(await related.innerText()),
+  );
+  check(
+    "related: says plainly when no AI hypothesis exists",
+    /No AI hypothesis about this disease has been generated yet/.test(await related.innerText()),
+  );
+  const tall = await page.evaluate(() => document.documentElement.scrollHeight);
+  check("dossier: no column makes the page long", tall < 5200, `${tall}px`);
+  await shot("03-related");
 
   // 4. A claim tab -> evidence drawer: origin label, verbatim passage, DOI link
   const claimBtn = page.getByRole("button", { name: /PMID-/ }).first();
@@ -187,27 +194,46 @@ try {
   check("symptoms: 'no hearing loss' is understood as absent, not as a match", true);
   await shot("06-symptoms");
 
-  // 7. Clusters follow the search: groups around the entry being looked into
-  await page.goto(`${BASE}/clusters?id=MONDO:0008767`, { waitUntil: "networkidle" });
-  await page.getByText(/Groups around/).waitFor({ timeout: 15000 });
-  await page
-    .getByText(/Share an observed mechanism: lysosome \(cholesterol\)/)
-    .first()
-    .waitFor({ timeout: 20000 });
-  check("clusters: groups around the searched disease, named by the shared feature", true);
+  // 7. The top bar: only Home and Symptoms stand alone; the views of a search appear once something is searched
+  const pages = page.getByRole("navigation", { name: "Pages" });
   check(
-    "clusters: Niemann-Pick type C is in its mechanism group",
-    /Niemann-Pick disease type C/.test(await text("article")),
+    "top bar: only Home, Symptoms and Simulation",
+    (await pages.getByRole("link").allInnerTexts()).join("|") === "Home|Symptoms|Simulation",
+  );
+  check(
+    "top bar: no views on the standalone pages",
+    (await page.getByRole("navigation", { name: "Views of this search" }).count()) === 0,
+  );
+  check("top bar: no 'seed cluster' anywhere", !/seed cluster/i.test(await text("body")));
+  await page.goto(`${BASE}/entity/MONDO:0008767`, { waitUntil: "networkidle" });
+  const views = page.getByRole("navigation", { name: "Views of this search" });
+  check(
+    "after a search: Dossier, Graph and Clusters are offered",
+    (await views.getByRole("link").allInnerTexts()).map((t) => t.trim()).join("|") ===
+      "Dossier|Graph|Clusters",
+  );
+  check(
+    "after a search: Graph and Clusters follow the searched disease",
+    /id=MONDO(%3A|:)0008767/.test(
+      (await views.getByRole("link", { name: "Clusters" }).getAttribute("href")) ?? "",
+    ),
+  );
+
+  // 7b. Clusters: explained, about the searched disease, and closed without a search
+  await views.getByRole("link", { name: "Clusters" }).click();
+  await page.getByRole("heading", { name: /What is a cluster\?/ }).waitFor({ timeout: 15000 });
+  check("clusters: explains what a cluster is", true);
+  await page.getByRole("heading", { name: /Linked to the gene CLN3/ }).waitFor({ timeout: 30000 });
+  check("clusters: one cluster per shared thing, named after it", true);
+  check(
+    "clusters: Niemann-Pick type C is in the shared-mechanism cluster",
+    /Same mechanism in papers[\s\S]*Niemann-Pick disease type C/.test(await text("main")),
   );
   await shot("07-clusters");
-  const sideGraph = await page
-    .getByRole("navigation", { name: "Pages" })
-    .getByRole("link", { name: "Graph" })
-    .getAttribute("href");
+  await page.goto(`${BASE}/clusters`, { waitUntil: "networkidle" });
   check(
-    "sidebar: the Graph page follows the entry being looked into",
-    /id=MONDO(%3A|:)0008767/.test(sideGraph ?? ""),
-    sideGraph ?? "",
+    "clusters: without a search it asks for one instead of showing random clusters",
+    /Search a disease first/.test(await text("main")),
   );
 
   // 8. Simulation page: a pass and the intended failure, from the API

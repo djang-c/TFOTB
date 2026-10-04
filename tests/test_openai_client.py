@@ -95,14 +95,14 @@ def test_the_key_is_never_in_an_error_message(monkeypatch):
 
 def test_provider_comes_from_the_environment_and_each_provider_checks_its_own_key(monkeypatch):
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
-    assert provider_name() == "openai"  # the only provider; it is also the default
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert provider_name() == "openai"  # no Anthropic key: OpenAI
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-not-real")
+    assert provider_name() == "anthropic" and make_client().provider == "anthropic"  # the Anthropic key is used first
     monkeypatch.setenv("LLM_PROVIDER", "openai")
     assert provider_name() == "openai" and has_key() is True and make_client().provider == "openai"
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     assert has_key() is False
-    monkeypatch.setenv("LLM_PROVIDER", "anthropic")  # removed: refused, not silently ignored
-    with pytest.raises(LLMError, match="LLM_PROVIDER"):
-        provider_name()
     monkeypatch.setenv("LLM_PROVIDER", "nonsense")
     with pytest.raises(LLMError, match="LLM_PROVIDER"):
         provider_name()

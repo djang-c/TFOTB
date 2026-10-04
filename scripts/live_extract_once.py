@@ -24,7 +24,7 @@ from pathlib import Path
 
 from atlas.extraction import PROMPT_VERSION, SourceText, extract_claims
 from atlas.llm.cache import CachedClient
-from atlas.llm.factory import has_key, make_client
+from atlas.llm.factory import has_key, make_client, provider_name
 from atlas.resolver import Resolver
 from atlas.sources import SourceError, fetch_full_text
 from atlas.store import PublicStore
@@ -58,7 +58,7 @@ def main() -> int:
         print("Refusing: pass --i-approve-sending-this-text to confirm this text may be sent to the provider.")
         return 2
     if not has_key():
-        print("Refusing: OPENAI_API_KEY is not in the environment.")
+        print("Refusing: no model key in the environment (ANTHROPIC_API_KEY or OPENAI_API_KEY).")
         return 2
     if args.pmid:
         try:
@@ -80,7 +80,7 @@ def main() -> int:
         print(f"Refusing: text is {len(text)} chars, over --max-chars {args.max_chars}.")
         return 2
 
-    client = CachedClient(make_client(max_tokens=args.max_tokens), ROOT / "data" / "cache" / "llm", mode="record", provider="openai")
+    client = CachedClient(make_client(max_tokens=args.max_tokens), ROOT / "data" / "cache" / "llm", mode="record", provider=provider_name())
     resolver = Resolver.from_raw(ROOT / "data" / "raw", include_extraction_refs=True)
     report = extract_claims(client, SourceText(source_id, url, text), resolver)
 
