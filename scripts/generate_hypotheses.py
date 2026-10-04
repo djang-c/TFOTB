@@ -13,17 +13,17 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 from atlas.db import AtlasDB
 from atlas.hypotheses import generate_hypotheses
-from atlas.llm.anthropic_client import AnthropicClient
 from atlas.llm.base import LLMError
 from atlas.llm.cache import CachedClient
+from atlas.llm.factory import make_client, provider_name
 from atlas.policy import load_policy
+from atlas.research import live_allowed
 from atlas.resolver import Resolver
 from atlas.schemas import Claim
 
@@ -41,9 +41,9 @@ def main() -> int:
     if not (STORE / "atlas.db").exists():
         print("No claim store yet: run scripts/ingest_papers.py first.")
         return 2
-    live = policy.live_extraction and not args.offline and bool(os.environ.get("ANTHROPIC_API_KEY"))
-    inner = AnthropicClient(max_tokens=policy.max_output_tokens) if live else None
-    client = CachedClient(inner, ROOT / "data" / "cache" / "llm", mode="replay", allow_live_on_miss=live, provider="anthropic")
+    live = live_allowed(policy, offline=args.offline)
+    inner = make_client(max_tokens=policy.max_output_tokens) if live else None
+    client = CachedClient(inner, ROOT / "data" / "cache" / "llm", mode="replay", allow_live_on_miss=live, provider=provider_name())
     resolver = Resolver.from_raw(ROOT / "data" / "raw", include_extraction_refs=True)
     db = AtlasDB(STORE / "atlas.db")
     claims = {c.claim_id: c for c in db.all(Claim)}

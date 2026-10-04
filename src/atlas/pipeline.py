@@ -41,6 +41,7 @@ class PaperRun:
     from_cache: bool = False
     citation: str = ""  # the paper's DOI link or Europe PMC page, taken from its record
     journal: str = ""
+    meta: dict | None = None  # title/year/authors for the papers sidecar; never written to the run log
 
 
 @dataclass
@@ -141,6 +142,8 @@ def ingest_papers(
                 sid, "ingested", "", ft.license, counts["added"], counts["already"],
                 len(ex.quarantined) + counts["conflict"], ex.prompt_version, ex.from_cache,
                 ft.citation_url, ft.journal,
+                {"source_id": sid, "pmid": pmid, "citation": ft.citation_url, "doi": ft.doi, "title": ft.title,
+                 "journal": ft.journal, "year": ft.year, "authors": list(ft.authors)},
             )
         )
     return report
@@ -148,4 +151,7 @@ def ingest_papers(
 
 def ledger_rows(report: IngestReport) -> list[dict[str, Any]]:
     """Plain dicts for an append-only run log (one JSON line each)."""
-    return [r.__dict__.copy() for r in report.runs]
+    rows = [r.__dict__.copy() for r in report.runs]
+    for row in rows:
+        row.pop("meta", None)  # paper metadata goes to papers.jsonl, not the run log
+    return rows

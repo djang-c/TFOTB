@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { safeHref } from "@/lib/safeHref";
-import { api, ApiError, enc, type PatientGroups, type SourceCoverage, type AssetResult, type ConnectionResult, type CoverageManifest, type Entity, type GapResult } from "@/lib/api";
+import { api, ApiError, enc, type Collaborators, type PatientGroups, type SourceCoverage, type AssetResult, type ConnectionResult, type CoverageManifest, type Entity, type GapResult } from "@/lib/api";
 import { ActionCardView } from "@/components/ActionCardView";
 import { ApiDown } from "@/components/ApiDown";
 import { CategoryPill, GAP_KIND, ReviewBadge, SourceBadge, StatusMark } from "@/components/Badges";
@@ -18,12 +18,13 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
       api.entity(id), api.connections(id), api.assets(id), api.gap(id), api.actions(id), api.graph(id), api.entities(),
       api.related(id).catch(() => null),
       api.groups(id).catch(() => null),
+      api.collaborators(id).catch(() => null),
     ]);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
     return <ApiDown what={id} />;
   }
-  const [ent, conn, assets, gap, actions, graph, all, related, groups] = data;
+  const [ent, conn, assets, gap, actions, graph, all, related, groups, collab] = data;
   const groupList = groups?.status === "ok" ? groups.groups : [];
   // Similar-symptom diseases appear in Q1 once connections are computed; keep the other blocks.
   if (related && conn.results.length > 0) related.groups = related.groups.filter((g) => g.kind !== "phenotype_neighbours");
@@ -151,6 +152,7 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
 
           <Section id="existing" title="What useful work already exists?">
             {groups && groups.status !== "not_available" && groups.status !== "not_a_disease" && <PatientGroupsBlock g={groups} />}
+            {collab && collab.items.length > 0 && <CollaboratorsBlock c={collab} />}
             {assets.coverage && <SearchedLine c={assets.coverage} shown={assets.assets.length} total={assets.total ?? null} />}
             {assets.assets.length === 0 ? (
               <Empty>No registries, studies or models are linked to this entry yet.</Empty>
@@ -261,6 +263,49 @@ function ConnectionRow({ r, label, labels, note }: { r: ConnectionResult; label:
       </div>
       <Wells comparisons={r.comparisons} labels={labels} />
     </li>
+  );
+}
+
+function CollaboratorsBlock({ c }: { c: Collaborators }) {
+  return (
+    <div className="mb-8">
+      <h3 className="text-base font-semibold">Researchers who published on this</h3>
+      <p className="mt-1 text-sm text-muted">
+        From the {c.papers_considered} papers whose claims we hold. {c.bridges > 0
+          ? `${c.bridges} of these ${c.total === 1 ? "person also appears" : "people also appear"} on papers about other diseases, listed first when those are separate papers.`
+          : "None of them appears on papers about other diseases we hold."}
+      </p>
+      <ul className="mt-2 divide-y divide-rule rounded-lg border border-rule">
+        {c.items.map((i) => (
+          <li key={`${i.name}-${i.orcid ?? ""}`} className="px-4 py-3 text-sm">
+            <div className="flex flex-wrap items-baseline gap-x-3">
+              <span className="font-medium">{i.name}</span>
+              {i.orcid && <a className="ref text-xs" href={`https://orcid.org/${encodeURIComponent(i.orcid)}`} target="_blank" rel="noreferrer">ORCID</a>}
+              <span className="text-xs text-muted">matched by {i.match}</span>
+            </div>
+            {i.affiliation && <p className="text-xs text-muted">{i.affiliation}</p>}
+            <p className="mt-1">
+              Papers on this disease:{" "}
+              {i.papers.map((p) => (
+                <span key={p.source_id} className="mr-2">
+                  {safeHref(p.citation) ? <a className="ref" href={safeHref(p.citation)} target="_blank" rel="noreferrer">{p.title}</a> : p.title}
+                  {p.claim_ids.map((id) => <ClaimRef key={id} id={id} />)}
+                </span>
+              ))}
+            </p>
+            {i.also_studies.length > 0 && (
+              <p className="mt-1 text-muted">
+                Also on papers about:{" "}
+                {i.also_studies.map((a, k) => (
+                  <span key={a.entity_id}>{k > 0 && ", "}<Link className="ref" href={`/entity/${enc(a.entity_id)}`}>{a.label}</Link>{a.claim_ids.map((id) => <ClaimRef key={id} id={id} />)}</span>
+                ))}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-muted">{c.note}</p>
+    </div>
   );
 }
 

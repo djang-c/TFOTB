@@ -9,7 +9,6 @@ single bad paper; each paper's outcome is a row in the returned summary and in t
 from __future__ import annotations
 
 import json
-import os
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,6 +17,7 @@ from typing import Any
 from atlas.db import AtlasDB, export_snapshot
 from atlas.discovery import DiscoveryError, Found, discover
 from atlas.llm.base import LLMClient
+from atlas.llm.factory import has_key
 from atlas.pipeline import ingest_papers, ledger_rows
 from atlas.policy import IngestPolicy
 from atlas.resolver import Resolver
@@ -48,8 +48,8 @@ def already_ingested(store_dir: Path) -> set[str]:
 
 
 def live_allowed(policy: IngestPolicy, *, offline: bool = False) -> bool:
-    """A paid model call needs the policy to allow it AND a key in the environment."""
-    return policy.live_extraction and not offline and bool(os.environ.get("ANTHROPIC_API_KEY"))
+    """A paid model call needs the policy to allow it AND a key for the chosen provider in the environment."""
+    return policy.live_extraction and not offline and has_key()
 
 
 def run_research(
@@ -88,6 +88,10 @@ def run_research(
                 if row["reason"].startswith("per-run cap"):
                     continue  # not attempted this run; it stays in the summary but not in the log
                 f.write(json.dumps({"at": now, **row}) + "\n")
+        with (store_dir / "papers.jsonl").open("a") as f:  # who wrote each ingested paper, for the collaborator view
+            for r in report.runs:
+                if r.status == "ingested" and r.meta:
+                    f.write(json.dumps(r.meta) + "\n")
         manifest = export_snapshot(db, store_dir / "snapshot", dataset_version=f"local-{now[:10]}", built_at=now)
     finally:
         db.close()

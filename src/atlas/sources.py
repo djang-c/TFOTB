@@ -39,6 +39,7 @@ class FullText:
     journal: str = ""
     year: str = ""
     pub_types: tuple[str, ...] = ()
+    authors: tuple[dict, ...] = ()  # {"name", "orcid" or None, "affiliation" or None}, as the paper's record lists them
 
     @property
     def citation_url(self) -> str:
@@ -99,6 +100,23 @@ _REJECT_TYPES = {
 }
 
 
+def authors_of(rec: dict) -> tuple[dict, ...]:
+    """Authors exactly as the article record gives them. Nothing is guessed or completed."""
+    out = []
+    for a in (rec.get("authorList") or {}).get("author", []) or []:
+        name = (a.get("fullName") or "").strip()
+        if not name:
+            continue
+        ident = a.get("authorId") or {}
+        affs = ((a.get("authorAffiliationDetailsList") or {}).get("authorAffiliation") or [])
+        out.append({
+            "name": name,
+            "orcid": ident.get("value") if str(ident.get("type", "")).upper() == "ORCID" else None,
+            "affiliation": (affs[0].get("affiliation") or "").strip() or None if affs else None,
+        })
+    return tuple(out)
+
+
 def credibility_problem(rec: dict) -> str | None:
     """Why a Europe PMC record is not an acceptable source, or None if it is."""
     if rec.get("source") != "MED":
@@ -137,4 +155,5 @@ def fetch_full_text(pmid: str, fetch: Fetch = _get) -> FullText:
         text="\n".join(paras), url=url, doi=rec.get("doi", ""),
         journal=rec["journalInfo"]["journal"]["title"], year=str(rec.get("pubYear", "")),
         pub_types=tuple((rec.get("pubTypeList") or {}).get("pubType", [])),
+        authors=authors_of(rec),
     )

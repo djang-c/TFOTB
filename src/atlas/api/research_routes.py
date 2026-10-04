@@ -17,8 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from atlas.api.jobs import RateLimited
 from atlas.api.routes import _entity
-from atlas.llm.anthropic_client import AnthropicClient
 from atlas.llm.cache import CachedClient
+from atlas.llm.factory import make_client, provider_name
 from atlas.policy import load_policy
 from atlas.research import ResearchUnavailable, live_allowed, load_extraction_resolver, run_research
 
@@ -56,9 +56,9 @@ def _default_work(request: Request, terms: list[str]) -> Any:
     def work() -> dict[str, Any]:
         resolver = load_extraction_resolver(s.raw_dir)  # raises ResearchUnavailable with a plain message
         live = live_allowed(policy)
-        inner = AnthropicClient(max_tokens=policy.max_output_tokens) if live else None
+        inner = make_client(max_tokens=policy.max_output_tokens) if live else None
         cache = s.store_path.parent.parent / "cache" / "llm"
-        client = CachedClient(inner, cache, mode="replay", allow_live_on_miss=live, provider="anthropic")
+        client = CachedClient(inner, cache, mode="replay", allow_live_on_miss=live, provider=provider_name())
         return run_research(
             terms=terms, pmids=None, policy=policy, store_dir=s.store_path.parent, client=client,
             resolver=resolver, live=live,

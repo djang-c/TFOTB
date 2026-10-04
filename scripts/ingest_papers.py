@@ -12,7 +12,8 @@ DOI link taken from its record.
 
 What may run unattended is set once in config/ingest_policy.json (live model calls on/off, caps on
 papers per run and text size, which diseases to watch). No per-run approval is needed. A live call
-happens only if the policy allows it and ANTHROPIC_API_KEY is in the environment; otherwise recorded
+happens only if the policy allows it and the chosen provider's key (LLM_PROVIDER = anthropic or openai;
+default anthropic) is in the environment; otherwise recorded
 responses are replayed and papers without one are reported as skipped.
 
 Stored claims are `unreviewed` and immutable; review is an optional label upgrade, never a gate.
@@ -26,8 +27,8 @@ import sys
 from pathlib import Path
 
 from atlas.discovery import DiscoveryError, discover
-from atlas.llm.anthropic_client import AnthropicClient
 from atlas.llm.cache import CachedClient
+from atlas.llm.factory import make_client, provider_name
 from atlas.policy import load_policy
 from atlas.research import already_ingested, live_allowed, load_extraction_resolver, run_research
 
@@ -75,9 +76,9 @@ def main() -> int:
 
     live = live_allowed(policy, offline=args.offline)
     if policy.live_extraction and not args.offline and not live:
-        print("Policy allows live calls but ANTHROPIC_API_KEY is not in the environment: replay-only this run.")
-    inner = AnthropicClient(max_tokens=policy.max_output_tokens) if live else None
-    client = CachedClient(inner, ROOT / "data" / "cache" / "llm", mode="replay", allow_live_on_miss=live, provider="anthropic")
+        print("Policy allows live calls but the API key for the chosen provider is not in the environment: replay-only this run.")
+    inner = make_client(max_tokens=policy.max_output_tokens) if live else None
+    client = CachedClient(inner, ROOT / "data" / "cache" / "llm", mode="replay", allow_live_on_miss=live, provider=provider_name())
     summary = run_research(
         terms=[], pmids=pmids, policy=policy, store_dir=STORE, client=client, resolver=resolver, live=live
     )

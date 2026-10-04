@@ -242,6 +242,16 @@ export interface PatientGroups {
   groups: { name: string; website: string | null; country: string | null; registry_url: string | null; kind: string | null }[];
 }
 
+/** Investigators on the papers behind the stored claims, as the papers list them. Authorship is not a contact route. */
+export interface Collaborators {
+  items: {
+    name: string; orcid: string | null; affiliation: string | null; match: string; other_papers: number;
+    papers: { source_id: string; title: string; journal: string; year: string; citation: string; claim_ids: string[] }[];
+    also_studies: { entity_id: string; label: string; claim_ids: string[] }[];
+  }[];
+  total: number; bridges: number; papers_considered: number; note: string; source?: string;
+}
+
 /** A home-page entry point. The API derives these from the dataset; they are never hand-picked. */
 export type Featured = { id: string; label: string; type: EntityType } & (
   | { reason: "connections"; connections: number; assets: number }
@@ -256,6 +266,7 @@ export const api = {
   search: (q: string) => get<{ results: SearchHit[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
   related: (id: string) => get<Related>(`/entities/${enc(id)}/related`),
   groups: (id: string) => get<PatientGroups>(`/entities/${enc(id)}/groups`),
+  collaborators: (id: string) => get<Collaborators>(`/entities/${enc(id)}/collaborators`),
   entities: () => get<{ items: Entity[] }>("/entities"),
   entity: (id: string) => get<{ entity: Entity; claims: Claim[]; claim_counts_by_predicate: Record<string, number>;
     reviewed_claims: number; summary: { text: string; claim_ids: string[]; source?: string }[]; summary_method?: string }>(`/entities/${enc(id)}`),

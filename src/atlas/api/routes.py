@@ -13,6 +13,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from atlas.api.claimstore import load_claims, paper_coverage
 from atlas.api.fixtures import load_fixture
+from atlas.collaborators import NOTE as COLLABORATOR_NOTE
+from atlas.collaborators import collaborators_for, load_papers
 from atlas.graph import find_paths, neighborhood
 from atlas.policy import IngestPolicy, load_policy
 from atlas.search import SearchIndex
@@ -300,8 +302,15 @@ def groups(request: Request, entity_id: str) -> Any:
 
 @router.get("/entities/{entity_id}/collaborators")
 def collaborators(request: Request, entity_id: str) -> Any:
+    """Investigators on the papers behind the stored claims, and who also works on other diseases."""
     _entity(request, entity_id)
-    return _wrap(request, items=[])
+    if entity_id.startswith("SYN:"):  # demo entries have no papers behind them
+        return _wrap(request, items=[], total=0, bridges=0, papers_considered=0, note=COLLABORATOR_NOTE)
+    s = request.app.state.settings
+    papers = load_papers(s.store_path.parent)
+    out = collaborators_for(entity_id, _stored_claims(request), papers, label_of=_label_of(request))
+    out["source"] = "authors listed on the papers whose claims are stored"
+    return {"_synthetic": STORE_NOTE, **out}
 
 
 @router.get("/entities/{entity_id}/graph")
