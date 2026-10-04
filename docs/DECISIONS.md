@@ -84,3 +84,6 @@
 - Evidence brief: shows routes from `graph.find_paths` per candidate (hypothesis-only routes labelled), and says when no route of up to 4 steps exists without claiming absence.
 - `simulation_report` card (T23): restates a recorded `robotics/simulate.py` report; refuses a report that does not mark `biology` and `physical_execution` as `not_modeled`; cites source claims only if stored; names a lab-automation engineer as reviewer.
 - Ingest pipeline: licence allow-list defaults to CC0 / CC BY / CC BY-SA, so NC/ND papers (including PMID:37245481) need an explicit `--allow-licence` each run. This keeps the unresolved NC/ND policy a visible per-run decision instead of a silent default. Generated store output is git-ignored because it holds claims derived from NC/ND text.
+
+## 2026-10-03 - Licence allow-list removed from the ingest pipeline (owner decision)
+- The owner ruled that this is a hackathon project, not a commercial use, so ingestion accepts any open-access paper. The paper's reported licence is still recorded per run in `data/store/ingest_log.jsonl`; `--only-licence` can restrict if wanted. This supersedes the earlier line in this file that NC/ND papers need an explicit flag. Generated store output stays git-ignored. If the project ever moves beyond the hackathon, the NC/ND and HPO terms need revisiting.

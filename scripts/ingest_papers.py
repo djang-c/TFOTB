@@ -3,9 +3,9 @@
 By default this makes NO paid call: it serves recorded model responses and skips any paper without one.
 A live call needs all of: --live, --i-approve-sending-these-texts and ANTHROPIC_API_KEY.
 
-  PYTHONPATH=src .venv/bin/python scripts/ingest_papers.py --pmids 37245481 --allow-licence "cc by-nc-nd"
+  PYTHONPATH=src .venv/bin/python scripts/ingest_papers.py --pmids 37245481
 
-Papers whose licence is not on the allow-list are skipped and logged, never sent. Stored claims are
+The paper's licence is recorded in the log; any open-access paper is accepted. Stored claims are
 `unreviewed` and immutable. Outputs: data/store/atlas.db, data/store/snapshot/, data/store/ingest_log.jsonl.
 """
 
@@ -21,7 +21,7 @@ from pathlib import Path
 from atlas.db import AtlasDB, export_snapshot
 from atlas.llm.anthropic_client import AnthropicClient
 from atlas.llm.cache import CachedClient
-from atlas.pipeline import DEFAULT_ALLOWED_LICENCES, ingest_papers, ledger_rows
+from atlas.pipeline import ingest_papers, ledger_rows
 from atlas.resolver import Resolver
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -40,7 +40,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--pmids", nargs="*", default=[], help="PubMed IDs")
     ap.add_argument("--watchlist", type=Path, help="text file, one PMID per line")
-    ap.add_argument("--allow-licence", action="append", help="add a licence to the allow-list (repeatable)")
+    ap.add_argument("--only-licence", action="append", help="optional: accept only these licences (repeatable)")
     ap.add_argument("--max-papers", type=int, default=5)
     ap.add_argument("--max-chars", type=int, default=70_000)
     ap.add_argument("--max-tokens", type=int, default=4096)
@@ -63,9 +63,8 @@ def main() -> int:
     resolver = Resolver.from_raw(ROOT / "data" / "raw", include_extraction_refs=True)
     STORE.mkdir(parents=True, exist_ok=True)
     db = AtlasDB(STORE / "atlas.db")
-    allowed = [*DEFAULT_ALLOWED_LICENCES, *(args.allow_licence or [])]
     report = ingest_papers(
-        pmids, client=client, resolver=resolver, db=db, allowed_licences=allowed,
+        pmids, client=client, resolver=resolver, db=db, allowed_licences=args.only_licence,
         max_papers=args.max_papers, max_chars=args.max_chars, skip=_already_done(),
     )
     now = datetime.now(UTC).isoformat(timespec="seconds")

@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     fixtures_dir: Path = REPO_ROOT / "data" / "fixtures"
     raw_dir: Path = REPO_ROOT / "data" / "raw"
+    # Claims written by scripts/ingest_papers.py (read-only here); missing file = no stored claims.
+    store_path: Path = REPO_ROOT / "data" / "store" / "atlas.db"
     # Search the pinned ontologies when scripts/fetch_ontologies.py has been run.
     real_search: bool = True
 

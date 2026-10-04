@@ -79,12 +79,13 @@ def test_rerunning_the_same_paper_adds_nothing_and_never_overwrites(resolver):
     assert (r.claims_added, r.claims_already_present) == (0, 1) and len(db.all(Claim)) == 1
 
 
-def test_a_licence_not_on_the_allow_list_is_skipped_and_never_sent_to_the_model(resolver):
+def test_any_licence_is_accepted_by_default_and_recorded_but_a_restriction_can_be_set(resolver):
+    nc = {"1": paper("1", "cc by-nc-nd")}
     client = Fake()
-    rep = run(["1"], resolver, AtlasDB(), client, fetch=source(**{"1": paper("1", "cc by-nc-nd")}))
-    assert rep.runs[0].status == "skipped" and "allow-list" in rep.runs[0].reason and client.calls == 0
-    ok = run(["1"], resolver, AtlasDB(), client, fetch=source(**{"1": paper("1", "cc by-nc-nd")}), allowed_licences=["cc by-nc-nd"])
-    assert ok.runs[0].status == "ingested" and client.calls == 1
+    rep = run(["1"], resolver, AtlasDB(), client, fetch=source(**nc))
+    assert rep.runs[0].status == "ingested" and rep.runs[0].licence == "cc by-nc-nd"
+    blocked = run(["1"], resolver, AtlasDB(), client, fetch=source(**nc), allowed_licences=["cc by"])
+    assert blocked.runs[0].status == "skipped" and "allow-list" in blocked.runs[0].reason and client.calls == 1
 
 
 def test_the_per_run_cap_skips_the_rest_with_a_reason(resolver):

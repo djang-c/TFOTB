@@ -2,9 +2,10 @@
 
 One function, `ingest_papers`, so the same code runs from a local script today and from a scheduled
 job later. Rules:
-- Only papers whose reported licence is on the caller's allow-list are sent to the model. A paper
-  that is not open access, not allowed, over the size cap, or beyond the per-run cap is SKIPPED and
-  the reason is recorded; skipping is never silent and never a zero count.
+- Any open-access paper may be ingested (owner decision 2026-10-03: hackathon project, not commercial);
+  the reported licence is recorded in the run log. A caller may still pass `allowed_licences` to
+  restrict. A paper that is not open access, over the size cap, or beyond the per-run cap is SKIPPED
+  and the reason is recorded; skipping is never silent and never a zero count.
 - Calls go through the record/replay cache. Whether a live call may be made on a cache miss is the
   caller's explicit choice (`live`), so a scheduled run cannot spend money by accident.
 - Stored claims are immutable. A claim ID that already exists with the same content is a no-op; the
@@ -24,8 +25,6 @@ from atlas.llm.base import LLMClient
 from atlas.resolver import Resolver
 from atlas.schemas import Claim, SourceCoverage, SourceStatus
 from atlas.sources import FullText, SourceError, fetch_full_text
-
-DEFAULT_ALLOWED_LICENCES = ("cc0", "cc by", "cc by-sa")  # the owner has not yet decided on NC/ND
 
 
 @dataclass
@@ -86,7 +85,7 @@ def ingest_papers(
     client: LLMClient,
     resolver: Resolver,
     db: AtlasDB,
-    allowed_licences: Iterable[str] = DEFAULT_ALLOWED_LICENCES,
+    allowed_licences: Iterable[str] | None = None,  # None = any licence
     max_papers: int = 5,
     max_chars: int = 70_000,
     skip: Iterable[str] = (),
@@ -95,7 +94,7 @@ def ingest_papers(
     """Ingest up to `max_papers` papers. `skip` holds source IDs already done in earlier runs."""
     report = IngestReport()
     done = set(skip)
-    allowed = tuple(allowed_licences)
+    allowed = None if allowed_licences is None else tuple(allowed_licences)
     attempted = 0
     for pmid in dict.fromkeys(str(p).strip() for p in pmids if str(p).strip()):
         sid = f"PMID:{pmid}"
@@ -110,7 +109,7 @@ def ingest_papers(
         except SourceError as exc:
             report.runs.append(PaperRun(sid, "failed", str(exc)))
             continue
-        if not _licence_allowed(ft.license, allowed):
+        if allowed is not None and not _licence_allowed(ft.license, allowed):
             report.runs.append(
                 PaperRun(sid, "skipped", f"licence {ft.license!r} is not on the allow-list", ft.license)
             )

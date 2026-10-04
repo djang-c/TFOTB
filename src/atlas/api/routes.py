@@ -10,7 +10,9 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, HTTPException, Request
 
+from atlas.api.claimstore import load_claims
 from atlas.api.fixtures import load_fixture
+from atlas.graph import find_paths, neighborhood
 from atlas.search import SearchIndex
 
 router = APIRouter()
@@ -75,6 +77,20 @@ _SOURCE_URL = {
 
 REAL_NOTE = ("Not synthetic: read from pinned public files (MONDO, HGNC, HPO; versions in data/raw/CHECKSUMS.json). "
              "Unreviewed by any expert.")
+
+
+def _stored_claims(request: Request) -> dict[str, Any]:
+    return load_claims(request.app.state.settings.store_path)
+
+
+def _label_of(request: Request) -> Any:
+    ix = _index(request)
+    return (lambda i: ix.r.label_of(i) or "") if ix is not None else (lambda _i: "")
+
+
+STORE_NOTE = ("Not synthetic: claims extracted from papers into the local store by scripts/ingest_papers.py. "
+              "Every claim is unreviewed by any expert; labels come from the pinned ontologies where available, "
+              "otherwise the ID is shown.")
 
 
 def _wrap(request: Request, **payload: Any) -> dict[str, Any]:
@@ -254,10 +270,43 @@ def collaborators(request: Request, entity_id: str) -> Any:
 def graph(request: Request, entity_id: str, max_nodes: int = 40) -> Any:
     _entity(request, entity_id)
     ix = _index(request)
-    if ix is not None and not entity_id.startswith("SYN:"):
-        return _wrap_real(**ix.graph(entity_id, max_nodes=max_nodes))
+    real = ix is not None and not entity_id.startswith("SYN:")
+    base = ix.graph(entity_id, max_nodes=max_nodes) if real else None
+    claims = _stored_claims(request)
+    if any(entity_id in (c.subject_id, c.object_id) for c in claims.values()):
+        # Paper-extracted claims are added to the ontology-based graph; nothing already shown is dropped.
+        extra = neighborhood(claims, entity_id, max_nodes=max(1, min(max_nodes, 200)), label_of=_label_of(request))
+        g = base or {"nodes": [], "edges": [], "truncated": False, "omitted": 0}
+        have = {n["id"] for n in g["nodes"]}
+        nodes = g["nodes"] + [n for n in extra["nodes"] if n["id"] not in have]
+        seen = {e.get("claim_id") for e in g["edges"] if e.get("claim_id")}
+        edges = g["edges"] + [e for e in extra["edges"] if e["claim_id"] not in seen]
+        return {"_synthetic": STORE_NOTE if not base else REAL_NOTE + " " + STORE_NOTE, "nodes": nodes, "edges": edges,
+                "truncated": g["truncated"] or extra["truncated"], "omitted": g["omitted"] + extra["omitted"]}
+    if base is not None:
+        return _wrap_real(**base)
     g = _demo(request)["graphs"].get(entity_id, {"nodes": [], "edges": [], "truncated": False, "omitted": 0})
     return _wrap(request, **g)
+
+
+@router.get("/entities/{entity_id}/routes")
+def routes(request: Request, entity_id: str, to: str) -> Any:
+    """Routes through stored claims between this entity and `to` (explanation only; no score)."""
+    _entity(request, entity_id)
+    label = _label_of(request)
+    out = find_paths(_stored_claims(request), entity_id, to)
+    paths = [
+        {
+            "nodes": [{"id": n, "label": label(n) or n} for n in p.nodes],
+            "hops": [{"a": h.a, "b": h.b, "claim_ids": list(h.claim_ids), "hypothesis_only": h.hypothesis_only}
+                     for h in p.hops],
+            "hypothesis_only": p.hypothesis_only,
+            "reviewed_claims": p.reviewed_claims,
+        }
+        for p in out.paths
+    ]
+    return {"_synthetic": STORE_NOTE, "source": entity_id, "target": to, "paths": paths,
+            "gap": out.gap.model_dump(mode="json") if out.gap else None}
 
 
 @router.get("/entities/{entity_id}/gap")
@@ -292,6 +341,13 @@ def claim(request: Request, claim_id: str) -> Any:
         subject = ix.r.label_of(real["subject_id"]) or real["context"].get("study_title") or real["subject_id"]
         return _wrap_real(claim=real, subject_label=subject,
                           object_label=ix.r.label_of(real["object_id"]), lineage_siblings=[], contradicting_claims=[])
+    stored = _stored_claims(request).get(claim_id)
+    if stored is not None:
+        lab = _label_of(request)
+        return {"_synthetic": STORE_NOTE, "claim": stored.model_dump(mode="json"),
+                "subject_label": lab(stored.subject_id) or stored.subject_id,
+                "object_label": lab(stored.object_id) or stored.object_id,
+                "lineage_siblings": [], "contradicting_claims": []}
     d = _demo(request)
     c = next((c for c in d["claims"] if c["claim_id"] == claim_id), None)
     if c is None:
