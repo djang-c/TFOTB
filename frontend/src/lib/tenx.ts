@@ -106,10 +106,13 @@ export const SCENARIOS: Scenario[] = [
   {
     key: "core",
     label: "Shared core facility",
-    note: "The robot is booked in slots, so each change waits for the next one.",
+    note: "No robot of its own: each change waits for the next booked slot (7 days assumed).",
     inputs: { manualTurnaroundDays: 7 },
   },
 ];
+
+/** The case the page opens on: the lab the case is made for. The other starting points sit beside it, not hidden. */
+export const HEADLINE = SCENARIOS[2]!;
 
 export const fmtDays = (d: number) => `${d >= 10 ? d.toFixed(0) : d.toFixed(1)} days`;
 export const fmtX = (x: number) => `${x >= 10 ? x.toFixed(0) : x.toFixed(1)}×`;

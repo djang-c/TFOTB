@@ -10,6 +10,7 @@ import {
   DEFAULTS,
   fmtDays,
   fmtX,
+  HEADLINE,
   SCENARIOS,
   type TenxInputs,
 } from "@/lib/tenx";
@@ -162,8 +163,8 @@ function Bar({
 }
 
 function TenxPage() {
-  const [inputs, setInputs] = useState<TenxInputs>(DEFAULTS);
-  const [scenario, setScenario] = useState<string | null>("base");
+  const [inputs, setInputs] = useState<TenxInputs>({ ...DEFAULTS, ...HEADLINE.inputs });
+  const [scenario, setScenario] = useState<string | null>(HEADLINE.key);
   const example = useQuery({ queryKey: ["experiment-example"], queryFn: api.experimentExample });
   const loop = useMutation({
     mutationFn: () =>
@@ -276,6 +277,39 @@ function TenxPage() {
             {r.nights === 1 ? "" : "s"} ({r.runsPerNight} per night).
           </li>
         </ul>
+      </section>
+
+      <section aria-labelledby="where" className="mt-10">
+        <h2 id="where" className="text-xl font-semibold">
+          Where 10× holds, and where it does not
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The same loop and the same other inputs, in three kinds of lab. Only the wait between
+          manual runs changes.
+        </p>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {SCENARIOS.map((s) => {
+            const x = compare({ ...inputs, ...s.inputs });
+            return (
+              <div
+                key={s.key}
+                className={`rounded-lg border p-4 ${x.speedup >= 10 ? "border-primary/50 bg-primary/5" : "border-border/60 bg-muted/30"}`}
+              >
+                <div className="font-mono text-3xl font-semibold">{fmtX(x.speedup)}</div>
+                <div className="mt-1 text-sm font-medium">{s.label}</div>
+                <div className="mt-1 text-[11px] leading-5 text-muted-foreground">
+                  {fmtDays(x.manualDays)} by hand, {fmtDays(x.assistedDays)} with TFOTB. {s.note}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-sm leading-6">
+          The case: groups without a robot of their own, which is most patient-led efforts, wait for
+          booked robot time between every run. That wait is what the overnight loop removes, so 10×
+          or more holds there. In a lab with its own robot it is about 6×. Which one applies is what
+          must be measured.
+        </p>
       </section>
 
       <section aria-labelledby="assume" className="mt-10">

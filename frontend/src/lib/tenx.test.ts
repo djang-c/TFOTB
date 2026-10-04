@@ -54,3 +54,11 @@ describe("10× case arithmetic", () => {
     expect([...speeds].sort((a, b) => a - b)).toEqual(speeds);
   });
 });
+
+describe("the headline case", () => {
+  it("is the shared-facility case and reaches 10×", async () => {
+    const { HEADLINE } = await import("./tenx");
+    expect(HEADLINE.key).toBe("core");
+    expect(compare({ ...base, ...HEADLINE.inputs }).speedup).toBeGreaterThanOrEqual(10);
+  });
+});

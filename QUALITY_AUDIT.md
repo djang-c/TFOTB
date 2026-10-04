@@ -176,7 +176,7 @@ The audit's open items 1 (frontend), 7 (vendor package pin) and part of 5 (publi
 - OpenAI is the only provider; no package or lockfile change is needed.
 - `deploy/store/` is committed; author emails were found in affiliation strings and are now stripped.
 - New: lookup of unknown terms (`POST /api/lookup`), tested offline (25 tests) and live against NLM MeSH and Europe PMC.
-- 10× case added: a `/10x` page next to Simulation (a model with editable assumptions; about 6× on the starting values, so it does not claim 10×). Still not measured.
+- 10× case added: a `/10x` page next to Simulation (a model with editable assumptions: 11.5× for a group waiting on a shared robot, 6.2× for a lab with its own, so the 10× holds only in the first case). Still not measured.
 - Python tests: 499 passing. The audit's other findings (claim error rate not re-sampled, no 10x measurement, no variants or funders, no OpenAI run, no video, no deployment) are unchanged.
 
 ## Addendum 2026-10-04 (later): OpenAI runs live
