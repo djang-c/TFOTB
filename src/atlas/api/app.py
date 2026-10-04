@@ -2,9 +2,11 @@
 
 import threading
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from atlas import __version__
 from atlas.api.experiment_routes import router as experiment_router
@@ -47,7 +49,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(research_router, prefix="/api")
     app.include_router(term_router, prefix="/api")
     app.include_router(experiment_router, prefix="/api")
+    if settings.frontend_dist and (settings.frontend_dist / "_shell.html").is_file():
+        _serve_frontend(app, settings.frontend_dist)
     return app
+
+
+def _serve_frontend(app: FastAPI, dist: Path) -> None:
+    """Serve the built single-page app: real files as they are, every other path as the app shell (client routing)."""
+    root = dist.resolve()
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str) -> FileResponse:
+        if path.startswith("api/") or path == "api":
+            raise HTTPException(status_code=404, detail="Not found")
+        target = (root / path).resolve()
+        if path and target.is_file() and root in target.parents:
+            return FileResponse(target)
+        return FileResponse(root / "_shell.html")
 
 
 app = create_app()

@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # (an overnight run counts as one call per run). Past the cap the researcher's rules decide.
     experiment_ai_calls_per_hour: int = 60
     policy_path: Path = REPO_ROOT / "config" / "ingest_policy.json"
+    # When set to a built frontend folder (frontend/dist/client), the API also serves the web app from the same
+    # address, so one URL (and one tunnel or host) is enough. Unset by default.
+    frontend_dist: Path | None = None
     # Search the pinned ontologies when scripts/fetch_ontologies.py has been run.
     real_search: bool = True
 
