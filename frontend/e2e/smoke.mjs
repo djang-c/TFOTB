@@ -62,24 +62,28 @@ try {
     .filter({ hasText: /neuronal ceroid lipofuscinosis 3/i })
     .first()
     .click();
-  await page.waitForURL(/\/explorer\?id=MONDO/);
+  await page.waitForURL(/\/entity\/MONDO/);
   await page
     .getByRole("heading", { level: 1 })
     .filter({ hasText: /ceroid/i })
     .waitFor({ timeout: 15000 });
-  check("explorer: opens the disease", true);
+  check("dossier: opens the disease", true);
   await page.waitForSelector("canvas", { timeout: 15000 });
   const box = await page.locator("canvas").first().boundingBox();
   check(
-    "explorer: the 3D graph canvas is present and tall enough to read",
+    "dossier: the 3D graph canvas is present and tall enough to read",
     !!box && box.height >= 400 && box.width >= 400,
     box ? `${Math.round(box.width)}x${Math.round(box.height)}` : "no canvas",
   );
   await page.waitForTimeout(2500); // let WebGL draw before the screenshot
-  await shot("02-explorer-overview");
+  await shot("02-dossier");
 
-  // 3. Connections tab: the core journey (CLN3 <-> Niemann-Pick type C) with an evidence label
-  await page.getByRole("tab", { name: "Connections" }).click();
+  // 3. Related diseases (the first tab of a disease dossier): the core journey, CLN3 <-> Niemann-Pick type C, with an evidence label
+  check(
+    "dossier: a disease opens on its related diseases",
+    (await page.getByRole("tab", { name: /Related diseases/ }).getAttribute("aria-selected")) ===
+      "true",
+  );
   const npc = page.locator("li", { hasText: /Niemann-Pick disease type C/ }).first();
   await npc.waitFor({ timeout: 20000 });
   check("connections: Niemann-Pick type C is listed", true);
@@ -95,8 +99,8 @@ try {
   check("connections: a route shows 'shared feature, not a causal step'", true);
   await shot("03-connections-route");
 
-  // 4. Claims tab -> evidence drawer: origin label, verbatim passage, DOI link
-  await page.getByRole("tab", { name: /Claims/ }).click();
+  // 4. A claim tab -> evidence drawer: origin label, verbatim passage, DOI link
+  await page.getByRole("tab", { name: /Mechanistic leads/ }).click();
   const claimBtn = page.getByRole("button", { name: /PMID-/ }).first();
   await claimBtn.waitFor({ timeout: 15000 });
   await claimBtn.click();
@@ -123,7 +127,7 @@ try {
   check("drawer: Escape closes it", (await page.getByRole("dialog").count()) === 0);
 
   // 5. Treatment ideas on Niemann-Pick type C are shown, labelled as hypotheses, with source and reasoning
-  await page.goto(`${BASE}/explorer?id=MONDO:0018982`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/entity/MONDO:0018982`, { waitUntil: "networkidle" });
   const hyp = page.locator("section", { hasText: "Hypotheses and treatment ideas" }).first();
   await hyp.waitFor({ timeout: 20000 });
   const ht = await hyp.innerText();
@@ -137,13 +141,37 @@ try {
   );
   await shot("05-treatment-ideas");
 
-  // 6. Symptoms page
-  await page.goto(`${BASE}/symptoms?q=seizures, vision loss, ataxia`, { waitUntil: "networkidle" });
-  await page.getByText("Candidate diseases (research hypotheses)").waitFor({ timeout: 20000 });
+  // 5b. The explorer (graph with inspector): opens, offers the dossier, lists related diseases and a path explorer
+  await page.goto(`${BASE}/explorer?id=MONDO:0008767`, { waitUntil: "networkidle" });
+  await page.getByRole("link", { name: /Open dossier/ }).waitFor({ timeout: 15000 });
+  const insp = page.getByRole("complementary", { name: "Entity inspector" });
+  await insp.getByText("Related diseases").first().waitFor({ timeout: 20000 });
   check(
-    "symptoms: candidates are listed as research hypotheses",
+    "explorer: inspector lists related diseases with evidence labels",
+    /literature-supported lead|symptom-level lead/.test(await insp.innerText()),
+  );
+  check("explorer: has a path explorer", (await insp.getByText("Path explorer").count()) > 0);
+  await page.waitForTimeout(2500);
+  await shot("05b-explorer");
+
+  // 6. Symptoms page: described symptoms, absence, candidates
+  await page.goto(`${BASE}/symptoms`, { waitUntil: "networkidle" });
+  const sbox = page.getByLabel("Describe symptoms");
+  await sbox.fill("seizures, vision loss, ataxia");
+  await sbox.press("Enter");
+  await page.getByText(/Candidate diseases/).waitFor({ timeout: 25000 });
+  check(
+    "symptoms: candidates include the neuronal ceroid lipofuscinosis family",
     /neuronal ceroid/i.test(await text("ol")),
   );
+  check(
+    "symptoms: says they are hypotheses, not diagnoses",
+    /not clinical diagnoses/.test(await text("body")),
+  );
+  await sbox.fill("no hearing loss");
+  await sbox.press("Enter");
+  await page.getByText("absent:").first().waitFor({ timeout: 25000 });
+  check("symptoms: 'no hearing loss' is understood as absent, not as a match", true);
   await shot("06-symptoms");
 
   // 7. Clusters page

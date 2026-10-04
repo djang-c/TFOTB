@@ -14,6 +14,7 @@ import { Route as ClustersRouteImport } from './routes/clusters'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as SimulationRouteImport } from './routes/simulation'
 import { Route as SymptomsRouteImport } from './routes/symptoms'
+import { Route as EntityIdRouteImport } from './routes/entity.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const SymptomsRoute = SymptomsRouteImport.update({
   path: '/symptoms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EntityIdRoute = EntityIdRouteImport.update({
+  id: '/entity/$id',
+  path: '/entity/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/explorer': typeof ExplorerRoute
   '/simulation': typeof SimulationRoute
   '/symptoms': typeof SymptomsRoute
+  '/entity/$id': typeof EntityIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/explorer': typeof ExplorerRoute
   '/simulation': typeof SimulationRoute
   '/symptoms': typeof SymptomsRoute
+  '/entity/$id': typeof EntityIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,33 @@ export interface FileRoutesById {
   '/explorer': typeof ExplorerRoute
   '/simulation': typeof SimulationRoute
   '/symptoms': typeof SymptomsRoute
+  '/entity/$id': typeof EntityIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clusters' | '/explorer' | '/simulation' | '/symptoms'
+  fullPaths:
+    | '/'
+    | '/clusters'
+    | '/explorer'
+    | '/simulation'
+    | '/symptoms'
+    | '/entity/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clusters' | '/explorer' | '/simulation' | '/symptoms'
-  id: '__root__' | '/' | '/clusters' | '/explorer' | '/simulation' | '/symptoms'
+  to:
+    | '/'
+    | '/clusters'
+    | '/explorer'
+    | '/simulation'
+    | '/symptoms'
+    | '/entity/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/clusters'
+    | '/explorer'
+    | '/simulation'
+    | '/symptoms'
+    | '/entity/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +105,7 @@ export interface RootRouteChildren {
   ExplorerRoute: typeof ExplorerRoute
   SimulationRoute: typeof SimulationRoute
   SymptomsRoute: typeof SymptomsRoute
+  EntityIdRoute: typeof EntityIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SymptomsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/entity/$id': {
+      id: '/entity/$id'
+      path: '/entity/$id'
+      fullPath: '/entity/$id'
+      preLoaderRoute: typeof EntityIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExplorerRoute: ExplorerRoute,
   SimulationRoute: SimulationRoute,
   SymptomsRoute: SymptomsRoute,
+  EntityIdRoute: EntityIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -131,7 +131,7 @@ export function Overview({
   );
 }
 
-function TermPapers({ data }: { data: EntityData }) {
+export function TermPapers({ data }: { data: EntityData }) {
   return (
     <Section title="Papers that name it" count={data.papers?.length}>
       <p className="mb-3 text-[11px] leading-4 text-muted-foreground">
@@ -165,7 +165,13 @@ function TermPapers({ data }: { data: EntityData }) {
 }
 
 /** AI hypotheses and treatment ideas: always labelled, with the reasoning, the source and the claims they rest on. */
-function Hypotheses({ claims, labelOf }: { claims: Claim[]; labelOf: (id: string) => string }) {
+export function Hypotheses({
+  claims,
+  labelOf,
+}: {
+  claims: Claim[];
+  labelOf: (id: string) => string;
+}) {
   const drugs = claims.filter(isDrugClaim);
   return (
     <Section
@@ -274,7 +280,7 @@ export function GapCard({ gap, coverage }: { gap: GapResult; coverage: CoverageM
   );
 }
 
-function Collaborators({ id }: { id: string }) {
+export function Collaborators({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["collab", id], queryFn: () => api.collaborators(id), retry: 0 });
   const c = q.data;
   if (!c || c.items.length === 0) return null;
@@ -340,7 +346,7 @@ function Collaborators({ id }: { id: string }) {
   );
 }
 
-function PatientGroups({ id }: { id: string }) {
+export function PatientGroups({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["groups", id], queryFn: () => api.groups(id), retry: 0 });
   const g = q.data;
   if (!g || g.status === "not_available" || g.status === "not_a_disease") return null;

@@ -65,6 +65,9 @@ class Hit:
                 "match": self.match, "source_type": "database_record"}
 
 
+_NEGATION = re.compile(r"^(?:no|not|without|absent|denies|never)\b\s*", re.IGNORECASE)
+
+
 class SearchIndex:
     def __init__(self, resolver: Resolver, phenotype: PhenotypeChannel | None = None,
                  gene_disease: list[dict[str, str]] | None = None,
@@ -552,45 +555,55 @@ class SearchIndex:
                     if res.status != "resolved" else []}
 
         parts = [p.strip() for p in re.split(r"[,;\n]|\band\b|\bwith\b", text, flags=re.IGNORECASE) if p.strip()]
-        for part in parts:
+        for raw_part in parts:
+            # "no hearing loss" says the symptom is absent: it is resolved like any symptom but never used as a match
+            neg = _NEGATION.match(raw_part)
+            part = raw_part[neg.end():].strip() if neg else raw_part
+            if not part:
+                continue
+            start = len(out)
             r = one(part)
             if r["status"] == "resolved":
                 out.append(r)
-                continue
-            words = part.split()
-            if len(words) > 1:  # a run of words: try the longest exact names first, left to right
-                i, found = 0, []
-                while i < len(words):
-                    for n in range(min(6, len(words) - i), 0, -1):
-                        cand = one(" ".join(words[i:i + n]))
-                        if cand["status"] == "resolved":
-                            found.append(cand)
-                            i += n
-                            break
-                    else:
-                        i += 1
-                if found:
-                    out += found
-                    continue
-            out.append(r)
+            else:
+                words = part.split()
+                found: list[dict[str, Any]] = []
+                if len(words) > 1:  # a run of words: try the longest exact names first, left to right
+                    i = 0
+                    while i < len(words):
+                        for n in range(min(6, len(words) - i), 0, -1):
+                            cand = one(" ".join(words[i:i + n]))
+                            if cand["status"] == "resolved":
+                                found.append(cand)
+                                i += n
+                                break
+                        else:
+                            i += 1
+                out += found or [r]
+            for item in out[start:]:
+                item["absent"] = bool(neg)
         seen: set[str] = set()
         return [r for r in out if not (r["id"] and (r["id"] in seen or seen.add(r["id"])))]
 
     def symptom_search(self, text: str, limit: int = 15) -> dict[str, Any]:
         """Candidate diseases for described symptoms, with the genes linked to each. Research hypotheses only."""
         terms = self.symptom_terms(text)
-        ids = [t["id"] for t in terms if t["id"]]
+        ids = [t["id"] for t in terms if t["id"] and not t.get("absent")]
+        absent_ids = [t["id"] for t in terms if t["id"] and t.get("absent")]
         rows = self.ph.rank_by_symptoms(ids, exclude=self.excluded, limit=limit) if self.ph and ids else []
         lab = self.r.label_of
         cands = []
         for r in rows:
             genes = self.genes_of.get(r["disease_id"], [])[:5]
+            # a symptom the person says is absent, but that the disease records (or records a more specific form of)
+            clash = [t for t in absent_ids if r["disease_id"] in self.ph._by_term.get(t, ())] if self.ph else []
             cands.append({
-                **r, "label": lab(r["disease_id"]),
+                **r, "label": lab(r["disease_id"]), "recorded_despite_absent": [lab(t) for t in clash],
                 "matched_labels": [lab(t) for t in r["matched"]], "unmatched_labels": [lab(t) for t in r["unmatched"]],
                 "genes": [{"id": g["id"], "label": lab(g["id"]), "claim_id": g["claim_id"], "source": g["source"]} for g in genes],
                 "label_kind": "research hypothesis, not a diagnosis",
             })
+        cands.sort(key=lambda c: (-c["coverage"], len(c["recorded_despite_absent"])))  # stable: other ties keep their order
         return {
             "terms": terms, "candidates": cands,
             "definition": self.ph.SYMPTOM_DEFINITION if self.ph else "",

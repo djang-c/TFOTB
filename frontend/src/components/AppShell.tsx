@@ -1,10 +1,10 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { EvidenceDrawerProvider } from "@/components/EvidenceDrawer";
-import { Button } from "@/components/ui/button";
-import { useApiStatus, STATUS_TEXT, STATUS_DOT } from "@/lib/useApiStatus";
+import { STATUS_DOT, STATUS_TEXT, useApiStatus } from "@/lib/useApiStatus";
 
 const nav = [
   { to: "/", label: "Overview" },
@@ -16,9 +16,10 @@ const nav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const path = useRouterState({ select: (s) => s.location.pathname });
+  const path = useRouterState({ select: (state) => state.location.pathname });
   const navigate = useNavigate();
   const status = useApiStatus();
+  const openEntity = (id: string) => void navigate({ to: "/entity/$id", params: { id } });
   return (
     <EvidenceDrawerProvider>
       <div className="min-h-screen bg-background text-foreground">
@@ -38,11 +39,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <CatalogSearch
                 compact
                 className="mx-auto hidden w-full max-w-md md:block"
-                onSelect={(id) => void navigate({ to: "/explorer", search: { id } })}
+                onSelect={(entity) => openEntity(entity.id)}
               />
             )}
             <nav
-              className="ml-auto hidden h-full items-center gap-5 md:flex"
+              className="ml-auto hidden h-full items-center gap-6 md:flex"
               aria-label="Primary navigation"
             >
               {nav.map((item) => (
@@ -77,9 +78,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <CatalogSearch
                 compact
                 className="mb-2"
-                onSelect={(id) => {
+                onSelect={(entity) => {
                   setOpen(false);
-                  void navigate({ to: "/explorer", search: { id } });
+                  openEntity(entity.id);
                 }}
               />
               {nav.map((item) => (
@@ -96,7 +97,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
           )}
         </header>
-        {status === "down" && <ApiDown />}
+        {status === "down" && (
+          <div
+            role="alert"
+            className="border-b border-destructive/30 bg-destructive/5 px-5 py-3 text-center text-xs text-destructive"
+          >
+            The TFOTB API is not reachable, so nothing can be shown. Start it with{" "}
+            <code className="font-mono">make api</code> (port 8000), or set{" "}
+            <code className="font-mono">VITE_API_BASE</code> to where it runs.
+          </div>
+        )}
         <main>{children}</main>
         <footer className="border-t border-border px-5 py-6 text-center text-[11px] leading-5 text-muted-foreground">
           Research support only. Not a clinical system: no diagnosis, dosing, eligibility or
@@ -104,18 +114,5 @@ export function AppShell({ children }: { children: ReactNode }) {
         </footer>
       </div>
     </EvidenceDrawerProvider>
-  );
-}
-
-export function ApiDown() {
-  return (
-    <div
-      role="alert"
-      className="border-b border-destructive/30 bg-destructive/5 px-5 py-3 text-center text-xs text-destructive"
-    >
-      The TFOTB API is not reachable, so nothing can be shown. Start it with{" "}
-      <code className="font-mono">make api</code> (port 8000), or set{" "}
-      <code className="font-mono">VITE_API_BASE</code> to where it runs.
-    </div>
   );
 }

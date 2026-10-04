@@ -1,64 +1,136 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowDown,
-  ArrowRight,
-  BookOpenCheck,
-  Database,
-  FlaskConical,
-  Network,
-  ShieldCheck,
-} from "lucide-react";
-import { lazy, Suspense } from "react";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { ArrowDown, ArrowRight } from "lucide-react";
+import { lazy, Suspense, useState } from "react";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import { api, type EntityType } from "@/lib/api";
+import { clean, isHypothesis } from "@/lib/labels";
+import { useMeta, useStarters } from "@/lib/queries";
 
 const DnaBackdrop = lazy(() =>
   import("@/components/DnaBackdrop").then((m) => ({ default: m.DnaBackdrop })),
 );
 
-export const Route = createFileRoute("/")({ ssr: false, component: Index });
+export const Route = createFileRoute("/")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "The Flight of the Buffalo — Rare Disease Connections" },
+      {
+        name: "description",
+        content:
+          "Search traceable rare-disease connections and inspect bounded robotics simulations.",
+      },
+      { property: "og:title", content: "The Flight of the Buffalo — Rare Disease Connections" },
+      {
+        property: "og:description",
+        content:
+          "Search traceable rare-disease connections and inspect bounded robotics simulations.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Index,
+});
 
 const n = (v: number | undefined) => (v === undefined ? "—" : v.toLocaleString("en-US"));
 
+const BLURB: Partial<Record<EntityType, string>> = {
+  disease: "Related diseases, shared mechanisms and the paper behind each link.",
+  gene: "Diseases linked to this gene and what papers report about it.",
+  phenotype: "Diseases that record this symptom.",
+};
+
+/** The design's hero artwork when its image file is present; otherwise the animated DNA drawing from the same design. */
+function HeroArt() {
+  const [missing, setMissing] = useState(false);
+  if (missing)
+    return (
+      <Suspense fallback={null}>
+        <DnaBackdrop />
+      </Suspense>
+    );
+  return (
+    <img
+      src="/tfotb-scientific-hero.jpg"
+      alt=""
+      width={1920}
+      height={1088}
+      onError={() => setMissing(true)}
+      className="absolute left-0 top-1/2 h-auto w-full -translate-y-1/2 object-contain"
+      aria-hidden="true"
+    />
+  );
+}
+
 function Index() {
   const navigate = useNavigate();
-  const explore = (id: string) => void navigate({ to: "/explorer", search: { id } });
-  const meta = useQuery({ queryKey: ["meta"], queryFn: api.meta, staleTime: 300_000, retry: 1 });
-  const seeds = meta.data?.real?.seed ?? meta.data?.featured ?? [];
+  const explore = (id: string) => void navigate({ to: "/entity/$id", params: { id } });
+  const { items: starters } = useStarters();
+  const meta = useMeta();
   const real = meta.data?.real;
   const store = meta.data?.store;
-  const tiles = [
+  const terms = useQuery({ queryKey: ["terms"], queryFn: api.terms, staleTime: 60_000, retry: 0 });
+  const seedCluster = starters.slice(0, 3);
+  const seedData = useQueries({
+    queries: seedCluster.map((s) => ({
+      queryKey: ["entity", s.id],
+      queryFn: () => api.entity(s.id),
+      staleTime: 60_000,
+      retry: 0,
+    })),
+  });
+  const entries = real
+    ? real.counts.disease + real.counts.gene + real.counts.phenotype + (store?.terms_added ?? 0)
+    : undefined;
+  const metrics = [
+    { value: n(entries), label: "Catalogue entries" },
+    { value: n(store?.claims), label: "Claims read from papers" },
+    { value: n(store?.papers), label: "Papers with claims" },
+    { value: n(store?.terms_added), label: "Terms added by lookup" },
+  ];
+  const categories: {
+    type: EntityType;
+    label: string;
+    copy: string;
+    count: number | undefined;
+    ids: { id: string; label: string }[];
+  }[] = [
     {
-      icon: Network,
-      value: real ? n(real.counts.disease + real.counts.gene + real.counts.phenotype) : "—",
-      label: "Catalogue entries",
-      copy: real
-        ? `${n(real.counts.disease)} diseases, ${n(real.counts.gene)} genes and ${n(real.counts.phenotype)} symptoms from pinned public ontologies (MONDO, HGNC, HPO).`
-        : "Pinned public ontologies are not loaded on this server; only labelled demo entries are available.",
+      type: "disease",
+      label: "Diseases",
+      copy: "Conditions with linked genes, symptoms and mechanisms.",
+      count: real?.counts.disease,
+      ids: starters.filter((s) => s.type === "disease"),
     },
     {
-      icon: Database,
-      value: n(store?.claims),
-      label: "Claims read from papers",
-      copy: store
-        ? `From ${n(store.papers)} journal articles, each with its DOI link and the exact sentence. ${n(store.ai_hypotheses)} AI hypotheses and ${n(store.treatment_ideas)} treatment ideas are labelled as hypotheses.`
-        : "Every claim cites the exact passage it came from.",
+      type: "gene",
+      label: "Genes",
+      copy: "Genes linked to disease in public reference files and in papers.",
+      count: real?.counts.gene,
+      ids: starters.filter((s) => s.type === "gene"),
     },
     {
-      icon: ShieldCheck,
-      value: n(store?.terms_added),
-      label: "Terms added by lookup",
-      copy: "Search for something new and it is checked against NLM MeSH and Europe PMC. Verified terms join the catalogue; anything else stays on your device.",
+      type: "phenotype",
+      label: "Symptoms",
+      copy: "Recorded symptoms, from the Human Phenotype Ontology.",
+      count: real?.counts.phenotype,
+      ids: [],
+    },
+    {
+      type: "term",
+      label: "Added by lookup",
+      copy: "Medical terms verified against NLM MeSH or Europe PMC when someone searched for them.",
+      count: store?.terms_added,
+      ids: (terms.data?.items ?? []).slice(0, 3),
     },
   ];
   return (
     <div>
       <section className="relative isolate flex min-h-[calc(100svh-64px)] flex-col items-center justify-center overflow-hidden border-b border-border px-5 py-20 text-center sm:px-8">
-        <Suspense fallback={null}>
-          <DnaBackdrop />
-        </Suspense>
+        <HeroArt />
         <div
           className="hero-center-wash pointer-events-none absolute inset-0 z-[1]"
           aria-hidden="true"
@@ -77,29 +149,33 @@ function Index() {
             A disease, a gene, a symptom or a mechanism. You get the research that connects to it,
             the source behind every statement, and an honest account of what is unknown.
           </p>
-          <CatalogSearch className="mx-auto mt-10 max-w-[600px] text-left" onSelect={explore} />
+          <CatalogSearch
+            unified
+            className="mx-auto mt-10 max-w-[600px] text-left"
+            onSelect={(entity) => explore(entity.id)}
+          />
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <span className="mr-1 text-xs text-muted-foreground">Try</span>
-            {seeds.slice(0, 4).map((s) => (
+            {starters.slice(0, 4).map(({ id, label }) => (
               <Button
-                key={s.id}
+                key={id}
                 variant="outline"
                 size="sm"
                 className="rounded-full border-border bg-background/90 px-3 text-xs font-normal"
-                onClick={() => explore(s.id)}
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("search:fill", { detail: clean(label) }))
+                }
               >
-                {s.label}
+                {clean(label)}
               </Button>
             ))}
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="rounded-full border-border bg-background/90 px-3 text-xs font-normal"
-            >
-              <Link to="/symptoms">No diagnosis yet? Describe symptoms</Link>
-            </Button>
           </div>
+          <Link
+            to="/symptoms"
+            className="mt-5 inline-block text-xs text-muted-foreground hover:text-primary"
+          >
+            No diagnosis yet? Describe symptoms to find candidate diseases →
+          </Link>
           {meta.isError && (
             <p role="alert" className="mt-4 text-xs text-destructive">
               The API did not answer, so there is nothing to search yet.
@@ -113,69 +189,101 @@ function Index() {
           Not sure where to start? Explore <ArrowDown className="size-4" />
         </a>
       </section>
-      <section
-        id="explore"
-        className="mx-auto grid max-w-[1200px] gap-3 px-5 py-12 sm:px-8 md:grid-cols-3"
-      >
-        {tiles.map((t) => {
-          const Icon = t.icon;
-          return (
-            <div key={t.label} className="rounded-lg border border-border/60 bg-muted/30 p-7">
-              <Icon className="size-4 text-primary" />
-              <div className="mt-8 font-mono text-2xl font-semibold">{t.value}</div>
-              <h2 className="mt-2 text-sm font-semibold">{t.label}</h2>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">{t.copy}</p>
+
+      <section id="explore" className="mx-auto max-w-[1200px] px-5 py-12 sm:px-8">
+        <div className="grid grid-cols-2 gap-3 rounded-lg border border-border/60 bg-muted/30 p-6 sm:grid-cols-4">
+          {metrics.map((m) => (
+            <div key={m.label} className="text-center sm:text-left">
+              <div className="font-mono text-2xl font-semibold">{m.value}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{m.label}</div>
             </div>
-          );
-        })}
-      </section>
-      <section className="mx-auto grid max-w-[1200px] gap-3 border-t border-border/60 px-5 py-12 sm:px-8 md:grid-cols-3">
-        {[
-          {
-            icon: BookOpenCheck,
-            title: "Every statement has a source",
-            copy: "Claims quote the paper word for word and link its DOI. An AI found them, and the page says so. No human review is needed to be shown, and none is claimed.",
-          },
-          {
-            icon: FlaskConical,
-            title: "Hypotheses are labelled",
-            copy: "AI hypotheses and treatment ideas are shown with their reasoning and the claims they were built from. They never count as evidence and are never advice.",
-          },
-          {
-            icon: Network,
-            title: "Gaps are stated, not hidden",
-            copy: "When nothing is found the page says what was searched and when. It never says that no connection exists.",
-          },
-        ].map((t) => {
-          const Icon = t.icon;
-          return (
-            <div key={t.title}>
-              <Icon className="size-4 text-primary" />
-              <h2 className="mt-3 text-sm font-semibold">{t.title}</h2>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">{t.copy}</p>
-            </div>
-          );
-        })}
-      </section>
-      {seeds[0] && (
-        <section className="mx-auto flex max-w-[1150px] flex-col gap-5 border-t border-border/60 px-5 py-12 sm:px-8 md:flex-row md:items-center">
-          <div>
+          ))}
+        </div>
+
+        {seedCluster.length > 0 && (
+          <div className="mt-12">
             <p className="section-kicker">Start here</p>
-            <h2 className="mt-2 text-xl font-semibold">Open the {seeds[0].label} evidence graph</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              See related diseases and how strong the evidence is, open any claim to read its
-              source, then replay the workflow simulation.
+            <h2 className="mt-2 text-xl font-semibold">Seed cluster</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Key entry points into the evidence graph, with live counts of what has been read from
+              papers.
+              {meta.data?.real?.seed_note ? ` ${meta.data.real.seed_note}` : ""}
             </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {seedCluster.map((s, i) => {
+                const claims = seedData[i]?.data?.claims ?? [];
+                const hypotheses = claims.filter(isHypothesis).length;
+                return (
+                  <Link
+                    key={s.id}
+                    to="/entity/$id"
+                    params={{ id: s.id }}
+                    className="group rounded-lg border border-border/60 bg-background p-6 transition-colors hover:border-primary/50"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {s.type}
+                        </div>
+                        <h3 className="mt-1 font-semibold group-hover:text-primary">
+                          {clean(s.label)}
+                        </h3>
+                      </div>
+                      <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                      {BLURB[s.type] ?? "Evidence and sources for this entry."}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
+                      <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 font-mono">
+                        {seedData[i]?.isPending ? "…" : claims.length} claims from papers
+                      </span>
+                      <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 font-mono">
+                        {seedData[i]?.isPending ? "…" : hypotheses} hypotheses
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-          <Button
-            variant="outline"
-            className="md:ml-auto"
-            onClick={() => explore(seeds[0]?.id ?? "")}
-          >
-            Open graph <ArrowRight />
-          </Button>
-        </section>
-      )}
+        )}
+
+        <div className="mt-12 border-t border-border/60 pt-10">
+          <p className="section-kicker">Browse the dataset</p>
+          <h2 className="mt-2 text-xl font-semibold">By category</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {categories.map(({ type, label, copy, count, ids }) => (
+              <div key={type} className="rounded-lg border border-border/60 bg-muted/30 p-5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3 className="text-sm font-semibold">{label}</h3>
+                  <span className="font-mono text-xs text-muted-foreground">{n(count)}</span>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">{copy}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {ids.slice(0, 3).map((e) => (
+                    <Link
+                      key={e.id}
+                      to="/entity/$id"
+                      params={{ id: e.id }}
+                      className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] transition-colors hover:border-primary/50 hover:text-primary"
+                    >
+                      {clean(e.label)}
+                    </Link>
+                  ))}
+                  {ids.length === 0 && (
+                    <span className="text-[11px] text-muted-foreground">
+                      {type === "term"
+                        ? "None yet. Search for a new term to add one."
+                        : "Search to browse."}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

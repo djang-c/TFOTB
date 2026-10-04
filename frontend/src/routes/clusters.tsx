@@ -41,7 +41,7 @@ function ClustersPage() {
                   key={d.id}
                   variant="outline"
                   size="sm"
-                  onClick={() => void navigate({ to: "/explorer", search: { id: d.id } })}
+                  onClick={() => void navigate({ to: "/entity/$id", params: { id: d.id } })}
                 >
                   {clean(d.label)}
                 </Button>

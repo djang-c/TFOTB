@@ -263,6 +263,7 @@ export interface SymptomSearch {
     status: string;
     id: string | null;
     label: string;
+    absent?: boolean;
     candidates?: { id: string; label: string }[];
   }[];
   candidates: {
@@ -274,6 +275,7 @@ export interface SymptomSearch {
     matched_labels: string[];
     unmatched_labels: string[];
     recorded_absent: string[];
+    recorded_despite_absent: string[];
     genes: { id: string; label: string; claim_id: string; source: string }[];
   }[];
   definition: string;
@@ -448,6 +450,8 @@ export const api = {
       lineage_siblings: string[];
       contradicting_claims: string[];
     }>(`/claims/${enc(id)}`),
+  terms: () =>
+    request<{ total: number; items: { id: string; label: string; type: string }[] }>("/terms"),
   symptoms: (q: string) => request<SymptomSearch>(`/symptoms?q=${enc(q)}`),
   clusters: () => request<{ clusters: Cluster[]; total: number; note: string }>("/clusters"),
   simulation: (id: string) => request<SimRun>(`/simulations/${enc(id)}`),

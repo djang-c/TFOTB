@@ -42,3 +42,30 @@ class TestRealSymptoms:
     def test_empty_and_overlong_input_are_handled(self, client):
         assert client.get("/api/symptoms").json()["candidates"] == []
         assert client.get("/api/symptoms", params={"q": "ataxia, " * 500}).status_code == 200
+
+
+@pytest.mark.skipif(not (RAW / "hpo" / "phenotype.hpoa").exists(), reason="pinned HPO files not downloaded")
+class TestAbsentSymptoms:
+    def test_a_symptom_described_as_absent_is_never_used_as_a_match(self, client):
+        r = client.get("/api/symptoms", params={"q": "seizures, no hearing loss"}).json()
+        flags = {t["label"]: t["absent"] for t in r["terms"]}
+        assert flags == {"Seizure": False, "Hearing impairment": True}
+        for c in r["candidates"]:
+            assert "Hearing impairment" not in c["matched_labels"]  # absence is not evidence of a match
+
+    def test_a_disease_that_records_an_absent_symptom_is_flagged_and_not_ranked_above_an_equal_one(self, client):
+        base = client.get("/api/symptoms", params={"q": "seizures"}).json()["candidates"]
+        r = client.get("/api/symptoms", params={"q": "seizures, no hearing loss"}).json()["candidates"]
+        flagged = [c for c in r if c["recorded_despite_absent"]]
+        assert flagged and all(c["recorded_despite_absent"] == ["Hearing impairment"] for c in flagged)
+        assert {c["disease_id"] for c in r} <= {c["disease_id"] for c in base} | {c["disease_id"] for c in r}
+        first_ok = next(i for i, c in enumerate(r) if not c["recorded_despite_absent"])
+        last_flagged_same_cov = [i for i, c in enumerate(r) if c["recorded_despite_absent"] and c["coverage"] == r[first_ok]["coverage"]]
+        assert all(i > first_ok for i in last_flagged_same_cov)
+
+    def test_only_absent_symptoms_give_no_candidates(self, client):
+        assert client.get("/api/symptoms", params={"q": "no seizures"}).json()["candidates"] == []
+
+    def test_a_word_that_merely_starts_with_no_is_not_a_negation(self, client):
+        t = client.get("/api/symptoms", params={"q": "nocturnal enuresis"}).json()["terms"]
+        assert all(not x["absent"] for x in t)

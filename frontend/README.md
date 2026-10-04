@@ -2,13 +2,16 @@
 
 The explorer for The Flight of The Buffalo. A single-page app (TanStack Start in SPA mode, React, Tailwind, three.js). It holds **no data of its own**: every screen reads from the API in `../src/atlas/api`, and if the API is down it says so.
 
-| Page            | What it shows                                                                                                                                                                                                            | API                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| `/`             | Search, live counts, entry points                                                                                                                                                                                        | `/meta`, `/search`                                  |
-| `/explorer?id=` | Evidence graph; tabs: Overview (what is known, hypotheses and treatment ideas, what is not known, researchers, patient groups), Connections (related diseases, evidence label, route), Action cards, Claims and evidence | `/entities/{id}` and its sub-routes, `/claims/{id}` |
-| `/symptoms?q=`  | Candidate diseases for described symptoms (research hypotheses)                                                                                                                                                          | `/symptoms`                                         |
-| `/clusters`     | Diseases grouped by a shared observed mechanism                                                                                                                                                                          | `/clusters`                                         |
-| `/simulation`   | Replay of a recorded workflow simulation                                                                                                                                                                                 | `/simulations/{id}`                                 |
+| Page | What it shows | API |
+|---|---|---|
+| `/` | Search, live metrics, seed cluster, categories | `/meta`, `/search`, `/terms` |
+| `/entity/{id}` | The dossier: neighbourhood graph; tabs for related diseases (evidence label and route), mechanistic leads, literature-supported, symptoms, open hypotheses and gaps; what is known, hypotheses and treatment ideas, next steps, researchers, patient groups, action cards; Markdown and JSON export | `/entities/{id}` and its sub-routes, `/claims/{id}` |
+| `/explorer?id=` | Full-height evidence graph with an inspector (Overview, Action Cards, Claims and Evidence), path explorer, link to the dossier | same |
+| `/symptoms` | Compose symptoms as chips (prefix "no" for absent); candidate diseases with coverage, linked genes, "Take to clinic" and export | `/symptoms?q=` |
+| `/clusters` | Diseases grouped by a shared observed mechanism | `/clusters` |
+| `/simulation` | Replay of a recorded workflow simulation | `/simulations/{id}` |
+
+**Design.** The screens follow the Lovable design in `Downloads/gene-link-play(1)` (home with metrics, seed cluster and categories; dossier page; explorer; symptom composer; simulation). Departures, each for honesty or because the API differs: the hero uses the animated DNA drawing because the design's hero photo is not in the folder (drop `tfotb-scientific-hero.jpg` into `public/` and it is used automatically); the explorer's "Hops" control is "Nodes" because the API has no hop depth; the path explorer picks its target by search because the catalogue has tens of thousands of entries; "Live deck view" reads "Replay of a recorded run"; the hard-coded "Collisions 0" is replaced by recorded failures; a Clusters page and a Related diseases tab are added.
 
 **Unknown terms.** Press Enter on something the catalogue has never seen and the API (`POST /lookup`) checks it against NLM MeSH and Europe PMC. A verified medical term is added to the shared catalogue with the papers found; anything else is kept only in this browser (`localStorage`) and labelled unverified. Text that looks like a personal identifier is refused before anything is sent.
 

@@ -289,8 +289,8 @@ function EntityLink({
 }) {
   return (
     <Link
-      to="/explorer"
-      search={{ id }}
+      to="/entity/$id"
+      params={{ id }}
       onClick={onClose}
       className="font-semibold underline-offset-2 hover:underline"
     >
