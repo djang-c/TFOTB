@@ -83,7 +83,7 @@ function TopBar() {
   const tab = (on: boolean) =>
     `inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs ${on ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`;
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+    <header className="app-header sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
       <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
         <Link to="/" className="flex shrink-0 items-center gap-2">
           <img src="/logo.png" alt="" className="size-8 object-contain" />
