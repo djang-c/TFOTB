@@ -244,6 +244,16 @@ def assets(request: Request, entity_id: str) -> Any:
     return _wrap(request, assets=_demo(request)["assets"].get(entity_id, []))
 
 
+@router.get("/entities/{entity_id}/groups")
+def groups(request: Request, entity_id: str) -> Any:
+    """Patient groups listed by GARD (real diseases only; demo entries have none here)."""
+    _entity(request, entity_id)
+    ix = _index(request)
+    if ix is None or entity_id.startswith("SYN:"):
+        return _wrap(request, status="not_available", groups=[], pages=[])
+    return _wrap_real(**ix.groups(entity_id))
+
+
 @router.get("/entities/{entity_id}/collaborators")
 def collaborators(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)

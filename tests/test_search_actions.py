@@ -54,6 +54,6 @@ def test_summary_points_to_genes_on_subtypes_instead_of_saying_none():
     ix.trials = TrialsSource(fetch=lambda url: {"studies": []})
     text = " ".join(x["text"] for x in ix.summary("MONDO:9000010"))
     assert "No gene is linked to it" not in text
-    assert "PDG1 (Parent disease, type 1)" in text and "broader grouping" in text
+    assert "PDG1 (Parent disease, type 1)" in text and "1 more specific form of it" in text
     assert ix.hierarchy_note("MONDO:9000010", "MONDO:9000011") == "a more specific form of this disease"
     assert ix.hierarchy_note("MONDO:9000011", "MONDO:9000010") == "a broader group that includes this disease"

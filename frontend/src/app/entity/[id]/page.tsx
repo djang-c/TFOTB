@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { api, ApiError, enc, type SourceCoverage, type AssetResult, type ConnectionResult, type CoverageManifest, type Entity, type GapResult } from "@/lib/api";
+import { api, ApiError, enc, type PatientGroups, type SourceCoverage, type AssetResult, type ConnectionResult, type CoverageManifest, type Entity, type GapResult } from "@/lib/api";
 import { ActionCardView } from "@/components/ActionCardView";
 import { ApiDown } from "@/components/ApiDown";
 import { CategoryPill, GAP_KIND, ReviewBadge, SourceBadge, StatusMark } from "@/components/Badges";
@@ -16,12 +16,14 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
     data = await Promise.all([
       api.entity(id), api.connections(id), api.assets(id), api.gap(id), api.actions(id), api.graph(id), api.entities(),
       api.related(id).catch(() => null),
+      api.groups(id).catch(() => null),
     ]);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
     return <ApiDown what={id} />;
   }
-  const [ent, conn, assets, gap, actions, graph, all, related] = data;
+  const [ent, conn, assets, gap, actions, graph, all, related, groups] = data;
+  const groupList = groups?.status === "ok" ? groups.groups : [];
   // Similar-symptom diseases appear in Q1 once connections are computed; keep the other blocks.
   if (related && conn.results.length > 0) related.groups = related.groups.filter((g) => g.kind !== "phenotype_neighbours");
   const hasRelated = !!related && related.groups.length > 0;
@@ -80,6 +82,7 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
           <AtAGlance
             shares={conn.results}
             assets={assets.total ?? assets.assets.length}
+            groups={groupList.length}
             openAssets={assets.assets.filter((a) => a.ranking_reasons.includes("open")).length}
             assetsFailed={assets.coverage?.status === "failed"}
             gap={gap.gap}
@@ -146,6 +149,7 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
           </Section>
 
           <Section id="existing" title="What useful work already exists?">
+            {groups && groups.status !== "not_available" && groups.status !== "not_a_disease" && <PatientGroupsBlock g={groups} />}
             {assets.coverage && <SearchedLine c={assets.coverage} shown={assets.assets.length} total={assets.total ?? null} />}
             {assets.assets.length === 0 ? (
               <Empty>No registries, studies or models are linked to this entry yet.</Empty>
@@ -259,6 +263,35 @@ function ConnectionRow({ r, label, labels, note }: { r: ConnectionResult; label:
   );
 }
 
+function PatientGroupsBlock({ g }: { g: PatientGroups }) {
+  if (g.status === "failed") return <p className="mb-6 text-sm text-ev-conflict">GARD could not be checked just now. This is not the same as no patient groups.</p>;
+  if (g.status === "no_xref") return <p className="mb-6 text-sm text-muted">Patient groups: MONDO has no GARD cross-reference for this entry, so none could be looked up.</p>;
+  return (
+    <div className="mb-8">
+      <h3 className="text-base font-semibold">Patient groups</h3>
+      {g.groups.length === 0 ? (
+        <p className="mt-1 text-sm text-muted">GARD lists no patient group for this disease. That may mean none exists yet, or that GARD has not recorded one.</p>
+      ) : (
+        <ul className="mt-2 divide-y divide-rule rounded-lg border border-rule">
+          {g.groups.map((o) => (
+            <li key={o.name} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 px-4 py-2.5 text-sm">
+              <span>
+                {o.website ? <a className="font-medium hover:text-link hover:underline" href={o.website} target="_blank" rel="noreferrer">{o.name}</a> : <span className="font-medium">{o.name}</span>}
+                {o.country && <span className="ml-2 text-xs text-muted">{o.country}</span>}
+              </span>
+              {o.registry_url && <a className="ref text-xs" href={o.registry_url} target="_blank" rel="noreferrer">Patient registry</a>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-2 text-xs text-muted">
+        {g.note} Retrieved {g.retrieved} from{" "}
+        {g.pages.map((p, i) => <span key={p.url}>{i > 0 && ", "}<a className="ref" href={p.url} target="_blank" rel="noreferrer">GARD: {p.label}</a></span>)}.
+      </p>
+    </div>
+  );
+}
+
 /** What a source search returned and how much survived the name check, from recorded counts. */
 function SearchedLine({ c, shown, total }: { c: SourceCoverage; shown: number; total: number | null }) {
   if (c.status !== "ok") {
@@ -338,8 +371,8 @@ function Synonyms({ names }: { names: string[] }) {
 }
 
 /** Summary first: the three questions, answered in one line each, linking to the detail below. */
-function AtAGlance({ shares, assets, openAssets, assetsFailed, gap, actions }: {
-  shares: ConnectionResult[]; assets: number; openAssets: number; assetsFailed: boolean; gap: GapResult | null; actions: number;
+function AtAGlance({ shares, assets, groups, openAssets, assetsFailed, gap, actions }: {
+  shares: ConnectionResult[]; assets: number; groups: number; openAssets: number; assetsFailed: boolean; gap: GapResult | null; actions: number;
 }) {
   const byCat = shares.reduce<Record<string, number>>((m, r) => ({ ...m, [r.category]: (m[r.category] ?? 0) + 1 }), {});
   const catLine = Object.entries(byCat).map(([c, n]) => `${n} ${c}`).join(" · ");
@@ -347,8 +380,10 @@ function AtAGlance({ shares, assets, openAssets, assetsFailed, gap, actions }: {
     { href: "#shares", q: "Who shares our characteristics?",
       a: shares.length ? `${shares.length} related ${shares.length === 1 ? "disease" : "diseases"}` : "None computed", sub: catLine || "No connection in the indexed evidence" },
     { href: "#existing", q: "What useful work already exists?",
-      a: assetsFailed ? "Source unavailable" : assets ? `${assets} ${assets === 1 ? "study or resource" : "studies and resources"}` : "None found",
-      sub: assetsFailed ? "Not the same as none" : assets ? `${openAssets} open now` : "Nothing lists this disease by name" },
+      a: [groups ? `${groups} patient ${groups === 1 ? "group" : "groups"}` : "",
+        assetsFailed ? "" : assets ? `${assets} ${assets === 1 ? "study" : "studies"}` : ""].filter(Boolean).join(" · ")
+        || (assetsFailed ? "Source unavailable" : "None found"),
+      sub: assetsFailed ? "Studies could not be checked; not the same as none" : assets ? `${openAssets} ${openAssets === 1 ? "study is" : "studies are"} open now` : "No study lists this disease by name" },
     { href: "#next", q: "What should we do next?",
       a: actions ? `${actions} drafted ${actions === 1 ? "step" : "steps"}` : gap ? "An open question" : "Not drafted yet",
       sub: gap ? (GAP_KIND[gap.kind] ?? gap.kind) : actions ? "Each needs review before use" : "Needs the evidence above to be reviewed" },

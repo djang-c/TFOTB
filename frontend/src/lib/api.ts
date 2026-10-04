@@ -229,6 +229,16 @@ export interface RealMeta {
   seed_note: string;
 }
 
+/** Patient groups as listed by GARD (NIH), shown verbatim; never checked or endorsed by us. */
+export interface PatientGroups {
+  status: "ok" | "failed" | "no_xref" | "not_a_disease" | "not_available";
+  note?: string;
+  retrieved?: string;
+  rejected?: number;
+  pages: { label: string; url: string }[];
+  groups: { name: string; website: string | null; country: string | null; registry_url: string | null; kind: string | null }[];
+}
+
 /** A home-page entry point. The API derives these from the dataset; they are never hand-picked. */
 export type Featured = { id: string; label: string; type: EntityType } & (
   | { reason: "connections"; connections: number; assets: number }
@@ -242,6 +252,7 @@ export const api = {
     featured?: Featured[]; simulations?: { run_id: string; label: string }[]; real?: RealMeta | null }>("/meta"),
   search: (q: string) => get<{ results: SearchHit[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
   related: (id: string) => get<Related>(`/entities/${enc(id)}/related`),
+  groups: (id: string) => get<PatientGroups>(`/entities/${enc(id)}/groups`),
   entities: () => get<{ items: Entity[] }>("/entities"),
   entity: (id: string) => get<{ entity: Entity; claims: Claim[]; claim_counts_by_predicate: Record<string, number>;
     reviewed_claims: number; summary: { text: string; claim_ids: string[]; source?: string }[]; summary_method?: string }>(`/entities/${enc(id)}`),
