@@ -115,7 +115,7 @@ def run_research(
             for r in report.runs:
                 if r.status == "ingested" and r.meta:
                     f.write(json.dumps(r.meta) + "\n")
-        ids = {i for c in db.all(Claim) for i in (c.subject_id, c.object_id)}
+        ids = {i for c in db.all(Claim) for i in (c.subject_id, c.object_id, c.context.get("substance")) if i}
         write_labels(store_dir, ids, resolver)
         manifest = export_snapshot(db, store_dir / "snapshot", dataset_version=f"local-{now[:10]}", built_at=now)
     finally:

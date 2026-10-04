@@ -424,12 +424,6 @@ def entity_actions(request: Request, entity_id: str) -> Any:
 
 @router.get("/claims/{claim_id}")
 def claim(request: Request, claim_id: str) -> Any:
-    ix = _index(request)
-    real = ix.claim(claim_id) if ix is not None else None
-    if real is not None:
-        subject = ix.r.label_of(real["subject_id"]) or real["context"].get("study_title") or real["subject_id"]
-        return _wrap_real(claim=real, subject_label=subject,
-                          object_label=ix.r.label_of(real["object_id"]), lineage_siblings=[], contradicting_claims=[])
     store = _stored_claims(request)
     stored = store.get(claim_id)
     if stored is not None:
@@ -442,6 +436,12 @@ def claim(request: Request, claim_id: str) -> Any:
                 "subject_label": lab(stored.subject_id) or stored.subject_id,
                 "object_label": lab(stored.object_id) or stored.object_id,
                 "lineage_siblings": siblings, "contradicting_claims": contradicting}
+    ix = _index(request)
+    real = ix.claim(claim_id) if ix is not None else None
+    if real is not None:
+        subject = ix.r.label_of(real["subject_id"]) or real["context"].get("study_title") or real["subject_id"]
+        return _wrap_real(claim=real, subject_label=subject,
+                          object_label=ix.r.label_of(real["object_id"]), lineage_siblings=[], contradicting_claims=[])
     d = _demo(request)
     c = next((c for c in d["claims"] if c["claim_id"] == claim_id), None)
     if c is None:

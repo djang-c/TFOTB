@@ -22,7 +22,7 @@ def main() -> int:
         (DST / "atlas.db").unlink()
     db = load_snapshot(SRC / "snapshot", DST / "atlas.db")
     db.close()
-    for name in ("papers.jsonl", "ingest_log.jsonl"):
+    for name in ("papers.jsonl", "ingest_log.jsonl", "labels.json"):
         if (SRC / name).exists():
             shutil.copy(SRC / name, DST / name)
     print("loaded the packaged claim store into", DST)

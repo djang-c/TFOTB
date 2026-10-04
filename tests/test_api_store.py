@@ -138,3 +138,16 @@ def test_graph_and_routes_use_the_label_sidecar_for_go_terms_the_public_index_do
 def test_ready_reports_whether_the_index_is_built(tmp_path):
     c = TestClient(create_app(Settings(real_search=False, store_path=tmp_path / "x.db")))
     assert c.get("/api/ready").json() == {"ready": True, "index": "disabled"}
+
+
+def test_a_stored_claim_lists_the_other_claims_from_the_same_paper_and_is_not_labelled_synthetic(tmp_path):
+    from atlas.db import AtlasDB
+
+    path = tmp_path / "atlas.db"
+    db = AtlasDB(path)
+    for cid in ("CLAIM:PMID-1-a", "CLAIM:PMID-1-b"):
+        db.put(make_claim(cid, "ACCUMULATES_IN_COMPARTMENT", subject_id=A, object_id="GO:0005764", source_type="published", lineage="STUDY:PMID-1"))
+    db.close()
+    c = TestClient(create_app(Settings(real_search=False, store_path=path)))
+    body = c.get("/api/claims/CLAIM:PMID-1-a").json()
+    assert body["lineage_siblings"] == ["CLAIM:PMID-1-b"] and "Not synthetic" in body["_synthetic"]

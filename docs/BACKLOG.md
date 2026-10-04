@@ -29,3 +29,5 @@ Deviation from PLAN: `simulation_time` is recorded as `simulation_steps` + `simu
 <!-- 2026-10-03: T23 graph-linked record built: src/atlas/simulation.py (SimulationRun + one SIMULATES_WORKFLOW_FOR claim, unreviewed computational_prediction; a pass changes no ranking; biology/physical execution must be not_modeled). Not done: persist runs in the DB, API/UI display of the graph link. -->
 
 <!-- 2026-10-04: PLAN revised (automation, credible sources, hypotheses, labels not gates). Built: credibility gate, on-demand research flags, hypotheses.py + script, literature-supported category, ai_generated source type, origin labels on card lines. Open: run hypothesis generation live; API endpoint for on-demand research (design: background job, policy caps); schedule the weekly job (Databricks); frontend display of origin labels in the evidence drawer. -->
+
+<!-- 2026-10-04 audit: see QUALITY_AUDIT.md and REQUIREMENTS_TRACEABILITY.md. T10 cards/graph/collaborators/symptoms/clusters/uploads built; OpenAI adapter offline-tested only; frontend, video, deploy, 10x remain. -->

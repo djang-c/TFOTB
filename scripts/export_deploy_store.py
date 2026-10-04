@@ -40,7 +40,7 @@ def main() -> int:
     now = datetime.now(UTC).isoformat(timespec="seconds")
     manifest = export_snapshot(db, OUT / "snapshot", dataset_version=f"deploy-{now[:10]}", built_at=now)
     db.close()
-    for name in ("papers.jsonl", "ingest_log.jsonl"):
+    for name in ("papers.jsonl", "ingest_log.jsonl", "labels.json"):
         if (SRC / name).exists():
             shutil.copy(SRC / name, OUT / name)
     print(f"wrote {OUT.relative_to(ROOT)}: {n} claims; files", sorted(p.name for p in OUT.rglob("*") if p.is_file()))

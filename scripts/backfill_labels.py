@@ -24,7 +24,7 @@ def main() -> int:
     if not claims:
         print("No claims in the store.")
         return 2
-    ids = {i for c in claims.values() for i in (c.subject_id, c.object_id)}
+    ids = {i for c in claims.values() for i in (c.subject_id, c.object_id, c.context.get("substance")) if i}
     n = write_labels(STORE, ids, load_extraction_resolver(ROOT / "data" / "raw"))
     print(f"{len(ids)} entities in {len(claims)} claims; labels.json now holds {n} names")
     return 0

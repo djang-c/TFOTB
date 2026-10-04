@@ -1,6 +1,8 @@
 # Deploy (free tier)
 
-Owners: **Builder B owns the Hugging Face Space (API)** and **Builder A owns Vercel (frontend)**. Deployment happens at the end of the build.
+Owners: the project owner now holds both the Hugging Face Space (API) and Vercel (frontend); Builder B's tasks were handed over on 2026-10-04. Deployment happens at the end of the build.
+
+**Before deploying (audit 2026-10-04):** (1) the image only contains the paper claims if the packaged store is committed. Run `PYTHONPATH=src python scripts/export_deploy_store.py`, read `deploy/store/` (short quotes with DOI links, author names), then publish it deliberately with `git add -f deploy/store`. It is git-ignored by default. (2) The workflow now runs `ruff` and `pytest` before it deploys. (3) The API image has no GO or ChEBI files, so `POST /api/research` cannot run there; leave `RESEARCH_ENABLED` off. (4) Check `/api/ready` after a cold start: the search index takes about ten seconds to build.
 
 The frontend runs on **Vercel** (Hobby plan). The API runs on a **Hugging Face Docker Space** (free CPU). Neither costs money.
 
