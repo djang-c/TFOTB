@@ -52,3 +52,25 @@ def test_the_shipped_policy_file_is_valid():
     root = Path(__file__).resolve().parent.parent
     p = load_policy(root / "config" / "ingest_policy.json")
     assert p.max_papers_per_run >= 1 and p.seed_entities
+
+
+def test_a_momentary_network_error_is_retried_and_a_lasting_one_is_reported_plainly():
+    import urllib.error
+
+    from atlas.discovery import DiscoveryError
+
+    calls = {"n": 0}
+
+    def flaky(url):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise urllib.error.URLError("timed out")
+        return json.dumps({"resultList": {"result": [{"pmid": "9", "title": "T"}]}}).encode()
+
+    assert [f.pmid for f in discover(["x"], fetch=flaky, wait_s=0)] == ["9"] and calls["n"] == 3
+
+    def down(url):
+        raise urllib.error.URLError("no route")
+
+    with pytest.raises(DiscoveryError, match="failed after 3 tries"):
+        discover(["x"], fetch=down, wait_s=0)

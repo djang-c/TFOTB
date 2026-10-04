@@ -25,7 +25,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from atlas.discovery import discover
+from atlas.discovery import DiscoveryError, discover
 from atlas.llm.anthropic_client import AnthropicClient
 from atlas.llm.cache import CachedClient
 from atlas.policy import load_policy
@@ -52,7 +52,11 @@ def main() -> int:
         on_demand = bool(args.query or args.entity)  # the user asked for specific research: use only that
         terms = [resolver.label_of(e) for e in (args.entity if on_demand else policy.seed_entities)]
         terms += args.query if on_demand else list(policy.extra_queries)
-        found = discover([t for t in terms if t], per_query=policy.discovery_per_query)
+        try:
+            found = discover([t for t in terms if t], per_query=policy.discovery_per_query)
+        except DiscoveryError as exc:
+            print(f"{exc}\nNothing was ingested; run again later.")
+            return 1
         done = already_ingested(STORE)
         pmids = [f.pmid for f in found if f"PMID:{f.pmid}" not in done]
         print(f"discovered {len(found)} open-access papers, {len(pmids)} not yet ingested")

@@ -130,3 +130,15 @@ def test_claims_cite_the_papers_real_doi_link_and_the_run_log_records_journal(re
     r = run(["1"], resolver, db).runs[0]
     assert r.citation == "https://doi.org/10.1000/x" and r.journal == "Synthetic Journal"
     assert db.all(Claim)[0].source_url == "https://doi.org/10.1000/x"
+
+
+def test_a_network_error_on_one_paper_fails_that_paper_only_and_the_run_continues(resolver):
+    import urllib.error
+
+    def fetch(pmid):
+        if pmid == "1":
+            raise urllib.error.URLError("timed out")
+        return paper(pmid)
+
+    rep = run(["1", "2"], resolver, AtlasDB(), fetch=fetch)
+    assert [r.status for r in rep.runs] == ["failed", "ingested"] and "timed out" in rep.runs[0].reason

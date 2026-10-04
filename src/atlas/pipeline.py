@@ -18,6 +18,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Any
+from xml.etree.ElementTree import ParseError
 
 from atlas.db import AtlasDB
 from atlas.extraction import SourceText, extract_claims
@@ -108,8 +109,9 @@ def ingest_papers(
         attempted += 1
         try:
             ft = fetch(pmid)
-        except SourceError as exc:
-            report.runs.append(PaperRun(sid, "failed", str(exc)))
+        except (SourceError, OSError, ValueError, ParseError) as exc:
+            # A network timeout, a malformed response or an unreadable XML body fails this paper only.
+            report.runs.append(PaperRun(sid, "failed", f"{type(exc).__name__}: {exc}"[:300]))
             continue
         if allowed is not None and not _licence_allowed(ft.license, allowed):
             report.runs.append(

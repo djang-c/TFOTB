@@ -8,6 +8,7 @@ goes through the same fetch, quote-verification and resolution checks before any
 from __future__ import annotations
 
 import json
+import time
 import urllib.parse
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -33,13 +34,30 @@ def build_query(term: str) -> str:
     )
 
 
-def discover(terms: Iterable[str], *, per_query: int = 10, fetch: Fetch = _get) -> list[Found]:
+class DiscoveryError(RuntimeError):
+    """The literature search could not be completed (after retries). Nothing was guessed."""
+
+
+def _fetch_with_retry(fetch: Fetch, url: str, attempts: int = 3, wait_s: float = 2.0) -> bytes:
+    for n in range(1, attempts + 1):
+        try:
+            return fetch(url)
+        except OSError as exc:  # timeouts and connection errors are usually momentary
+            if n == attempts:
+                raise DiscoveryError(f"literature search failed after {attempts} tries: {exc}") from exc
+            time.sleep(wait_s * n)
+    raise AssertionError("unreachable")
+
+
+def discover(
+    terms: Iterable[str], *, per_query: int = 10, fetch: Fetch = _get, wait_s: float = 2.0
+) -> list[Found]:
     """Newest open-access PubMed papers per term, de-duplicated across terms, in term order."""
     seen: dict[str, Found] = {}
     for term in dict.fromkeys(t.strip() for t in terms if t and t.strip()):
         q = urllib.parse.quote(build_query(term))
         url = f"{API}/search?query={q}&format=json&resultType=lite&pageSize={per_query}"
-        for rec in json.loads(fetch(url)).get("resultList", {}).get("result", []):
+        for rec in json.loads(_fetch_with_retry(fetch, url, wait_s=wait_s)).get("resultList", {}).get("result", []):
             pmid = rec.get("pmid")
             if pmid and pmid not in seen:
                 seen[pmid] = Found(str(pmid), rec.get("title", ""), term)

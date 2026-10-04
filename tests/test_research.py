@@ -82,3 +82,16 @@ def test_the_log_records_only_papers_that_were_attempted_not_those_skipped_by_th
     assert len(s["papers"]) == 4  # the summary still shows what was skipped
     log = [json.loads(x) for x in (tmp_path / "store" / "ingest_log.jsonl").read_text().splitlines()]
     assert [r["source_id"] for r in log] == ["PMID:1", "PMID:2"]
+
+
+def test_a_failed_literature_search_returns_an_error_summary_and_ingests_nothing(tmp_path):
+    from atlas.discovery import DiscoveryError
+
+    def broken(terms, per_query):
+        raise DiscoveryError("literature search failed after 3 tries: timed out")
+
+    summary = run_research(
+        terms=["alpha"], pmids=None, policy=IngestPolicy(), store_dir=tmp_path / "store", client=Fake(),
+        resolver=resolver(), live=False, discover_fn=broken, fetch=paper,
+    )
+    assert "failed after 3 tries" in summary["error"] and summary["papers"] == [] and summary["claims_added"] == 0

@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from atlas.db import AtlasDB, export_snapshot
-from atlas.discovery import Found, discover
+from atlas.discovery import DiscoveryError, Found, discover
 from atlas.llm.base import LLMClient
 from atlas.pipeline import ingest_papers, ledger_rows
 from atlas.policy import IngestPolicy
@@ -69,7 +69,11 @@ def run_research(
     done = already_ingested(store_dir)
     found: list[Found] = []
     if pmids is None:
-        found = discover_fn([t for t in terms if t], per_query=policy.discovery_per_query)
+        try:
+            found = discover_fn([t for t in terms if t], per_query=policy.discovery_per_query)
+        except DiscoveryError as exc:
+            return {"live": live, "discovered": 0, "new_papers": 0, "papers": [], "claims_added": 0,
+                    "statements_quarantined": 0, "snapshot_rows": {}, "error": str(exc)}
         pmids = [f.pmid for f in found if f"PMID:{f.pmid}" not in done]
     db = AtlasDB(store_dir / "atlas.db")
     try:

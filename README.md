@@ -15,7 +15,7 @@ Hackathon submission (Hack-Nation Challenge 05). An evidence-backed rare-disease
 ## Verify it yourself
 | Claim | How to check |
 |---|---|
-| The test suite passes | `make test` (367 tests on 2026-10-04) and `make lint` |
+| The test suite passes | `make test` (373 tests on 2026-10-04) and `make lint` |
 | The reference data is the pinned version | `python scripts/fetch_ontologies.py` re-verifies every file against `data/raw/CHECKSUMS.json` |
 | Claims carry real citations and verbatim quotes | Open any paper-derived claim in the evidence drawer (it links the article and shows the quote), or run `scripts/ingest_papers.py --pmids 37245481` with an API key and inspect `data/store/`. Recorded model responses are not committed, so a run without a key makes no claims. |
 | The simulation fails when it should | `cd robotics && python simulate.py fixtures/blocked_path.json --out ../demo_outputs` (expect: fail) |
