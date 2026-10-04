@@ -253,7 +253,7 @@ function Dossier({ id }: { id: string }) {
   ];
 
   return (
-    <div className="fade-in px-5 py-8 lg:px-10">
+    <div className="stagger px-5 py-8 lg:px-10">
       <header className="flex flex-col gap-4 border-b border-border pb-6 xl:flex-row xl:items-end">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

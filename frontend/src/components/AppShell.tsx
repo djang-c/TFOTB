@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Boxes, FileText, Network } from "lucide-react";
-import { type ReactNode } from "react";
+import { useIsFetching } from "@tanstack/react-query";
+import { type ReactNode, useEffect, useState } from "react";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { EvidenceDrawerProvider } from "@/components/EvidenceDrawer";
 import { useFocusId } from "@/lib/focus";
@@ -33,10 +34,12 @@ export const SHELL_OFFSET = "6.25rem";
  * searched, a second row names it and offers the views of it: Dossier, Graph, Clusters.
  */
 export function AppShell({ children }: { children: ReactNode }) {
+  useRevealOrigin();
   return (
     <EvidenceDrawerProvider>
       <div className="relative min-h-screen bg-background text-foreground">
         {HERO_STYLE === "flow" && <div className="ambient-wash" aria-hidden="true" />}
+        {HERO_STYLE === "flow" && <TopProgress />}
         <div className="relative z-10">
           <TopBar />
           <ApiBanner />
@@ -49,6 +52,41 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
     </EvidenceDrawerProvider>
   );
+}
+
+/** Remembers where the last click or Enter was, so the next page can open as a circle from there. */
+function useRevealOrigin() {
+  useEffect(() => {
+    if (HERO_STYLE !== "flow") return;
+    const set = (x: number, y: number) => {
+      document.documentElement.style.setProperty("--vt-x", `${x}px`);
+      document.documentElement.style.setProperty("--vt-y", `${y}px`);
+    };
+    const down = (e: PointerEvent) => set(e.clientX, e.clientY);
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const r = (document.activeElement as HTMLElement | null)?.getBoundingClientRect();
+      if (r) set(r.left + r.width / 2, r.top + r.height / 2);
+    };
+    window.addEventListener("pointerdown", down, true);
+    window.addEventListener("keydown", key, true);
+    return () => {
+      window.removeEventListener("pointerdown", down, true);
+      window.removeEventListener("keydown", key, true);
+    };
+  }, []);
+}
+
+/** A bar across the top while data is loading. It waits 150 ms so quick loads do not flash it. */
+function TopProgress() {
+  const fetching = useIsFetching() > 0;
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    if (!fetching) return setShow(false);
+    const t = window.setTimeout(() => setShow(true), 150);
+    return () => window.clearTimeout(t);
+  }, [fetching]);
+  return show ? <div className="top-progress" role="progressbar" aria-label="Loading" /> : null;
 }
 
 function TopBar() {
