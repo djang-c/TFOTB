@@ -2,7 +2,7 @@
   "_readme": "Standing policy for the paper pipeline. Edit this file to change what runs unattended; nothing else needs approving per run. Every extracted claim is still stored 'unreviewed' and shown with that label; review is an optional upgrade, never a gate. The caps are the only spending control.",
   "live_extraction": true,
   "max_papers_per_run": 10,
-  "max_chars_per_paper": 70000,
+  "max_chars_per_paper": 120000,
   "max_output_tokens": 4096,
   "seed_entities": ["MONDO:0008767", "MONDO:0018982"],
   "extra_queries": ["CLN3 disease", "Batten disease", "Niemann-Pick type C"],
