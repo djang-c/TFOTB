@@ -1,31 +1,32 @@
 # TFOTB (The Flight of the Buffalo): submission blueprint
 
-Status: draft, checked against the code and the running app on 2026-10-04. All model calls use the OpenAI API. **Before you submit, complete the gate below.**
+Status: remade 2026-10-04, checked against the code and the running app. All model calls use the OpenAI API. **Before you submit, complete the gate below.**
 
 ## Gate: do these before submitting
 - [x] **Store packaged.** `deploy/store` holds all 52 claims: 13 read by GPT-5 mini and 39 from the first development runs (shown as `development-model`).
-- [ ] **Checks pass on the filming machine.** `make lint`, `make test` and `npm run e2e` (in `frontend/`).
+- [x] **Checks pass on the build machine (2026-10-04).** 516 backend tests, 65 frontend unit tests and 47 of 47 browser checks pass; `ruff` and `eslint` are clean. Re-run them on the machine you film on.
+- [ ] **Live app.** The API is not deployed. Hugging Face now charges for Docker Spaces on free CPU, so a free host or a PRO subscription must be chosen (`docs/DEPLOY.md`). The front end goes on Vercel. Until then judges run it locally with `make setup`, `make api`, `make web` (see the README).
+- [ ] **One-pager PDF.** The text is in section 4. Export it as `TeamName_OnePager.pdf`.
 - [ ] **Each beat checked on screen.** If a beat does not match what you see, change the script, not the screen.
+- [ ] **The 10× case is not measured.** It is a model with assumptions, and it says so. Do not call it a result.
 
 ---
 
-## 1. Project summary (text submission, 150–300 words; this draft is about 220)
+## 1. Project summary (text submission, 150–300 words; this draft is under 300)
 
-**The problem.** Evidence on rare diseases is scattered across thousands of papers and databases. Finding which diseases are connected, and how well that connection is supported, is slow manual work.
+**The problem.** Evidence on rare diseases is scattered across thousands of papers and databases. A patient group leader like Maria cannot easily tell which diseases share her disease's mechanism, what work exists, or who to approach.
 
 **What we built.** The Flight of the Buffalo (TFOTB) finds open-access, PubMed-indexed papers by itself. GPT-5 mini reads each paper and proposes claims under a strict JSON schema; GPT-5 proposes labelled hypotheses across papers and reviews failed experiment runs. Code keeps a claim only if its quote appears word for word in the paper and its names resolve to real ontology IDs (MONDO, HGNC, HPO). Every claim keeps its quote and DOI link.
 
 **Key features.**
-- **Disease dossier:** related diseases, each with its reason (shared gene, mechanism from papers, disease family, similar symptoms) and an evidence label instead of a combined score. AI hypotheses are labelled. Patient groups come from GARD. Export to Markdown or JSON with provenance.
-- **3D evidence graph:** click any link to see the exact quote and paper.
-- **Clusters:** diseases that share one specific thing with the one you searched.
-- **Symptom search:** candidate diseases, shown as research hypotheses, not diagnoses.
-- **Closed-loop experiment planner:** the researcher defines parameters, limits, pass criteria and what to change on failure for an overnight robot run. Plans are checked against real pipetting limits and a MuJoCo motion model. The AI only picks among the changes the researcher allowed.
-- **10× case:** a page next to Simulation built on the people in the challenge brief. It runs Maria's journey for CLN3 disease live (related diseases, patient groups and registries, studies, researchers, a sourced evidence brief) and compares the typical way with TFOTB for Maria, Devon, Priya and Dr. Osei. On the starting values Maria goes from 30 working days to 11 working hours (about 22×). The typical-way times are editable assumptions; it is a model, not a measurement.
+- **Disease dossier:** related diseases, each with its reason (shared gene, mechanism from papers, disease family, similar symptoms) and an evidence label instead of a combined score. Patient groups, matched studies and researchers are listed too. Export with provenance.
+- **3D evidence graph, Clusters and symptom search:** every link opens its quote and paper; symptom results are hypotheses, not diagnoses.
+- **10× case:** Maria's journey to a sourced proposal, run live, against the typical way for the brief's four people. The typical-way times are stated assumptions, not measurements.
+- **Closed-loop experiment planner:** the researcher sets parameters, limits, pass criteria and failure rules for an overnight robot run, checked against pipetting limits and a MuJoCo motion model.
 
-**How we use OpenAI.** Every model call goes through the OpenAI API with strict structured output, and every claim records the model that read it. More credits would let it read the literature for every rare disease instead of one seed cluster, run its paper-finding job weekly, and read each paper twice with two models to catch misreadings.
+**How we use OpenAI.** Every model call uses the OpenAI API with strict structured output, and every claim records its model. More credits would read the literature for every rare disease instead of one seed cluster, run paper-finding weekly, and read each paper twice with two models.
 
-**Who benefits.** Rare-disease researchers who want leads they can trace to the source.
+**Who benefits.** Patient groups and rare-disease researchers who want leads they can trace to the source.
 
 ---
 
@@ -34,14 +35,16 @@ Use **CLN3 disease**, not Fabry disease: Fabry disease has no claims from papers
 
 | Time | Say | Show | Callout |
 |---|---|---|---|
-| 0:00–0:08 | "Rare-disease evidence is scattered across thousands of papers. TFOTB puts it in one place, and shows where every link comes from." | Home page. Type "CLN3" and pick *neuronal ceroid lipofuscinosis 3*. | The Flight of the Buffalo |
-| 0:08–0:20 | "For a disease, it lists related diseases with the reason for each one: a shared gene, a mechanism reported in papers, the disease hierarchy, or similar symptoms." | Dossier, **Related diseases** (35 rows). Filter by reason, then point at the Niemann-Pick type C row. | Related diseases, each with its reason |
-| 0:20–0:30 | "Click any citation for the exact sentence and the paper. It also says who found it: here, an AI read the article, and no human has reviewed it yet." | Click a claim chip. The evidence drawer opens with the verbatim quote, the DOI link, "found by AI" and "unreviewed". | Every claim, traced to its source |
-| 0:30–0:40 | "The same evidence as a 3D graph. Every link opens its own evidence." | **Graph** tab. Rotate, click a node, open a link's evidence. | 3D evidence graph |
-| 0:40–0:54 | "To test a lead, the researcher defines an overnight experiment: the parameters, limits, pass criteria and what to change on failure. The robot plan is checked against real limits. Each run is scored, and the next run changes only what the researcher allowed." | **Simulation** in the top bar. Show the parameter table and rules, then **Run overnight (synthetic)**, then the overnight log. | Closed-loop experiment: the researcher sets the rules |
-| 0:54–1:00 | "Export everything with its sources. Research support only." | Back on the dossier, click **JSON** to download `…-provenance.json`. | Research support only |
+| 0:00–0:07 | "Rare-disease evidence is scattered across thousands of papers. TFOTB puts it in one place, and shows where every link comes from." | Home page. Type "CLN3" and pick *neuronal ceroid lipofuscinosis 3*. | The Flight of the Buffalo |
+| 0:07–0:18 | "For a disease, it lists related diseases with the reason for each one: a shared gene, a mechanism reported in papers, the disease hierarchy, or similar symptoms." | Dossier, **Related diseases** (35 rows). Filter by reason, then point at the Niemann-Pick type C row. | Related diseases, each with its reason |
+| 0:18–0:27 | "Click any citation for the exact sentence and the paper. It says who found it: here, an AI read the article, and no human has reviewed it yet." | Click a claim chip. The drawer shows the verbatim quote, the DOI link, "found by AI" and "unreviewed". Pick a **GPT-5 mini** claim if you show the model name. | Every claim, traced to its source |
+| 0:27–0:34 | "The same evidence as a 3D graph. Every link opens its own evidence." | **Graph** tab. Rotate, click a node, open a link's evidence. | 3D evidence graph |
+| 0:34–0:48 | "Maria's question is how fast she can get from her disease to a sourced proposal for a partner. Here are her four steps, run live. Typical way, on our stated assumptions, about 30 working days. Here a person only checks sources: about 11 hours. The assumptions are on the page, and none is measured." | **10× case** in the top bar. Click **Run Maria's journey**, then scroll to the Maria card with the 22× figure and the stress test. | 10× case: the assumptions are on the page |
+| 0:48–0:56 | "To test a lead, the researcher defines an overnight experiment. The robot plan is checked against real limits, each run is scored, and the next run changes only what the researcher allowed." | **Simulation** in the top bar. **Run overnight (synthetic)**, then the log. | Closed loop: the researcher sets the rules |
+| 0:56–1:00 | "Export everything with its sources. Research support only." | Back on the dossier, click **JSON**. | Research support only |
 
-Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "real lab results":
+Do not say "confidence score", "validated", "peer reviewed", "diagnosis", "measured 10×" or "real lab results":
+- The 10× figures are arithmetic on stated assumptions. The time with TFOTB is a person checking sources.
 - The overnight run uses SYNTHETIC readings, and the page labels them so.
 - Measured results come only from readings the researcher uploads.
 
@@ -70,7 +73,7 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
   - GPT-5 mini reads each paper's open-access full text and proposes claims with verbatim quotes.
   - GPT-5 proposes hypotheses that must cite stored claims from two different papers, and reviews failed experiment runs, choosing only among the changes the researcher allowed.
   - Every response is cached and every claim names its model, so a rerun replays at no cost.
-- **Reference data:** MONDO, HGNC, HPO, GO and ChEBI files, pinned and checked by SHA-256. Papers come from Europe PMC (open access, PubMed-indexed). Patient groups come from GARD.
+- **Reference data:** MONDO, HGNC, HPO, GO and ChEBI files, pinned and checked by SHA-256. Papers come from Europe PMC (open access, PubMed-indexed). Patient groups come from GARD, matched studies from ClinicalTrials.gov.
 - **Storage:** a SQLite claim store (`data/store/atlas.db`) with a checksummed snapshot.
 - **Backend:** FastAPI and Pydantic. Assay statistics (Z′, CV, 4-parameter logistic fit) use numpy.
 - **Frontend:** React 19 on TanStack Start and Vite, with a three.js graph and Tailwind.
@@ -78,14 +81,18 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 
 **3. What worked**
 - **Strict claim checks.** The model proposes; code keeps a claim only if its quote is verbatim, its relation is allowed, and both names resolve to ontology IDs. 52 claims are stored. In the latest GPT-5 mini run, 13 proposals were kept and 49 quarantined.
-- **Related diseases from the full reference data.** For CLN3 disease there are 35 related diseases: 3 by shared gene, 1 by mechanism from papers, 1 by a direct paper link, 15 by hierarchy and 25 by symptoms. One disease can have several reasons.
+- **Related diseases from the full reference data.** For CLN3 disease there are 35 related diseases: 3 by shared gene, 1 by mechanism from papers, 1 by a direct paper link, 15 by hierarchy and 25 by symptoms. The mechanism link to Niemann-Pick type C (lysosomal cholesterol) comes from claims in papers about both diseases.
+- **Maria's journey runs end to end.** For CLN3 disease the site returns, each in well under a second: related diseases with reasons, 3 patient groups (1 with a registry link), 2 matched studies, 13 researchers from the papers behind the claims (4 matched by ORCID), and a sourced evidence brief.
 - **Labels instead of a single score.** Independent studies are counted separately from papers that only cite a fact as background, and AI hypotheses are always labelled as hypotheses.
-- **A researcher-defined experiment loop.**
-  - The plan is checked against real limits.
-  - Pass criteria come from published assay guidance: Z′ ≥ 0.5 (Zhang 1999), control CV ≤ 20% (NIH Assay Guidance Manual), and enough points on each flat end of the curve (Sebaugh 2011).
-  - The AI can only choose among the changes the researcher allowed.
+- **A researcher-defined experiment loop.** The plan is checked against real limits. Pass criteria come from published assay guidance: Z′ ≥ 0.5 (Zhang 1999), control CV ≤ 20% (NIH Assay Guidance Manual), and enough points on each flat end of the curve (Sebaugh 2011). The AI can only choose among the changes the researcher allowed.
 
-**3b. The 10× case (`/10x`).** Milestone, from the brief's "What good looks like": Maria approaches a partner with a sourced proposal for shared research. Typical way, per the brief's three questions plus the proposal (all assumptions, editable): who shares our disease characteristics 10 working days, what useful work exists 10, who to approach 5, write the sourced proposal 5 = 30 working days. With TFOTB the same four steps are answered in under a second (measured live), and what is left is a person checking sources: 3 + 3 + 1 + 4 = 11 working hours. That is about 22×. Stress test: if checking takes 3× as long, it is about 7×, and 10× is lost beyond 2.2×. Devon (3 days to 30 minutes), Priya (the brief's "months per mechanism", taken as 40 days, to 8 hours) and Dr. Osei (10 days to 2 hours) are on the page too; Priya and Dr. Osei are only partly built. To validate: time real people on the same briefs against one quality rubric. A second section models the lab step after the proposal (6× with an own robot, 12× waiting on a shared one).
+**3b. The 10× case (`/10x`).** Milestone, from the brief's "What good looks like": Maria approaches a partner with a sourced proposal for shared research.
+- **Typical way** (editable assumptions): who shares our disease characteristics 10 working days; what useful work exists 10; who to approach 5; write the sourced proposal 5. Total 30 working days.
+- **With TFOTB:** the same four steps are answered in under a second (measured live in the browser). What is left is a person checking sources: 3 + 3 + 1 + 4 = 11 working hours. That is about 22×.
+- **Stress test:** if checking takes 3× as long, it is about 7×. 10× is lost beyond 2.2×.
+- **The other people in the brief:** Devon (3 days to 30 minutes), Priya (the brief's "months per mechanism", taken as 40 days, to 8 hours) and Dr. Osei (10 days to 2 hours). Priya and Dr. Osei are only partly built and the page says so.
+- **After the proposal:** a second section models the lab step with the overnight loop: 6× in a lab with its own robot, 12× for a group waiting on a shared one.
+- **Not measured.** To validate: time real people on the same briefs against one quality rubric, run a real plate reader, and measure real turnaround in two or three labs.
 
 **4. What was hard, and what comes next**
 - **Contradictions.** Opposing effects on a shared feature produce a "conflicting evidence" label naming both claims. No real contradiction has been found in the stored papers yet, so this has only been tested on synthetic claims.
@@ -96,10 +103,26 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
   - a weekly reading job (built, switched off because of cost);
   - a second reading of each paper by a second model, keeping only statements both agree on;
   - model-suggested synonyms for unresolved names, and plain-language explanations of graph paths for families;
-  - on-demand research for every visitor instead of token holders.
-- **Already in the code but not yet shown:** ClinicalTrials.gov matching (`src/atlas/trials.py`), and a neural model that predicts genes and phenotypes from diseases and symptoms.
+  - on-demand research for every visitor instead of token holders;
+  - the missing piece of Priya's case: starting from a mechanism and ranking every disease it could reach.
+- **Already in the code but not yet shown:** a neural model that predicts genes and phenotypes from diseases and symptoms.
 
-**5. How the time was spent.** From git: the first commit was on 2026-10-03 at 11:51 PDT and the latest on 2026-10-04 at 00:48 PDT (104 commits in this repository). Work before the first commit is not recorded. The hour-by-hour split is `UNVERIFIED`; fill it in from your own notes, or leave it out.
+**5. How the time was spent.** From git: the first commit was on 2026-10-03 at 12:01 PDT and the latest on 2026-10-04 at 03:39 PDT (121 commits in this repository). Work before the first commit is not recorded. The hour-by-hour split is `UNVERIFIED`; fill it in from your own notes, or leave it out.
+
+---
+
+## 5. Coverage against the challenge brief
+
+| What judges look for | Where it is | Status |
+|---|---|---|
+| Graph quality | Evidence graph, Clusters, related diseases with reasons; counterexamples and uncertainty labelled | Built for the seed cluster. Clustering is a stated rule, not validated. |
+| Evidence integrity | Verbatim quotes, DOI links, "found by AI", "unreviewed", hypotheses labelled, contradictions surfaced | Built. No expert has reviewed any claim. 39 of 52 claims come from the first development runs, not GPT-5 mini. |
+| Patient progress | Maria's journey: related disease, patient groups with registries, studies, researchers, sourced brief | Built end to end for CLN3. Contact route and funders are not built. |
+| 10× impact | `/10x`: milestone, typical way against TFOTB for four people, assumptions, stress test, what to validate | A model with assumptions, not measured. |
+| Ambition and product craft | One search, progressive reveal, explain every edge, symptom search, Simulation | Built. Not checked on other browsers or with a screen reader. |
+| Built with OpenAI (extract, reconcile, explain) | Extract: GPT-5 mini. Reconcile: ontology resolution in code, synonyms by AI not yet. Explain: briefs and cards are written from stored claims, not by a model. | Extract live. Reconcile and explain are partial. |
+| Working prototype | Local run documented. Live deployment pending. | **Open** |
+| Repository with README (architecture, reproduce the dataset) | `README.md` | Built |
 
 ---
 
@@ -111,11 +134,12 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 | "OpenAI-compatible endpoint, with a fallback provider" | All model calls use the OpenAI API; there is no fallback provider. |
 | Search "GARD:0006830 – Fabry disease" | Search does not accept GARD IDs (0 results). Fabry disease is GARD 6400, and it has no claims from papers, so the drawer beat would show nothing. Use CLN3 disease. |
 | GARD as a source of findings | GARD supplies patient-group listings only (`src/atlas/gard.py`), not claims. |
-| Reads clinical trials | `src/atlas/trials.py` exists, but no API route or page uses it. Listed under future work. |
-| "Confidence score" in the drawer | No stored claim has a score (0 of 39). The app uses evidence labels and avoids combined scores on purpose. |
+| Reads clinical trials (no page uses `trials.py`) | Matched ClinicalTrials.gov studies appear in the dossier through `src/atlas/trials.py`. None has been reviewed for eligibility, and the earlier note that no page used it was wrong. |
+| "Confidence score" in the drawer | No stored claim has a score. The app uses evidence labels and avoids combined scores on purpose. |
 | `/search` page, `Graph3D.tsx`, `ActionCardView.tsx`, "View Hypothesis", "Export Spec" | The pages are `/`, `/entity/$id`, `/explorer`, `/clusters`, `/symptoms`, `/simulation` and `/10x`. The files are `KnowledgeGraph.tsx` and `explorer/Cards.tsx`. Exports are dossier Markdown/JSON and Markdown per card. |
 | Force-directed 3D graph | A shell layout: the searched node in the centre, direct links on the inner shell (`KnowledgeGraph.tsx`, `layout`). |
 | `hypotheses.py` weighs findings by source reliability | `hypotheses.py` makes AI hypotheses that must cite two or more stored claims. Evidence labels and counting independent studies live in `ranking.py`. |
 | Robotics simulation is "future expansion" | Built: a researcher-defined closed loop (`src/atlas/experiment.py`, the `/simulation` page) with the MuJoCo motion check. |
-| 24-hour build split into hour blocks | Git shows about 13 hours of commits. The split is `UNVERIFIED`. |
-| "High-precision extraction" | Precision has not been measured. Replaced with what was measured: 39 kept and 74 quarantined. |
+| "10× faster" as a result | A model with stated assumptions (about 22× for Maria on the starting values, about 7× if checking takes 3× as long). Nothing is measured on real people. |
+| 24-hour build split into hour blocks | Git shows about 16 hours between the first and latest commit. The split is `UNVERIFIED`. |
+| "High-precision extraction" | Precision has not been measured. Replaced with what was measured: 13 kept and 49 quarantined in the latest GPT-5 mini run. |
