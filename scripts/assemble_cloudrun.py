@@ -10,8 +10,10 @@ downloads and verifies those itself).
 
 from __future__ import annotations
 
+import os
 import shutil
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -48,6 +50,9 @@ def main(argv: list[str]) -> int:
     shutil.copytree(ROOT / "frontend", out / "frontend", ignore=SKIP)
     shutil.copy(ROOT / "requirements.lock", out / "requirements.lock")
     shutil.copy(ROOT / "deploy" / "cloudrun.Dockerfile", out / "Dockerfile")
+    now = time.time()  # gcloud zips the folder, and zip cannot store timestamps before 1980
+    for f in [out, *out.rglob("*")]:
+        os.utime(f, (now, now))
     size = sum(f.stat().st_size for f in out.rglob("*") if f.is_file()) // 1024
     print(f"assembled {out} ({size} KB)")
     return 0

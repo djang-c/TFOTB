@@ -4,6 +4,8 @@
 
 Hugging Face now requires a paid plan for Docker Spaces, and the free hosts that need no card give 512 MB of memory, while the API needs about 800 MB once its search index is built (measured: 786 MB steady, 888 MB peak). Cloud Run's free tier allows 2 GiB, scales to zero, and needs a card on file for verification but costs nothing within its free quota.
 
+**Deployed 2026-10-04 to https://tfotb-403661953034.us-central1.run.app** (project `tfotb-510611`, region us-central1, max 1 instance). Redeploy with the two commands below. A new Google Cloud project needs the default build account granted `roles/cloudbuild.builds.builder` once, or the first build fails with PERMISSION_DENIED.
+
 The image (`deploy/cloudrun.Dockerfile`) serves the API **and** the built web app from one address, so there is no Vercel and no cross-origin setup. It has **no OpenAI key**: paper reading, hypotheses, on-demand research and the AI review of experiment runs are off on the deployed app (the experiment loop falls back to the researcher's rules and says so). They work when the repository is run locally with a key in `.env`.
 
 ```bash

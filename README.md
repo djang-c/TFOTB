@@ -4,6 +4,8 @@
 
 # TFOTB - The Flight of The Buffalo
 
+**Live app: https://tfotb-403661953034.us-central1.run.app** (free tier; the first visit after it has been idle takes a few seconds to wake. The OpenAI features are off there and work when you run it locally with your own key).
+
 Hackathon submission (Hack-Nation Challenge 05). An evidence-backed rare-disease connection explorer, plus a bounded MuJoCo simulation of a lab liquid-handling workflow.
 **Research support only. Not a clinical system.** No diagnosis, dosing, eligibility or treatment advice. Spec: [`docs/PLAN.md`](docs/PLAN.md). Task status: [`docs/BACKLOG.md`](docs/BACKLOG.md). Why things are the way they are: [`docs/DECISIONS.md`](docs/DECISIONS.md). Independent audit of this repository: [`QUALITY_AUDIT.md`](QUALITY_AUDIT.md) and [`REQUIREMENTS_TRACEABILITY.md`](REQUIREMENTS_TRACEABILITY.md).
 
