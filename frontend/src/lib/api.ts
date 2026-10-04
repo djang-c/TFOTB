@@ -1,6 +1,8 @@
 // Typed client for the TFOTB API (src/atlas/api). Shapes mirror src/atlas/schemas.py and the routes in
 // src/atlas/api/routes.py. Nothing here is bundled data: every screen reads from the running API.
 
+import { fetchWithRetry } from "@/lib/retry";
+
 const rawBase = (import.meta.env["VITE_API_BASE"] as string | undefined)?.trim().replace(/\/$/, "");
 export const API_BASE = rawBase
   ? rawBase.endsWith("/api")
@@ -416,7 +418,11 @@ export class ApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, init);
+    // reads are safe to repeat: a refused request (429/503) while the host wakes up is retried, not shown as an error
+    const isRead = !init?.method || init.method.toUpperCase() === "GET";
+    res = isRead
+      ? await fetchWithRetry(`${API_BASE}${path}`, init)
+      : await fetch(`${API_BASE}${path}`, init);
   } catch {
     throw new ApiError(0, "The API could not be reached.");
   }

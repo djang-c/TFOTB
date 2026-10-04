@@ -6,6 +6,7 @@ import { CatalogSearch } from "@/components/CatalogSearch";
 import { EvidenceDrawerProvider } from "@/components/EvidenceDrawer";
 import { useFocusId } from "@/lib/focus";
 import { HERO_STYLE } from "@/lib/heroStyle";
+import { reloadOnce } from "@/lib/retry";
 import { clean } from "@/lib/labels";
 import { isLocalId } from "@/lib/localTerms";
 import { useEntity } from "@/lib/queries";
@@ -43,6 +44,15 @@ function useMounted() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   useRevealOrigin();
+  useEffect(() => {
+    // Vite fires this when a lazily loaded script cannot be fetched; loading the page again, once, fixes it.
+    const onFail = (e: Event) => {
+      e.preventDefault();
+      reloadOnce();
+    };
+    window.addEventListener("vite:preloadError", onFail);
+    return () => window.removeEventListener("vite:preloadError", onFail);
+  }, []);
   const mounted = useMounted();
   return (
     <EvidenceDrawerProvider>

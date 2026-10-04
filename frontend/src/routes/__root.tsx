@@ -8,7 +8,8 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { isChunkError, reloadOnce } from "@/lib/retry";
 
 import appCss from "../styles.css?url";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,10 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+  // A page script that failed to load (host busy, or a new deploy) is fixed by loading again, once.
+  useEffect(() => {
+    if (isChunkError(error)) reloadOnce();
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

@@ -1,12 +1,14 @@
 # TFOTB (The Flight of the Buffalo): submission blueprint
 
+Team: **Obstinacy**.
+
 Status: remade 2026-10-04, checked against the code and the running app. All model calls use the OpenAI API. **Before you submit, complete the gate below.**
 
 ## Gate: do these before submitting
 - [x] **Store packaged.** `deploy/store` holds all 52 claims: 13 read by GPT-5 mini and 39 from the first development runs (shown as `development-model`).
 - [x] **Checks pass on the build machine (2026-10-04).** 516 backend tests, 65 frontend unit tests and 47 of 47 browser checks pass; `ruff` and `eslint` are clean. Re-run them on the machine you film on.
-- [x] **Live app (2026-10-04):** https://tfotb-403661953034.us-central1.run.app. Google Cloud Run free tier, one service for the API and the web app (`docs/DEPLOY.md`), at most 1 instance. All 47 browser checks pass against it. The deployed app has no OpenAI key: the AI features work only when someone runs the repo locally with their own key, and the README says so. The first visit after idle takes a few seconds.
-- [ ] **One-pager PDF.** The text is in section 4. Export it as `TeamName_OnePager.pdf`.
+- [x] **Live app (2026-10-04):** https://tfotb-403661953034.us-central1.run.app. Google Cloud Run free tier, one service for the API and the web app (`docs/DEPLOY.md`), at most 3 instances. All 47 browser checks pass against it. The deployed app has no OpenAI key: the AI features work only when someone runs the repo locally with their own key, and the README says so. The first visit after idle takes a few seconds.
+- [x] **One-pager PDF:** `docs/Obstinacy_OnePager.pdf` (team Obstinacy; source `docs/Obstinacy_OnePager.html`, text in section 4).
 - [ ] **Each beat checked on screen.** If a beat does not match what you see, change the script, not the screen.
 - [ ] **The 10× case is half measured.** The product side is measured on the live app (median 2.5 s for Maria's five calls, 7 of 7 checklist items pass; `docs/measurements/journey.json`). The typical-way side is NOT: nobody has been timed yet. `docs/TIMING_STUDY.md` is a one-hour protocol for 3 to 5 people, and the `/10x` page shows their timings once `frontend/public/measurements/timing-results.json` exists. Until then do not call the 10× a result.
 
@@ -71,7 +73,7 @@ About 150 words at a normal pace. Show screens, not one example: any disease or 
 
 ---
 
-## 4. One-page technical report (PDF: `TeamName_OnePager.pdf`)
+## 4. One-page technical report (PDF: `Obstinacy_OnePager.pdf`)
 
 ### The Flight of the Buffalo (TFOTB): traceable evidence for rare-disease research
 
