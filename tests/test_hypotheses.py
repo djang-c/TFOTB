@@ -118,3 +118,10 @@ def test_adding_a_hypothesis_changes_no_evidence_category():
     for c in run(hyp(), s=s)[0].claims:
         s.add(c)
     assert dict(cats(s)) == dict(before)
+
+
+def test_ids_copied_without_the_claim_prefix_are_matched_only_when_they_are_stored_claims():
+    rep, _ = run(hyp(supporting_claim_ids=["a", "[b]"]))  # "CLAIM:a" and "CLAIM:b" are stored
+    assert rep.claims and rep.claims[0].derived_from == ("CLAIM:a", "CLAIM:b")
+    rep, _ = run(hyp(supporting_claim_ids=["a", "invented"]))
+    assert not rep.claims and "not stored" in rep.rejected[0]["reason"]

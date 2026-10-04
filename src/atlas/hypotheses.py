@@ -95,8 +95,17 @@ def claims_text(claims: dict[str, Claim], label_of=lambda _i: "") -> str:
     return "\n".join(rows)
 
 
+def _canonical_id(i: str, claims: dict[str, Claim]) -> str:
+    """Models sometimes drop the "CLAIM:" prefix when copying an ID. Add it back only if the result is a
+    stored claim; an ID that matches nothing stays as written and is rejected as not stored."""
+    i = i.strip().strip("[]")
+    if i in claims:
+        return i
+    return f"CLAIM:{i}" if f"CLAIM:{i}" in claims else i
+
+
 def _reject_reason(h: ProposedHypothesis, claims: dict[str, Claim]) -> str | None:
-    support = list(dict.fromkeys(h.supporting_claim_ids))
+    support = list(dict.fromkeys(_canonical_id(i, claims) for i in h.supporting_claim_ids))
     if len(support) < 2:
         return "needs at least two supporting claims"
     missing = [i for i in support if i not in claims]
@@ -143,6 +152,7 @@ def generate_hypotheses(client: LLMClient, claims: dict[str, Claim], *, label_of
     )
     report.model, report.prompt_version, report.from_cache = result.model, result.prompt_version, result.from_cache
     for h in result.parsed.hypotheses[:max_hypotheses]:  # type: ignore[attr-defined]
+        h = h.model_copy(update={"supporting_claim_ids": [_canonical_id(i, claims) for i in h.supporting_claim_ids]})
         reason = _reject_reason(h, claims)
         if reason:
             report.rejected.append({"hypothesis": h.model_dump(), "reason": reason})
