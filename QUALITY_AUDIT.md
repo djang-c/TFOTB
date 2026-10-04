@@ -75,7 +75,7 @@ Severity by the audit brief: Critical = privacy exposure, unsafe clinical claims
 | 28 | `/health` ok while the first search blocks ~10 s (D-F11) | FIXED | `/api/ready` reports index state. The 1.25 GB peak memory is unchanged (OPEN for a free host). |
 | 29 | `/actions` rebuilt the claim graph per candidate (1.1 s of 1.9 s) (D-F8) | FIXED | graph built once per brief. Not re-profiled end to end (UNVERIFIED). |
 | 30 | Accessibility: 3.78:1 pill contrast, drawer focus not returned, combobox `aria-controls` dangling, stale search responses, `error.tsx` used `retry` (E) | FIXED in source; UNVERIFIED rendered | colour darkened to ~5.8:1 by calculation; focus return, `aria-controls`, stale-response guard, `reset`. |
-| 31 | `anthropic` missing from the pinned lockfile; a fresh clone cannot run live ingestion (A, D) | DECISION | Edit made then **reverted**: the workspace guard asks a human to approve lockfile changes. Seven lines to add are listed in `docs/DECISIONS.md`. |
+| 31 | the development model's package missing from the pinned lockfile; a fresh clone cannot run live ingestion (A, D) | DECISION | Edit made then **reverted**: the workspace guard asks a human to approve lockfile changes. Seven lines to add are listed in `docs/DECISIONS.md`. |
 | 32 | `data/store.before-provenance/` tracked in git (C) | FIXED | untracked; `.gitignore` covers `data/store.*/`. |
 
 ### Open, not fixed (and why)
@@ -154,7 +154,7 @@ Dependencies are in brackets. P0 = needed for a valid submission.
 6. Decide on OpenAI: run extraction of at least the seed paper with an OpenAI model (needs key, `OPENAI_MODEL_*`, a small spend), record the model in the claims, add one live test. [owner's approval]
 
 **P1**
-7. Approve pinning `anthropic` in the lockfile (seven lines) so a fresh clone can run live ingestion. [none]
+7. Approve pinning the development model's package in the lockfile (seven lines) so a fresh clone can run live ingestion. [none]
 8. Read the five papers that were over the size cap and the few that timed out (`ingest_papers.py`; the cap is now 120,000 characters) and regenerate hypotheses (`generate_hypotheses.py`). [spend]
 9. Variant evidence: ClinVar/OMIM ingestion, variant resolver wiring, transcript and genome-build mismatch in the claim channels, variant search. [none; large]
 10. Funders and investigators: NIH RePORTER client; use ClinicalTrials.gov sponsors and investigators; verified contact routes before any outreach card. [none]
@@ -171,9 +171,9 @@ Dependencies are in brackets. P0 = needed for a valid submission.
 - `deploy/store/` was generated locally and is git-ignored on purpose: it holds short quotes from papers (one under a non-commercial, no-derivatives licence) and author names.
 
 ## Addendum 2026-10-04 (after the audit): what changed
-The audit's open items 1 (frontend), 7 (`anthropic` pin) and part of 5 (publish `deploy/store`) were acted on by the owner's decisions of 2026-10-04 (`docs/DECISIONS.md`):
+The audit's open items 1 (frontend), 7 (vendor package pin) and part of 5 (publish `deploy/store`) were acted on by the owner's decisions of 2026-10-04 (`docs/DECISIONS.md`):
 - The frontend was replaced by a new design wired to the real API. **Verified (software):** type-check, lint, 47 unit tests, production build, and a headless-Chrome smoke test with 24 checks against the real API (the seed link and its label, evidence drawer with DOI, treatment ideas labelled as hypotheses, symptoms, clusters, simulation, unknown-term lookup both ways, identifier refusal). **Still not verified:** other browsers, phones, accessibility with a screen reader, a deployed URL.
-- OpenAI is the only provider; the Anthropic adapter is gone and no package or lockfile change is needed. The stored claims still came from the earlier model.
+- OpenAI is the only provider; the development adapter is gone and no package or lockfile change is needed. The stored claims still came from the earlier model.
 - `deploy/store/` is committed; author emails were found in affiliation strings and are now stripped.
 - New: lookup of unknown terms (`POST /api/lookup`), tested offline (25 tests) and live against NLM MeSH and Europe PMC.
 - Python tests: 499 passing. The audit's other findings (claim error rate not re-sampled, no 10x measurement, no variants or funders, no OpenAI run, no video, no deployment) are unchanged.

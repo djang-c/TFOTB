@@ -138,7 +138,7 @@ def test_api_runs_a_step_with_measured_or_synthetic_readings_and_labels_them(tmp
     from atlas.api import create_app
     from atlas.api.settings import Settings
 
-    for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "LLM_PROVIDER"):
+    for k in ("OPENAI_API_KEY", "LLM_PROVIDER"):
         monkeypatch.delenv(k, raising=False)
     c = TestClient(create_app(Settings(real_search=False, store_path=tmp_path / "atlas.db")))
     d = c.get("/api/experiments/example").json()["definition"]

@@ -58,7 +58,7 @@ def main() -> int:
         print("Refusing: pass --i-approve-sending-this-text to confirm this text may be sent to the provider.")
         return 2
     if not has_key():
-        print("Refusing: no model key in the environment (ANTHROPIC_API_KEY or OPENAI_API_KEY).")
+        print("Refusing: no model key in the environment (OPENAI_API_KEY).")
         return 2
     if args.pmid:
         try:

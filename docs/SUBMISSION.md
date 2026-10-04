@@ -3,7 +3,7 @@
 Status: draft, checked against the code and the running app on 2026-10-04 (commit `708472b`). The submission uses OpenAI only. **Before you submit, complete the gate below.** Otherwise the "OpenAI" lines are not true yet.
 
 ## Gate: do these before submitting
-- [ ] **Re-read the stored claims with OpenAI.** All 39 stored claims were read by `claude-sonnet-5-5` (see `extraction_method` in `data/store/snapshot/claims.jsonl`). The OpenAI adapter (`src/atlas/llm/openai_client.py`) has only been tested offline; no live OpenAI call has been made. Re-run `scripts/ingest_papers.py` with `OPENAI_API_KEY` and `LLM_PROVIDER=openai`, then check that `extraction_method` says the OpenAI model.
+- [ ] **Re-read the stored claims with a GPT model.** All 39 stored claims were read by the earlier development model (see `extraction_method` in `data/store/snapshot/claims.jsonl`). The OpenAI adapter (`src/atlas/llm/openai_client.py`) has only been tested offline; no live OpenAI call has been made. Move `data/store` aside, re-ingest the same 30 PMIDs with `OPENAI_API_KEY`, `OPENAI_MODEL_FAST` and `OPENAI_MODEL_REASONING` set, run `generate_hypotheses.py`, the two backfills and `export_deploy_store.py`, then check that every `extraction_method` names the GPT model.
 - [ ] **Update the claim count.** Re-count the stored claims after the re-read, and update every number in this file that comes from the store.
 - [ ] **Run the checks on the filming machine.** `make lint`, `make test` and `npm run e2e` (in `frontend/`) must all pass.
 - [ ] **Check each beat on screen.** If a beat does not match what you see, change the script, not the screen.
@@ -95,7 +95,7 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 | Earlier draft said | What the repository shows |
 |---|---|
 | Next.js 15 frontend | TanStack Start + React 19 + Vite (`frontend/package.json`). There is no Next.js. |
-| "OpenAI-compatible endpoint, Anthropic as fallback" | The submission uses OpenAI only. The stored claims were read by Claude, and OpenAI has not been run live yet (see the gate). |
+| "OpenAI-compatible endpoint, with a fallback provider" | The submission uses OpenAI only; there is no fallback provider. The stored claims are re-read with GPT before submission (see the gate). |
 | Search "GARD:0006830 – Fabry disease" | Search does not accept GARD IDs (0 results). Fabry disease is GARD 6400, and it has no claims from papers, so the drawer beat would show nothing. Use CLN3 disease. |
 | GARD as a source of findings | GARD supplies patient-group listings only (`src/atlas/gard.py`), not claims. |
 | Reads clinical trials | `src/atlas/trials.py` exists, but no API route or page uses it. Listed under future work. |

@@ -1,7 +1,7 @@
 # Audit B: Scientific integrity and grounding (TFOTB)
 
 Auditor: Agent B (skeptical scientific reviewer). Read-only audit of `/Users/jang/Documents/startup-research/hackathon/tfotb`.
-Audit date: 2026-10-03 (store timestamps are 2026-10-04 UTC). No repo file was edited except this report; scratch scripts live under `/private/tmp/claude-501/-Users-jang/`.
+Audit date: 2026-10-03 (store timestamps are 2026-10-04 UTC). No repo file was edited except this report; scratch scripts live under a scratch directory outside the repo.
 Labels used: `VERIFIED` (I ran/read it), `UNVERIFIED` (could not check offline), `PREDICTION`/`HYPOTHESIS` where relevant. This is an audit of software behaviour and of the quote-to-claim fit; it is not a biological validation of any claim.
 
 ## 1. Executive verdict: CONDITIONALLY READY
@@ -24,7 +24,7 @@ Severity counts: Critical 0, High 4, Medium 8, Low 5.
 - Quote verbatim check: only `data/cache/texts/PMID-37245481.txt` is cached (1 of 34 ingested or attempted papers). All 8 claims of that paper were confirmed verbatim with the project's own `_squash` normalisation. For the other 50 paper claims the source text is not on disk, so verbatim presence is `UNVERIFIED` here (ingest code enforces it at `src/atlas/extraction.py:152`, and I did not re-fetch: no network). I judged entailment from the stored quote alone.
 - DOI/URL correctness: the DOIs come from fetch metadata. The cached text contains no DOI, and I did not use the network. All 20 or so DOIs are `UNVERIFIED`. The pattern is plausible for each journal (EBioMedicine, Glia, iScience and others).
 - Entity IDs were checked against the pinned MONDO/HGNC/ChEBI/GO files through the project's own `Resolver` (labels printed in the table). Some PMIDs are in the 42xxxxxx range, beyond my own knowledge; I treat them as pinned data and cannot independently confirm they exist.
-- Negative-case scripts: `/private/tmp/claude-501/-Users-jang/neg.py`, `real.py`, `real2.py` (run with `PYTHONPATH=src`, `Settings(_env_file=None)` so `.env` was not read; no server started; no model calls).
+- Negative-case scripts: `neg.py`, `real.py`, `real2.py` in a scratch directory (run with `PYTHONPATH=src`, `Settings(_env_file=None)` so `.env` was not read; no server started; no model calls).
 
 ## 3. Claim audit (all N=59)
 
@@ -222,7 +222,7 @@ Tally of the 58 paper claims: WRONG 6 (e7ed59984e, 65c4e5ecd4, 3f6d8c9ddd, a91c2
 3. Association only. `GENE_ASSOCIATED_WITH_DISEASE` includes pathology-level and case-report statements. "NPC1 causes NPC" is stored as an association (OK), but the UI predicate "is linked to" is weaker than some quotes ("caused by"), which is the safe direction.
 4. No variant-level, RNA, or quantitative effect-size data, and no sample sizes in stored claims. Samples in the key paper are small (JNCL n=5, NPC n=4, controls n=6) and come from autopsy brain only.
 5. Species: mouse observations are stored under human gene IDs.
-6. Hypotheses are model outputs (claude-opus-5-5, prompt hypothesis-v1) from a handful of claims; a single one exists. They are not evidence.
+6. Hypotheses are model outputs (the development model, prompt hypothesis-v1) from a handful of claims; a single one exists. They are not evidence.
 7. Treatment statements are literature statements, not recommendations; regulatory status is as of the paper date, not today.
 8. Phenotype similarity (HPO, BMA-Lin) is a display-only similarity, not evidence of a shared cause; the UI says so.
 9. Ontology equivalence (JNCL and CLN3 disease) is an unreviewed owner decision.

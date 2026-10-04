@@ -26,13 +26,13 @@ Status: WORKING = I ran it; PARTIAL; MOCKED = serves synthetic/fixture data; MIS
 | # | Brief requirement | Evidence | Status |
 |---|---|---|---|
 | D1 | Working prototype, deployed or easy to run locally | Local: API runs (`uvicorn atlas.api.app:app`, health ok). No deployed URL anywhere (`grep vercel.app/hf.space` finds none outside DEPLOY.md templates; `docs/DEPLOY.md` is a how-to). Frontend UNVERIFIED (no node_modules). Run-from-clone needs `fetch_ontologies.py` (~440 MB) for real data; otherwise synthetic only (README). | PARTIAL (API local WORKING; frontend UNVERIFIED; deployment MISSING) |
-| D2 | Repo with README covering architecture and dataset reproduction | README has what/verify/quick start/limits/layout but no architecture section or diagram (architecture only in `docs/implementation/02-architecture.md`, not linked from README). Dataset reproduction: ontologies via `scripts/fetch_ontologies.py` (not run by me; files already present in `data/raw/`, checksum verification UNVERIFIED). The paper-claim store (`data/store/`, git-ignored) cannot be reproduced without an Anthropic key and "recorded responses are not committed" (README). | PARTIAL |
+| D2 | Repo with README covering architecture and dataset reproduction | README has what/verify/quick start/limits/layout but no architecture section or diagram (architecture only in `docs/implementation/02-architecture.md`, not linked from README). Dataset reproduction: ontologies via `scripts/fetch_ontologies.py` (not run by me; files already present in `data/raw/`, checksum verification UNVERIFIED). The paper-claim store (`data/store/`, git-ignored) cannot be reproduced without a model key and "recorded responses are not committed" (README). | PARTIAL |
 | D3 | Team video | Not present. `docs/BACKLOG.md` T14 = TODO. | MISSING |
 | D4 | One-minute walkthrough | `docs/DEMO_SCRIPT.md` is a draft "not from a recording"; no video. Several beats do not match the running system (see F2, F4). | MISSING (script exists, partly inaccurate) |
 | D5 | One complete journey disease -> connection -> asset -> collaborator -> action | See section 3. Collaborator step absent for all entities. | PARTIAL (fails at collaborator) |
 | D6 | Honest "no supported route" with coverage and missing evidence | `GET /entities/MONDO:0002561/gap` returns kind `no_supported_route`, as_of, coverage manifest id, `missing_information`. Verified for 3 real entities. See F9 for a defect (gap says nothing retrieved while stored claims exist). | WORKING (with defect) |
 | D7 | 10x milestone, existing timeline vs route, assumptions | Only `docs/PLAN.md:484-490` plan text, which says measure and "if not 10x, state that". No milestone chosen, no baseline, no measurement, nothing in README/UI/demo script. | MISSING |
-| D8 | OpenAI models/tools actually used (track prizes) | `grep -i openai`: only docs/env.example/CLAUDE.md saying "OpenAI adapter at deployment". `src/atlas/llm/` has only `anthropic_client.py`. Store extractions: `llm:claude-sonnet-5-5@extract-v5`, hypotheses `llm:claude-opus-5-5@hypothesis-v1`. | MISSING |
+| D8 | OpenAI models/tools actually used (track prizes) | `grep -i openai`: only docs/env.example/project rules saying "OpenAI adapter at deployment". `src/atlas/llm/` has only the development adapter. Store extractions: `llm:<development model>@extract-v5`, hypotheses `llm:<development model>@hypothesis-v1`. | MISSING |
 
 ### 2b. Modules
 | # | Requirement | Evidence | Status |
@@ -75,7 +75,7 @@ Setup: `cd hackathon/tfotb && PYTHONPATH=src .venv/bin/python -m uvicorn atlas.a
 | Related | `.../related` | genes: 1; phenotype_neighbours: 12 | REAL |
 | Graph | `.../graph` | 49 nodes, 83 edges, truncated. Includes paper-claim edges: CLN3 -SHARES_PATHOGENIC_PATHWAY_WITH-> NPC (`CLAIM:PMID-37245481-e7ed59984e`, status inference, unreviewed), GO:0005764 lysosome ACCUMULATES edges, NPC CANDIDATE_THERAPY_FOR edges from CHEBI:747211 / CHEBI:50381. | REAL (stored claims) |
 | Routes | `.../routes?to=MONDO:0018982` | Paths CLN3 -> GO:0005764 -> NPC with 1 + 4 claim IDs; labels for GO nodes show raw IDs ("GO:0005764"); `reviewed_claims: 0`. | REAL (stored claims) |
-| Claim | `$B/claims/CLAIM:PMID-37245481-e7ed59984e` | source_url `https://doi.org/10.1016/j.ebiom.2023.104628`, quote verbatim (verified in cached text), `extraction_method llm:claude-sonnet-5-5@extract-v5`, `scope: background`. | REAL |
+| Claim | `$B/claims/CLAIM:PMID-37245481-e7ed59984e` | source_url `https://doi.org/10.1016/j.ebiom.2023.104628`, quote verbatim (verified in cached text), `extraction_method llm:<development model>@extract-v5`, `scope: background`. | REAL |
 | Asset | `.../assets` | 2 studies (of 45 fetched): PLX-200 master protocol; "Gene Therapy for Children With CLN3 Batten Disease". Coverage: ClinicalTrials.gov API v2, status ok. | REAL (live fetch) |
 | Groups | `.../groups` | GARD list: BDSRA Foundation (family register URL), Beyond Batten, ... | REAL (GARD; unchecked) |
 | Collaborator | `.../collaborators` | `{"_synthetic":"SYNTHETIC demo dataset...","items":[]}` | EMPTY (stub) |
@@ -116,7 +116,7 @@ Fix: ship a committed, snapshot of the claim store (`data/store/snapshot/*.jsonl
 **F4. Video, walkthrough and 10x analysis do not exist.** BACKLOG T14 TODO; DEMO_SCRIPT is a draft "not from a recording"; 10x appears only as a PLAN section with no milestone, baseline or measurement. The brief makes the 10x case one of five judging criteria.
 Fix: pick one milestone (PLAN suggests time to a quality-checked collaboration/evidence brief), time a manual baseline and the tool on N tasks, report the ratio even if below 10x; add a short README section. Do not claim 10x without it.
 
-**F5. No OpenAI use.** Track-prize eligibility requires it. Only `AnthropicClient` exists; extraction/hypothesis records show Claude models. Docs disclose this honestly (CLAUDE.md:22, DECISIONS.md:7, risks doc 11) as a "prize-only" risk.
+**F5. No OpenAI use.** Track-prize eligibility requires it. Only the development adapter exists; extraction/hypothesis records show the development model. Docs disclose this honestly (project rules, DECISIONS.md:7, risks doc 11) as a "prize-only" risk.
 Fix: implement `OpenAIClient` behind `atlas.llm.LLMClient` and re-run extraction for at least the seed paper, recording the model in `extraction_method`; or state in the submission that the track prize is not targeted. Needs owner approval for key/spend.
 
 **F6. No clustering; "defensible clustering" is a judged item.** No community detection or mechanism-based grouping; "cluster" = hand-picked 4-ID seed constant (`routes.py:149`). Similarity score unvalidated (README says so).
@@ -151,7 +151,7 @@ Fix: index GO terms already loaded and GARD group names for the seed diseases.
 
 ### Misleading or at-risk text (check before submission)
 - README "What it does" 1: implies mechanistic/literature categories are populated on related-diseases lists; on real data only symptom-level appears and NPC is not listed for CLN3 (F2, F13).
-- README "What it does" 2: "finds credible papers ... by itself": true in the ingest log (30 ingested), but only runs with an Anthropic key and is off in the deployed API.
+- README "What it does" 2: "finds credible papers ... by itself": true in the ingest log (30 ingested), but only runs with a model key and is off in the deployed API.
 - DEMO_SCRIPT 0:08 ("Niemann-Pick type C appears" in the related list) is false as built. 0:30 "AI hypothesis label on the pathway claim" attaches to the NPC <-> MONDO:0019262 edge, not CLN3-NPC. 0:42 gap card: real gap exists (MONDO:0002561) but with the F9 inconsistency.
 - DEMO_SCRIPT video outline step 1 "Researchers spend most of their time finding and checking connections by hand" is an unsupported assertion (UNVERIFIED; no source).
 - `deploy/hf-space-README.md`: "All data served is SYNTHETIC" is inaccurate for ontology data and would mislead judges either way.

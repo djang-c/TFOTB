@@ -1,10 +1,9 @@
-# 06 — AI Layer (Claude, provider-pluggable): Extract · Reconcile · Explain
+# 06 — AI Layer (OpenAI): Extract · Reconcile · Explain
 
 Implements: T04 (bounded extraction), reconciliation *suggestions* for T03, grounded explanation
-for T12, action prose for T10. PLAN names OpenAI; **proposal (needs teammate sign-off): build on
-Claude now** — only Anthropic API access today — behind a provider-agnostic client so an OpenAI
-adapter can be added for track-prize eligibility. Per CLAUDE.md, pin model + prompt + schema and get
-approval before sending any data. ⚠️ The brief says challenge-*track* prizes require OpenAI models.
+for T12, action prose for T10. The provider is OpenAI (the brief: challenge-*track* prizes require
+OpenAI models), behind a provider-agnostic client. Pin model + prompt + schema; only credible,
+open-access, PubMed-indexed journal text is ever sent.
 
 The three jobs: Each is a service with a strict schema, a
 deterministic validator *after* the model, and recorded responses for replay.
@@ -16,35 +15,22 @@ validator can't tie to a claim.
 ## 0. Shared plumbing — `src/atlas/llm/`
 
 - Interface: `LLMClient.parse(schema: type[BaseModel], system: str, input: str, model_tier: "fast"|"reasoning") -> BaseModel`.
-  Services never import a vendor SDK. Adapters: `AnthropicClient` (now), `OpenAIClient` (later).
-- **Anthropic adapter:** `anthropic` Python SDK, structured outputs with
-  `client.messages.parse(model=…, max_tokens=…, system=…, messages=[…], output_format=Schema)` →
-  `response.parsed_output` (a validated Pydantic instance). Pydantic still re-validates bounds.
-- **Models (env):** `LLM_MODEL_REASONING=claude-opus-5-5` (explain, fit assessment, action prose);
-  `LLM_MODEL_FAST=claude-sonnet-5-5` (bulk abstract extraction, reconciliation). Set
-  `output_config.effort` explicitly (Opus 5.5 defaults to `medium`; use `low` for fast-tier jobs).
-  Thinking stays adaptive (it can't be disabled on these models) — fine, we only read the parsed output.
-- **Refusals:** biomedical text can trip safety classifiers (`bio` category). Always check
-  `stop_reason == "refusal"` before reading output; enable server-side fallbacks
-  (`fallbacks: "default"` + its beta header) and on final refusal return the Audit-card path / mark
-  the abstract "not extracted" rather than crashing the pipeline. Log refusal counts in evals.
-- **Prompt caching:** frozen system prompt + schema description first, untrusted text last; put a
-  `cache_control` breakpoint after the stable prefix so batch extraction over ~100 abstracts reuses it.
-  Verify with `usage.cache_read_input_tokens`.
-- **Batch:** build-time extraction (pipeline step 08) can use the Message Batches API (50% cost,
-  async) — optional; plain sequential calls are fine at ~100 abstracts.
-- **Embeddings:** Anthropic has no embeddings endpoint. Primary search = exact + synonym + fuzzy
-  (`rapidfuzz`). Optional `EMBEDDINGS=fastembed` (local small BGE model) for symptom-phrase search;
-  if off, symptom phrases go through an LLM "map this description to HPO candidates" call constrained
-  to candidates from the lexical index.
+  Services never import a vendor SDK. Adapter: `OpenAIClient` (`llm/openai_client.py`).
+- **OpenAI adapter:** Chat Completions over plain HTTPS from the standard library (no vendor package),
+  with strict structured output (`response_format: {type: "json_schema", strict: true}`; the Pydantic
+  schema is made strict by `strict_schema`). Pydantic re-validates the returned JSON.
+- **Models (env):** `OPENAI_MODEL_REASONING` (hypotheses, explanation) and `OPENAI_MODEL_FAST`
+  (paper extraction). No model name is hard-coded; a missing name is an error, never a guess.
+- **Refusals and cut-offs:** a `refusal` in the message raises `LLMRefusal` (the paper is marked
+  "not extracted"); `finish_reason == "length"` is an error, never a partial parse.
+- **Embeddings:** none. Search = exact + synonym + fuzzy over the ontologies.
 - Cache/replay: key = sha256(provider, model, prompt version, input, schema name) →
-  `data/llm_cache/<service>/<key>.json`. `LLM_MODE=replay` serves cache, falls back to live if missing
-  and a key is set; `record` always calls live and writes.
-- Every response logs provider, model, latency, tokens, cache hit, stop_reason — surfaced in `/api/meta` debug.
-- Untrusted text (abstracts, researcher uploads) is passed inside clearly delimited blocks with an
+  `data/cache/llm/<schema>/<key>.json`. Replay serves the cache; a live call happens only when the
+  standing policy allows it and a key is set.
+- Every result records provider, model and prompt version (`extraction_method` on each claim).
+- Untrusted text (papers, researcher uploads) is passed inside clearly delimited blocks with an
   instruction that it is data, not instructions.
-- Note: Anthropic's document **Citations** feature returns exact `cited_text` but is incompatible
-  with structured output format, so we keep our own substring quote verification.
+- Quotes are verified by our own substring check, never trusted from the model.
 
 ## 1. Extract — permitted passage → candidate `Claim`s
 

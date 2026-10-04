@@ -51,7 +51,7 @@ action card, negative cases, honest gap card, the bounded simulation report/repl
 
 ## P0 · Scaffold (B, H3–H5; then T02 rest to H8)
 ```text
-Read CLAUDE.md, docs/PLAN.md, docs/implementation/02 and 03. Add without restructuring existing code:
+Read docs/PLAN.md, docs/implementation/02 and 03. Add without restructuring existing code:
 src/atlas/api/ (FastAPI app factory, CORS from env, /api/health, /api/meta stub, stub routers for
 every endpoint in doc 03 §4 returning data/fixtures/*.json), .env.example, Makefile (setup, dev, test,
 lint, typegen, e2e), frontend/ via create-next-app (latest, TS strict, App Router, Tailwind v4) +
@@ -80,7 +80,7 @@ Tests: label-built IDs rejected; ambiguous synonym stays unresolved; transcript 
 ```text
 Only for sources with a completed row in data/manifests/source_manifest.md. Implement
 scripts/pipeline steps per docs/implementation/04 and src/atlas/llm/ per 06 §0–1 (provider-agnostic
-client, Anthropic adapter with messages.parse + Pydantic, record/replay cache, refusal handling).
+client, OpenAI adapter with strict JSON-schema output + Pydantic, record/replay cache, refusal handling).
 Model + prompt + schema pinned in code and listed in DECISIONS.md; get human approval before the
 first live call. Quote verification; failures → quarantine with reasons; lineage IDs.
 Tests run offline in replay mode.

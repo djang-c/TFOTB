@@ -20,7 +20,7 @@ Implements: PLAN "Technical defaults", "Graph schema and identity". Extends the 
 │ src/atlas/  schemas · store (public claims + quarantine; isolated CaseStore) · ranking gates  │
 │             channels/ (registry + phenotype, dna_variants, rna_effects, molecular_mechanisms, │
 │             experimental_findings) · resolver · graph (NetworkX projection) · coverage ·      │
-│             llm/ (provider-agnostic client; Anthropic adapter) · actions · explain            │
+│             llm/ (provider-agnostic client; OpenAI adapter) · actions · explain               │
 ├──────────────────────────────────────────────────────────────────────────────────────────────┤
 │ robotics/   ExperimentSpec → compile_workflow → simulate (MuJoCo) → report/replay            │
 └──────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -46,7 +46,7 @@ Principles:
 | Store | SQLite (stdlib `sqlite3`) + JSON snapshots | T02 remaining work |
 | Graph | NetworkX `MultiDiGraph` projection | Leiden (`igraph`+`leidenalg`) only if T18 happens |
 | Ontology | `pronto` or `obonet` for HPO/MONDO in the pipeline | IC from a pinned, broad annotation corpus |
-| LLM | `anthropic` SDK via `atlas.llm` — `client.messages.parse(..., output_format=Model)` | **Proposed: Claude now, OpenAI adapter later** — needs teammate sign-off (doc 11) |
+| LLM | OpenAI Chat Completions with strict JSON-schema output, via `atlas.llm` (standard library HTTPS, no SDK) | Model names from env, never hard-coded |
 | Robotics | MuJoCo 3.14.0 (existing, DECISIONS.md) | Opentrons adapter = T24, P1 |
 | Web | Next.js (latest), React, TypeScript strict, Tailwind v4, `@xyflow/react` + `elkjs` (optional canvas), `lucide-react`, `react-markdown` | PLAN: canvas is optional; evidence drawer is P0 |
 | Tests | pytest (existing), Playwright for demo-path E2E | |
@@ -56,7 +56,7 @@ Principles:
 
 ```
 TFOTB/
-├── CLAUDE.md · README.md · pyproject.toml · requirements.lock
+├── README.md · pyproject.toml · requirements.lock
 ├── docs/
 │   ├── PLAN.md                 # authoritative spec
 │   ├── BACKLOG.md · DECISIONS.md
@@ -68,7 +68,7 @@ TFOTB/
 │   ├── coverage.py            +# coverage manifests from recorded operations
 │   ├── graph.py               +# NetworkX projection + neighborhood/paths
 │   ├── channels/phenotype.py  +# T06 … and the other channel impls (T07, T08)
-│   ├── llm/                   +# client.py (interface, cache), anthropic_adapter.py
+│   ├── llm/                   +# base.py (interface), cache.py, openai_client.py
 │   ├── explain.py · actions.py +
 │   └── api/                   +# FastAPI app + routers
 ├── scripts/pipeline/          +# reproducible data build (doc 04)
@@ -84,12 +84,11 @@ TFOTB/
 ## 4. Configuration (`.env.example`, +)
 
 ```
-LLM_PROVIDER=anthropic                  # anthropic | openai (adapter later)
-ANTHROPIC_API_KEY=
-LLM_MODEL_REASONING=claude-opus-5-5     # grounded explanation, action-card prose
-LLM_MODEL_FAST=claude-sonnet-5-5        # bounded extraction, reconciliation suggestions
+LLM_PROVIDER=openai                     # the only provider
+OPENAI_API_KEY=
+OPENAI_MODEL_REASONING=                 # hypotheses, grounded explanation (no default is assumed)
+OPENAI_MODEL_FAST=                      # bounded paper extraction
 LLM_MODE=replay                         # live | record | replay
-OPENAI_API_KEY=                         # only if the OpenAI adapter is added
 PORT=8000
 CORS_ORIGINS=http://localhost:3000
 NEXT_PUBLIC_API_BASE=http://localhost:8000/api

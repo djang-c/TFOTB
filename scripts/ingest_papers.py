@@ -12,8 +12,7 @@ DOI link taken from its record.
 
 What may run unattended is set once in config/ingest_policy.json (live model calls on/off, caps on
 papers per run and text size, which diseases to watch). No per-run approval is needed. A live call
-happens only if the policy allows it and a provider key is in the environment (ANTHROPIC_API_KEY, used
-first; or OPENAI_API_KEY with OPENAI_MODEL_FAST); otherwise recorded
+happens only if the policy allows it and OPENAI_API_KEY and OPENAI_MODEL_FAST are in the environment; otherwise recorded
 responses are replayed and papers without one are reported as skipped.
 
 Stored claims are `unreviewed` and immutable; review is an optional label upgrade, never a gate.

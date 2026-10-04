@@ -17,7 +17,7 @@ Evidence labels: **[A]** [E] = audit agent reports in `docs/audit/raw/` (A deliv
 | D5 | One complete journey disease -> connection -> asset -> collaborator -> action | See section 2 | PARTIAL: every step returns real data via the API [run]; collaborator step is author-based and name-matched; UI UNVERIFIED |
 | D6 | Honest "no supported route" with coverage and missing evidence | `connections._gap`, `graph.find_paths` gap; tests `test_acceptance.py`, `test_graph.py`; real gap observed for MONDO:0002561 [run] | WORKING |
 | D7 | 10x milestone with baseline, route and assumptions | `docs/PLAN.md` section only | MISSING (no milestone chosen, nothing measured) |
-| D8 | Actual OpenAI model use (track prizes) | `src/atlas/llm/openai_client.py`, `tests/test_openai_client.py` (fake HTTP). Every stored claim records an Anthropic model. | PARTIAL: adapter built, offline-tested; no live OpenAI call ever made; UNVERIFIED live |
+| D8 | Actual OpenAI model use (track prizes) | `src/atlas/llm/openai_client.py`, `tests/test_openai_client.py` (fake HTTP). Every stored claim records the development model until the GPT re-read (DECISIONS, 2026-10-04 final). | PARTIAL: adapter built, offline-tested; no live OpenAI call ever made; UNVERIFIED live |
 
 ## 2. The journey, traced (from the API after the fixes) [run]
 | Step | Request | Result | Data |

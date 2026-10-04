@@ -39,7 +39,7 @@ breadth-layer candidate as a finding.
 2. Every displayed claim keeps provenance (source, span, lineage). Bulk loads record source
    version + retrieval date + checksum; licence terms are in the manifest before use (T01).
 3. Missing ≠ zero: a disease absent from a source is `availability: missing`, not a low score.
-4. Public data only goes to any external service (Anthropic, OpenAI, Databricks, …); each new
+4. Public data only goes to any external service (OpenAI, Databricks, …); each new
    outbound use needs explicit human approval (charter §8). No PHI/PII.
 5. Models are evaluated before any performance claim: held-out known edges **with leakage control**
    (split by time or by hiding edges, no shared test/train identifiers), baselines (e.g. phenotype

@@ -8,7 +8,6 @@ dependencies = ["pydantic>=2", "pydantic-settings", "networkx", "fastapi", "uvic
 [project.optional-dependencies]
 dev = ["pytest", "httpx", "ruff"]
 sim = ["mujoco"]  # replay rendering only; the API image does not need it (requirements.lock still pins it)
-llm = ["anthropic"]  # optional extra; NOT yet pinned in the lockfile (changing the lockfile needs the owner's approval). The OpenAI adapter needs no package (standard library only).
 
 [tool.setuptools.packages.find]
 where = ["src"]

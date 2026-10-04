@@ -93,12 +93,10 @@ def test_the_key_is_never_in_an_error_message(monkeypatch):
     assert "sk-test" not in str(ei.value) and "401" in str(ei.value)
 
 
-def test_provider_comes_from_the_environment_and_each_provider_checks_its_own_key(monkeypatch):
+def test_openai_is_the_only_provider_and_it_checks_its_own_key(monkeypatch):
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    assert provider_name() == "openai"  # no Anthropic key: OpenAI
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-not-real")
-    assert provider_name() == "anthropic" and make_client().provider == "anthropic"  # the Anthropic key is used first
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-not-real")
+    assert provider_name() == "openai" and make_client().provider == "openai"
     monkeypatch.setenv("LLM_PROVIDER", "openai")
     assert provider_name() == "openai" and has_key() is True and make_client().provider == "openai"
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)

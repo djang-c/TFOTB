@@ -13,8 +13,8 @@
 | Medical-advice perception (dosing, prognosis) | Low | Critical | No dosing anywhere; refusal tests; disclaimers |
 | Overclaimed 10× | Med | Med | Measured brief speedup only, small n disclosed (PLAN) |
 | PLAN assumes 4 contributors; we are 2 | Certain | High | Explicit cuts in doc 09; robotics core already done |
-| **Track-prize eligibility: brief says challenge-track prizes require OpenAI models; we build on Claude** | Certain | High (prize-only) | Provider-agnostic `LLMClient`; adding an OpenAI adapter is ~1–2h once a key exists. Decide before H19 freeze |
-| Claude safety classifiers refuse some biomedical text (`bio`) | Low–Med | Med | Check `stop_reason`, server-side fallbacks, mark abstract "not extracted", log refusal rate |
+| **Track-prize eligibility: brief says challenge-track prizes require OpenAI models** | Certain | High (prize-only) | OpenAI is the only provider, behind the provider-agnostic `LLMClient` |
+| The model refuses some biomedical text | Low–Med | Med | Check the `refusal` field, mark the paper "not extracted", log refusal rate |
 | Toolchain setup on Builder B's Mac (no Node, system Python 3.9) | High | Med | Install Node 22 + pnpm + Python 3.12 first; reuse `requirements.lock` |
 | Scope creep | High | High | Cut list in doc 09; feature freeze H19 |
 
@@ -22,7 +22,7 @@
 
 | Topic | Proposal | Conflicts with |
 |---|---|---|
-| LLM provider | Claude now (`claude-opus-5-5` reasoning, `claude-sonnet-5-5` extraction) via provider-agnostic `atlas.llm`; OpenAI adapter later for track eligibility | PLAN/CLAUDE.md name OpenAI |
+| LLM provider | OpenAI (`OPENAI_MODEL_REASONING`, `OPENAI_MODEL_FAST`) via provider-agnostic `atlas.llm` | — |
 | Team | 2 builders, roles + cuts in doc 09 | PLAN assumes 4 |
 | API + frontend | FastAPI inside `src/atlas/api`; Next.js in `frontend/` | PLAN says "React" — compatible |
 | 10× narrative | Measured brief speedup (PLAN) framed as the first step to joining an existing natural-history registry | Compatible |

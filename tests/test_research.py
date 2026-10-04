@@ -71,7 +71,7 @@ def test_the_policy_cap_limits_papers_per_run_and_the_rest_are_reported_as_skipp
 
 def test_live_calls_need_both_the_policy_and_a_key(monkeypatch):
     on = IngestPolicy(live_extraction=True)
-    for k in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "LLM_PROVIDER"):
+    for k in ("OPENAI_API_KEY", "LLM_PROVIDER"):
         monkeypatch.delenv(k, raising=False)
     assert live_allowed(on) is False
     monkeypatch.setenv("OPENAI_API_KEY", "x")
