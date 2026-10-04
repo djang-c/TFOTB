@@ -115,7 +115,7 @@ def link_claim(run: SimulationRun, entity_id: str, claims: dict[str, Claim] | No
         subject_id=run.run_id,
         predicate="SIMULATES_WORKFLOW_FOR",
         object_id=entity_id,
-        source_url=f"local:robotics/simulate.py#{slug}",
+        source_url=f"atlas:workflow-simulation#{slug}",
         source_span=f"{run.scope_label}; spec {run.experiment_spec_hash}; {run.simulator_name} {run.simulator_version}",
         source_type=SourceType.synthetic_fixture,  # generic illustrative specs; no engineering source type yet
         status=ClaimStatus.computational_prediction,

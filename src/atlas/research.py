@@ -34,8 +34,7 @@ def load_extraction_resolver(raw_dir: Path) -> Resolver:
     missing = [str(p.relative_to(raw_dir)) for p in needed if not p.exists()]
     if missing:
         raise ResearchUnavailable(
-            f"reading papers needs reference files that are not on this server: {', '.join(missing)} "
-            "(run scripts/fetch_ontologies.py)"
+            "reading papers is not available on this server: its reference ontologies are not installed"
         )
     return Resolver.from_raw(raw_dir, include_extraction_refs=True)
 

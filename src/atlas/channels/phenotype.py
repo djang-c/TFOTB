@@ -222,7 +222,7 @@ class PhenotypeChannel(EvidenceChannel):
             availability="available",
             score=self.bma_lin(q, c),
             score_definition=(
-                f"BMA-Lin over HPO is_a, IC=-ln(p) with p from phenotype.hpoa over {self.n_diseases} annotated "
+                f"BMA-Lin over HPO is_a, IC=-ln(p) with p from the HPO disease–symptom annotations over {self.n_diseases} annotated "
                 f"source diseases; {self._versions}"
             ),
             context_matches=[f"{t} {self.labels.get(t, '')}".strip() for t in informative],

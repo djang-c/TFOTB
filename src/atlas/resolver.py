@@ -63,6 +63,13 @@ class Resolution:
     candidates: list[Candidate] = field(default_factory=list)
 
 
+_DATASET_NAMES = {
+    "mondo/": "MONDO", "hgnc/": "HGNC", "hpo/hp.json": "HPO ontology",
+    "hpo/phenotype.hpoa": "HPO disease–symptom annotations", "hpo/genes_to_disease.txt": "HPO gene–disease annotations",
+    "go/": "Gene Ontology", "chebi/": "ChEBI",
+}
+
+
 class Resolver:
     def __init__(self, versions: dict[str, str] | None = None):
         self.versions = versions or {}
@@ -72,6 +79,12 @@ class Resolver:
         self._tokens: dict[str, dict[str, set[str]]] = {t: {} for t in _ALL_TYPES}  # token -> norm names
         # (type, normalized) -> [(id, note, source_ids)]; empty source_ids = a general cluster alias
         self._aliases: dict[tuple[str, str], list[tuple[str, str, frozenset[str]]]] = {}
+
+    @property
+    def public_versions(self) -> dict[str, str]:
+        """Release notes keyed by dataset name, for readers (the keys of `versions` are repository paths)."""
+        return {next((n for p, n in _DATASET_NAMES.items() if k.startswith(p)), k.split("/", 1)[0].upper()): v
+                for k, v in self.versions.items()}
 
     # ---- building ----
     def add(self, entity_type: str, entity_id: str, label: str, names: list[tuple[str, int]], xrefs: list[str] = ()):
@@ -153,7 +166,8 @@ class Resolver:
         pay to load ~200,000 chemical names."""
         raw = Path(raw_dir)
         checks = raw / "CHECKSUMS.json"
-        versions = {k: v["note"] for k, v in json.loads(checks.read_text()).items()} if checks.exists() else {}
+        versions = ({k: re.sub(r";\s*see [\w./-]+\.\w+", "", v["note"]) for k, v in json.loads(checks.read_text()).items()}
+                    if checks.exists() else {})  # shown to readers: release notes without repository file references
         r = cls(versions)
         r.load_obo_json(raw / "mondo" / "mondo.json", DISEASE)
         r.load_hgnc(raw / "hgnc" / "hgnc_complete_set.txt")

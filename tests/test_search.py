@@ -67,7 +67,7 @@ def test_non_human_diseases_are_left_out(ix):
 
 def test_gene_and_disease_link_both_ways_with_source(ix):
     g = ix.related("HGNC:900001")["groups"][0]
-    assert g["items"][0]["id"] == "MONDO:9000001" and "genes_to_disease" in g["source"]
+    assert g["items"][0]["id"] == "MONDO:9000001" and "gene–disease" in g["source"]
     d = ix.related("MONDO:9000001")["groups"][0]
     assert d["items"][0]["id"] == "HGNC:900001"
 

@@ -141,7 +141,6 @@ function SimulationPage() {
         or SYNTHETIC (made by a stated model to show the loop; never evidence about any compound).
         The default criteria come from the NIH Assay Guidance Manual, Zhang 1999 (Z′) and Sebaugh
         2011 (curve plateaus); the default rules are a starting design, not a published standard.
-        See docs/research/closed_loop_experiments.md.
       </p>
     </div>
   );

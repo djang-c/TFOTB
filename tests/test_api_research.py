@@ -83,7 +83,7 @@ def test_enabling_research_without_a_token_fails_closed(tmp_path):
     app = make_app(Settings(real_search=False, store_path=tmp_path / "s" / "a.db", research_enabled=True, research_token=""))
     c = TestClient(app)
     r = c.post("/api/research", json={"query": "x"})
-    assert r.status_code == 503 and "RESEARCH_TOKEN" in r.json()["detail"]
+    assert r.status_code == 503 and "not configured" in r.json()["detail"]
 
 
 def test_the_job_list_is_only_shown_to_a_caller_with_the_token(tmp_path):
@@ -115,5 +115,5 @@ def test_unknown_job_is_404(tmp_path):
 def test_the_real_runner_fails_plainly_when_reference_files_are_missing(tmp_path):
     from atlas.research import ResearchUnavailable, load_extraction_resolver
 
-    with pytest.raises(ResearchUnavailable, match="not on this server"):
+    with pytest.raises(ResearchUnavailable, match="not available on this server"):
         load_extraction_resolver(tmp_path)

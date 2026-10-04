@@ -70,7 +70,7 @@ def _client(request: Request, wanted: bool) -> tuple[Any, str]:
         return None, "rules (no AI key is configured, so your rules decided)"
     pol = _policy(request)
     if not pol.live_extraction:
-        return None, "rules (live AI calls are off in config/ingest_policy.json)"
+        return None, "rules (live AI calls are switched off on this server)"
     return make_client(max_tokens=pol.max_output_tokens), "ai_review"
 
 
@@ -78,7 +78,7 @@ def _client(request: Request, wanted: bool) -> tuple[Any, str]:
 def example() -> dict[str, Any]:
     return {"definition": ex.example_definition().model_dump(mode="json"),
             "note": "An example to start from. Every number is the researcher's to replace.",
-            "sources": "docs/research/closed_loop_experiments.md"}
+            "sources": "NIH Assay Guidance Manual; Zhang et al. 1999 (Z′); Sebaugh 2011 (curve plateaus)"}
 
 
 @router.post("/experiments/plan")

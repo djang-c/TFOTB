@@ -94,7 +94,7 @@ _SOURCE_URL = {
 }
 
 
-REAL_NOTE = ("Not synthetic: read from pinned public files (MONDO, HGNC, HPO; versions in data/raw/CHECKSUMS.json). "
+REAL_NOTE = ("Not synthetic: read from pinned, checksummed releases of MONDO, HGNC and HPO. "
              "Unreviewed by any expert.")
 
 
@@ -122,7 +122,7 @@ def _label_of(request: Request) -> Any:
     return lambda i: base(i) or sidecar.get(i, "")
 
 
-STORE_NOTE = ("Not synthetic: claims extracted from papers into the local store by scripts/ingest_papers.py. "
+STORE_NOTE = ("Not synthetic: claims read from published papers by an AI model and checked by code. "
               "Every claim is unreviewed by any expert; labels come from the pinned ontologies where available, "
               "otherwise the ID is shown.")
 
@@ -241,7 +241,7 @@ def _real_meta(request: Request) -> dict[str, Any] | None:
     return {
         "counts": {t: sum(1 for x in ix.r._labels[t] if x not in ix.excluded) for t in ("disease", "gene", "phenotype")},
         "names": ix.size,
-        "sources": ix.r.versions,
+        "sources": ix.r.public_versions,
         "seed": seed,
         "seed_note": "Example entries chosen by the project owner on 2026-10-03 to start from; not a cluster and not reviewed.",
     }

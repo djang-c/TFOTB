@@ -44,9 +44,9 @@ def _guard(request: Request, token: str | None) -> None:
     if not s.research_enabled:
         raise HTTPException(status_code=403, detail="On-demand research is turned off on this server.")
     if not s.research_token:  # fail closed: this endpoint can spend money, so it never runs unauthenticated
-        raise HTTPException(status_code=503, detail="Research is enabled but RESEARCH_TOKEN is not set; refusing to run without one.")
+        raise HTTPException(status_code=503, detail="Research is enabled but not configured on this server, so it will not run.")
     if not _token_ok(request, token):
-        raise HTTPException(status_code=401, detail="Missing or wrong X-Research-Token.")
+        raise HTTPException(status_code=401, detail="Missing or wrong research token.")
 
 
 def _default_work(request: Request, terms: list[str]) -> Any:

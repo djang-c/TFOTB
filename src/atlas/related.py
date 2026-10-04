@@ -30,7 +30,7 @@ GENE_DISEASES_MAX = 40  # a gene linked to more diseases than this is listed, bu
 
 ORDER = ("gene", "mechanism", "paper_link", "family", "ai_hypothesis", "symptoms")
 NONE_NOTE = (
-    "No similarities found in the data we hold: no shared gene in HPO genes_to_disease, no sibling in the MONDO "
+    "No similarities found in the data we hold: no shared gene in the HPO gene–disease annotations, no sibling in the MONDO "
     "hierarchy, no shared mechanism in the papers read, no paper or AI hypothesis linking it to another disease, "
     f"and no other disease with a symptom similarity of {SIMILAR_MIN} or more. Missing is not the same as none: "
     "the papers about it may simply not have been read yet."
@@ -62,7 +62,7 @@ def from_reference(ix: Any, entity_id: str) -> dict[str, list[dict[str, Any]]]:
             _add(out, d["id"], {
                 "kind": "gene", "key": g["id"], "label": lab(g["id"]) or g["id"], "evidence": "reference",
                 "claim_ids": list(dict.fromkeys(x for x in (g.get("claim_id"), d.get("claim_id")) if x)),
-                "detail": f"both linked to {lab(g['id']) or g['id']} in HPO genes_to_disease"
+                "detail": f"both linked to {lab(g['id']) or g['id']} in the HPO gene–disease annotations"
                           + ("" if own else f" (on the subtype {lab(g['via']) or g['via']})"),
             })
 
@@ -152,7 +152,6 @@ def related_diseases(entity_id: str, *parts: dict[str, list[dict[str, Any]]], la
     return {"entity_id": entity_id, "diseases": rows, "total": len(rows), "counts": counts, "none": not rows,
             "note": NONE_NOTE if not rows else NOTE,
             "ai": {"stored_for_this_disease": counts["ai_hypothesis"], "stored_total": ai_stored,
-                   "note": ("No AI hypothesis about this disease has been generated yet. They are built by "
-                            "scripts/generate_hypotheses.py from the stored paper claims, with an AI model.")
+                   "note": "No AI hypothesis about this disease has been generated yet."
                    if not counts["ai_hypothesis"] else
                    "AI hypotheses are proposals built from stored claims. No paper states them."}}

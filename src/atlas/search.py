@@ -100,7 +100,7 @@ class SearchIndex:
         for _norm, eid, _etype, text, tier in rows:
             if tier != TIER_LABEL:
                 self.names_of.setdefault(eid, set()).add((text, tier))
-        # gene <-> disease: HPO genes_to_disease rows become sourced claims (atlas.structured).
+        # gene <-> disease: HPO gene–disease annotations rows become sourced claims (atlas.structured).
         claims, self.g2d_tally = gene_disease_claims(gene_disease or [], resolver, exclude=self.excluded)
         self.store = PublicStore()
         for c in claims:
@@ -109,7 +109,7 @@ class SearchIndex:
         self.diseases_of: dict[str, list[dict[str, str]]] = {}
         for c in claims:
             link = {"association": c.context["association_type"], "source_id": c.context["via"],
-                    "source": "HPO genes_to_disease", "claim_id": c.claim_id}
+                    "source": "HPO gene–disease annotations", "claim_id": c.claim_id}
             if all(x["id"] != c.object_id for x in self.diseases_of.get(c.subject_id, [])):
                 self.diseases_of.setdefault(c.subject_id, []).append({"id": c.object_id, **link})
             if all(x["id"] != c.subject_id for x in self.genes_of.get(c.object_id, [])):
@@ -263,13 +263,13 @@ class SearchIndex:
             genes = self.genes_of.get(entity_id, [])
             if genes:
                 groups.append({"kind": "genes", "title": "Genes linked to this disease",
-                               "source": "HPO genes_to_disease (via OMIM / Orphanet cross-references)",
+                               "source": "HPO gene–disease annotations (via OMIM / Orphanet cross-references)",
                                "total": len(genes),
                                "items": [{**g, "label": lab(g["id"]), "type": GENE} for g in genes[:RELATED_LIMIT]]})
             elif self.subtype_genes(entity_id):
                 sub = self.subtype_genes(entity_id)
                 groups.append({"kind": "subtype_genes", "title": "Genes recorded on more specific forms of this disease",
-                               "source": "HPO genes_to_disease (on the subtypes shown) + MONDO hierarchy",
+                               "source": "HPO gene–disease annotations (on the subtypes shown) + MONDO hierarchy",
                                "total": len(sub),
                                "items": [{**g, "label": lab(g["id"]), "type": GENE,
                                           "association": g["association"], "source_id": f"{g['source_id']}, on {lab(g['via'])}"}
@@ -291,14 +291,14 @@ class SearchIndex:
             ds = self.diseases_of.get(entity_id, [])
             if ds:
                 groups.append({"kind": "diseases", "title": "Diseases linked to this gene",
-                               "source": "HPO genes_to_disease (via OMIM / Orphanet cross-references)",
+                               "source": "HPO gene–disease annotations (via OMIM / Orphanet cross-references)",
                                "total": len(ds),
                                "items": [{**d, "label": lab(d["id"]), "type": DISEASE} for d in ds[:RELATED_LIMIT]]})
         elif etype == PHENOTYPE and self.ph:
             ds = sorted(set(self.ph._by_term.get(entity_id, ())) - self.excluded, key=lambda m: (len(self.ph._terms.get(m, ())), m))
             if ds:
                 groups.append({"kind": "diseases", "title": "Diseases annotated with this symptom",
-                               "source": "HPO phenotype.hpoa (includes more specific forms of the symptom); "
+                               "source": "HPO disease–symptom annotations (includes more specific forms of the symptom); "
                                          "listed with the most narrowly described diseases first",
                                "total": len(ds),
                                "items": [{"id": m, "label": lab(m), "type": DISEASE} for m in ds[:RELATED_LIMIT]]})
@@ -311,11 +311,11 @@ class SearchIndex:
             return {"results": [], "labels": {}, "hierarchy": {}, "coverage": None, "gap": None}
         versions = self.r.versions
         per_source = [
-            SourceCoverage(source="HPO genes_to_disease", version=versions.get("hpo/genes_to_disease.txt"),
+            SourceCoverage(source="HPO gene–disease annotations", version=versions.get("hpo/genes_to_disease.txt"),
                            status=SourceStatus.ok, fetched=self.g2d_tally["rows"], screened=self.g2d_tally["claims"]),
         ]
         if self.ph:
-            per_source.append(SourceCoverage(source="HPO phenotype.hpoa", version=versions.get("hpo/phenotype.hpoa"),
+            per_source.append(SourceCoverage(source="HPO disease–symptom annotations", version=versions.get("hpo/phenotype.hpoa"),
                                              status=SourceStatus.ok, fetched=self.ph.n_diseases,
                                              screened=self.ph.n_diseases - self.ph._unmapped))
         if self._paper_coverage is not None:
@@ -323,7 +323,7 @@ class SearchIndex:
         out = self._outcomes.get(entity_id)
         if out is None:
             out = run_query(entity_id, self.registry, self._rank_store.claims, dataset_version="pinned-ontologies",
-                            per_source=per_source, source_versions=versions, context={"max_candidates": RELATED_LIMIT})
+                            per_source=per_source, source_versions=self.r.public_versions, context={"max_candidates": RELATED_LIMIT})
             self._outcomes[entity_id] = out
         results = [r.result.model_dump(mode="json") for r in out.ranked if r.result.candidate_id not in self.excluded]
         labels = {r["candidate_id"]: self.r.label_of(r["candidate_id"]) for r in results}
@@ -447,10 +447,10 @@ class SearchIndex:
                 rare = sorted(self.ph.specific(terms), key=lambda t: (-self.ph.ic(t), t))[:3]
                 names = _join([self.ph.labels.get(t, t).lower() for t in rare])
                 say(f"The Human Phenotype Ontology records {len(terms)} features for it; the most distinctive "
-                    f"(recorded for the fewest other diseases) are {names}.", source="HPO phenotype.hpoa")
+                    f"(recorded for the fewest other diseases) are {names}.", source="HPO disease–symptom annotations")
             else:
                 say("No symptoms are recorded for it in the Human Phenotype Ontology files used here.",
-                    source="HPO phenotype.hpoa")
+                    source="HPO disease–symptom annotations")
             genes = self.genes_of.get(entity_id, [])
             if genes:
                 kinds = {g["association"] for g in genes}
@@ -458,16 +458,16 @@ class SearchIndex:
                 say(f"It is linked to {'the gene' if len(genes) == 1 else f'{len(genes)} genes:'} "
                     f"{_join([lab(g['id']) for g in genes[:5]])}{' and others' if len(genes) > 5 else ''} ({what}; "
                     "a link alone does not show that a gene causes the disease).",
-                    [g["claim_id"] for g in genes[:5]], "HPO genes_to_disease")
+                    [g["claim_id"] for g in genes[:5]], "HPO gene–disease annotations")
             else:
                 sub = self.subtype_genes(entity_id)
                 if sub:
                     say("No gene is linked to this entry itself, but genes are recorded on its more specific forms: "
                         + _join([f"{lab(g['id'])} ({lab(g['via'])})" for g in sub[:4]])
                         + (" and others" if len(sub) > 4 else "") + ".",
-                        [g["claim_id"] for g in sub[:4]], "HPO genes_to_disease + MONDO hierarchy")
+                        [g["claim_id"] for g in sub[:4]], "HPO gene–disease annotations + MONDO hierarchy")
                 else:
-                    say("No gene is linked to it in the HPO gene-disease file.", source="HPO genes_to_disease")
+                    say("No gene is linked to it in the HPO gene–disease annotations.", source="HPO gene–disease annotations")
             kids = self.children.get(entity_id, set())
             if kids:
                 say(f"MONDO lists {len(kids)} more specific {'form' if len(kids) == 1 else 'forms'} of it.",
@@ -496,13 +496,13 @@ class SearchIndex:
                 say(f"The HPO gene-disease file links {lab(entity_id)} to {len(ds)} "
                     f"{'disease' if len(ds) == 1 else 'diseases'}: {_join([lab(d['id']) for d in ds[:5]])}"
                     f"{' and others' if len(ds) > 5 else ''}. A link alone does not show that the gene causes them.",
-                    [d["claim_id"] for d in ds[:5]], "HPO genes_to_disease")
+                    [d["claim_id"] for d in ds[:5]], "HPO gene–disease annotations")
             else:
-                say(f"No disease is linked to {lab(entity_id)} in the HPO gene-disease file.", source="HPO genes_to_disease")
+                say(f"No disease is linked to {lab(entity_id)} in the HPO gene–disease annotations.", source="HPO gene–disease annotations")
         elif etype == PHENOTYPE and self.ph:
             n = len(set(self.ph._by_term.get(entity_id, ())) - self.excluded)
             say(f"This symptom term is recorded for {n} {'disease' if n == 1 else 'diseases'} in the Human Phenotype "
-                "Ontology, counting more specific forms of it.", source="HPO phenotype.hpoa")
+                "Ontology, counting more specific forms of it.", source="HPO disease–symptom annotations")
         return out
 
     def actions(self, entity_id: str) -> list[dict[str, Any]]:
@@ -610,7 +610,7 @@ class SearchIndex:
             "note": ("These are research hypotheses from recorded symptom patterns, not diagnoses. Many diseases share "
                      "symptoms, a missing symptom in a record is not evidence of absence, and nothing here uses a "
                      "person's data. Take them to a clinician or geneticist."),
-            "source": "HPO phenotype.hpoa and genes_to_disease", "versions": self.r.versions,
+            "source": "HPO disease–symptom annotations and HPO gene–disease annotations", "versions": self.r.public_versions,
         }
 
     def claim(self, claim_id: str) -> dict[str, Any] | None:

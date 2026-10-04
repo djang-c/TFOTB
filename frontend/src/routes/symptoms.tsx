@@ -48,7 +48,7 @@ function summaryText(terms: string[], res: SymptomSearch): string {
     );
   }
   lines.push(
-    `Source: HPO phenotype.hpoa and genes_to_disease. Discuss with a clinician or geneticist.`,
+    `Source: HPO disease–symptom annotations and HPO gene–disease annotations. Discuss with a clinician or geneticist.`,
   );
   return lines.join("\n");
 }
