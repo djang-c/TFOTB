@@ -35,7 +35,7 @@ from atlas.schemas import (
 
 API = "https://clinicaltrials.gov/api/v2/studies"
 FIELDS = ("NCTId,BriefTitle,OverallStatus,Condition,StudyType,Phase,LeadSponsorName,"
-          "StartDate,EnrollmentCount,LastUpdatePostDate")
+          "StartDate,EnrollmentCount,LastUpdatePostDate,PatientRegistry")
 OPEN = {"RECRUITING", "NOT_YET_RECRUITING", "ENROLLING_BY_INVITATION", "ACTIVE_NOT_RECRUITING", "AVAILABLE"}
 CACHE_SECONDS = 24 * 3600
 PAGE_SIZE = 100
@@ -95,6 +95,8 @@ class TrialsSource:
             design = p.get("designModule", {})
             phases = [x for x in design.get("phases", []) if x != "NA"]
             kind = (design.get("studyType") or "").lower().replace("_", " ")
+            if design.get("patientRegistry"):
+                kind = "patient registry (observational)"
             enrol = design.get("enrollmentInfo", {}).get("count")
             sponsor = p.get("sponsorCollaboratorsModule", {}).get("leadSponsor", {}).get("name")
             updated = status.get("lastUpdatePostDateStruct", {}).get("date", "")

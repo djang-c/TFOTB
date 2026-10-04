@@ -26,6 +26,7 @@ from atlas.channels.base import ChannelRegistry
 from atlas.channels.claims import build_claim_channels
 from atlas.channels.phenotype import PhenotypeChannel
 from atlas.connections import run_query
+from atlas.gard import GardSource
 from atlas.resolver import (
     _TIER_NAME,
     DISEASE,
@@ -110,6 +111,12 @@ class SearchIndex:
             if all(x["id"] != c.subject_id for x in self.genes_of.get(c.object_id, [])):
                 self.genes_of.setdefault(c.object_id, []).append({"id": c.subject_id, **link})
         self.trials = TrialsSource()
+        self.gard = GardSource()
+        self.gard_of: dict[str, list[str]] = {}  # MONDO -> GARD IDs, from MONDO's own cross-references
+        for xref, ids in resolver._xrefs.items():
+            if xref.startswith("gard:"):
+                for i in ids:
+                    self.gard_of.setdefault(i, []).append("GARD:" + xref.split(":", 1)[1])
         self._outcomes: dict[str, Any] = {}  # T09 outcome per disease, reused by the action cards
         self.registry = ChannelRegistry()
         if phenotype:
@@ -430,8 +437,8 @@ class SearchIndex:
                     say("No gene is linked to it in the HPO gene-disease file.", source="HPO genes_to_disease")
             kids = self.children.get(entity_id, set())
             if kids:
-                say(f"It is a broader grouping: MONDO lists {len(kids)} more specific "
-                    f"{'disease' if len(kids) == 1 else 'diseases'} directly under it.", source="MONDO hierarchy")
+                say(f"MONDO lists {len(kids)} more specific {'form' if len(kids) == 1 else 'forms'} of it.",
+                    source="MONDO hierarchy")
             conn = self.connections(entity_id)
             top = [r for r in conn["results"]
                    if r["category"] == "symptom-level lead" and r["candidate_id"] not in conn["hierarchy"]][:2]
@@ -440,6 +447,10 @@ class SearchIndex:
                 say(f"{lead} diseases with the most similar recorded symptoms are "
                     f"{_join([lab(r['candidate_id']) for r in top])}. "
                     "Similar symptoms are not a diagnosis and do not show a shared cause.", source="Phenotype channel")
+            grp = self.groups(entity_id)
+            if grp["status"] == "ok" and grp["groups"]:
+                say(f"GARD (NIH) lists {len(grp['groups'])} patient {'group' if len(grp['groups']) == 1 else 'groups'} "
+                    "for it (a listing is not an endorsement).", source="GARD")
             a = self.assets(entity_id)
             if a.get("coverage", {}) and a["coverage"].get("status") == "ok":
                 n = a.get("total", 0)
@@ -481,6 +492,12 @@ class SearchIndex:
 
     def _label(self, entity_id: str) -> str:
         return self.r.label_of(entity_id)
+
+    def groups(self, entity_id: str) -> dict[str, Any]:
+        """Patient groups GARD lists for a real disease (see atlas.gard for the rules)."""
+        if entity_id not in self.r._labels[DISEASE]:
+            return {"status": "not_a_disease", "groups": [], "pages": []}
+        return self.gard.for_disease(entity_id, self.gard_of.get(entity_id, []))
 
     def claim(self, claim_id: str) -> dict[str, Any] | None:
         c = self.store.claims.get(claim_id)
