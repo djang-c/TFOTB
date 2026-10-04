@@ -103,3 +103,43 @@ class TestRealFiles:
         assert out.availability.value in {"available", "missing"}
         if out.availability.value == "available":
             assert 0.0 <= out.score <= 1.0 and "annotated source diseases" in out.score_definition
+
+
+# --- symptoms-only ranking (audit D/E: the "no disease named" input) --------------------------------
+def test_symptom_ranking_orders_by_weighted_coverage_then_profile_share_and_explains_both(ch):
+    rows = ch.rank_by_symptoms([f"{H}3", f"{H}5"])
+    by = {r["disease_id"]: r for r in rows}
+    # MONDO:4 records both described symptoms, so it covers everything described (coverage 1.0)
+    assert by["MONDO:0000004"]["coverage"] == 1.0 and by["MONDO:0000004"]["unmatched"] == []
+    assert rows[0]["disease_id"] == "MONDO:0000004"
+    assert by["MONDO:0000001"]["unmatched"] == [f"{H}5"]  # a partial match says what it does not cover
+    assert "not probabilities" in ch.SYMPTOM_DEFINITION and "profile_share" in ch.SYMPTOM_DEFINITION
+
+
+def test_a_more_specific_recorded_form_of_a_symptom_counts_as_a_match(ch):
+    # H3 is_a H2 is_a H1: asking for the parent finds diseases recorded with the more specific child
+    assert "MONDO:0000001" in {r["disease_id"] for r in ch.rank_by_symptoms([f"{H}2"])}
+
+
+def test_recorded_absence_flows_down_to_specific_forms_but_never_up_to_the_general_symptom():
+    parents = {f"{H}3": {f"{H}2"}, f"{H}2": {f"{H}1"}}
+    labels = {f"{H}{i}": f"synthetic term {i}" for i in (1, 2, 3)}
+    terms = {"OMIM:1": {f"{H}3"}, "OMIM:2": {f"{H}3"}, "OMIM:3": {f"{H}2"}}
+    absent = {"OMIM:2": {f"{H}2"}, "OMIM:3": {f"{H}3"}}  # D2: general H2 absent; D3: only the specific H3 absent
+    xref = {f"OMIM:{i}": {f"MONDO:000000{i}"} for i in (1, 2, 3)}
+    c = PhenotypeChannel(parents, labels, terms, absent, xref, "SYNTHETIC HPO test version")
+    by = {r["disease_id"]: r for r in c.rank_by_symptoms([f"{H}3"])}
+    assert by["MONDO:0000002"]["recorded_absent"] == [f"{H}3"]  # general symptom absent => the specific form is too
+    rows = c.rank_by_symptoms([f"{H}3"])
+    assert [r["disease_id"] for r in rows].index("MONDO:0000002") > [r["disease_id"] for r in rows].index("MONDO:0000001")
+    d3 = {r["disease_id"]: r for r in c.rank_by_symptoms([f"{H}2"])}["MONDO:0000003"]
+    assert d3["recorded_absent"] == []  # a specific form being absent does not make the general symptom absent
+
+
+def test_unknown_terms_give_no_candidates_not_a_guess(ch):
+    assert ch.rank_by_symptoms(["HP:9999999"]) == [] and ch.rank_by_symptoms([]) == []
+
+
+def test_symptom_ranking_respects_the_limit_and_the_exclusion_set(ch):
+    assert len(ch.rank_by_symptoms([f"{H}5"], limit=2)) == 2
+    assert "MONDO:0000003" not in {r["disease_id"] for r in ch.rank_by_symptoms([f"{H}5"], exclude={"MONDO:0000003"})}

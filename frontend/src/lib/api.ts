@@ -242,6 +242,17 @@ export interface PatientGroups {
   groups: { name: string; website: string | null; country: string | null; registry_url: string | null; kind: string | null }[];
 }
 
+/** Candidate diseases for described symptoms: research hypotheses, never a diagnosis. */
+export interface SymptomSearch {
+  terms: { text: string; status: string; id: string | null; label: string; method: string; candidates?: { id: string; label: string }[] }[];
+  candidates: {
+    disease_id: string; label: string; coverage: number; profile_share: number; recorded_symptoms: number;
+    matched_labels: string[]; unmatched_labels: string[]; recorded_absent: string[];
+    genes: { id: string; label: string; claim_id: string; source: string }[]; label_kind: string;
+  }[];
+  definition: string; note: string; source?: string;
+}
+
 /** Investigators on the papers behind the stored claims, as the papers list them. Authorship is not a contact route. */
 export interface Collaborators {
   items: {
@@ -266,6 +277,7 @@ export const api = {
   search: (q: string) => get<{ results: SearchHit[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
   related: (id: string) => get<Related>(`/entities/${enc(id)}/related`),
   groups: (id: string) => get<PatientGroups>(`/entities/${enc(id)}/groups`),
+  symptoms: (q: string) => get<SymptomSearch>(`/symptoms?q=${enc(q)}`),
   collaborators: (id: string) => get<Collaborators>(`/entities/${enc(id)}/collaborators`),
   entities: () => get<{ items: Entity[] }>("/entities"),
   entity: (id: string) => get<{ entity: Entity; claims: Claim[]; claim_counts_by_predicate: Record<string, number>;

@@ -229,6 +229,18 @@ def search(request: Request, q: str = "") -> Any:
                 ambiguous=real["ambiguous"] or (not real["results"] and len(hits) > 1))
 
 
+@router.get("/symptoms")
+def symptoms(request: Request, q: str = "") -> Any:
+    """Candidate diseases for symptoms described in words or HPO IDs; research hypotheses, never a diagnosis."""
+    q = q.strip()[:500]
+    ix = _index(request)
+    if ix is None:
+        return _wrap(request, terms=[], candidates=[], note="Symptom search needs the pinned HPO and MONDO files.", definition="")
+    if not q:
+        return _wrap_real(terms=[], candidates=[], note="Describe symptoms, for example: seizures, vision loss, ataxia.", definition="")
+    return _wrap_real(**ix.symptom_search(q))
+
+
 @router.get("/entities/{entity_id}/related")
 def related(request: Request, entity_id: str) -> Any:
     """What connects to an entry in the pinned ontologies and HPO files (empty for demo entries)."""

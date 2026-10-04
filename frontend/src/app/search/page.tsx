@@ -30,6 +30,9 @@ export default async function SearchPage(props: PageProps<"/search">) {
       <main className="mx-auto max-w-[680px] px-4 py-16">
         <h1 className="text-2xl font-semibold tracking-tight">Search</h1>
         <div className="mt-6"><SearchBox size="lg" autoFocus /></div>
+        <p className="mt-4 text-sm text-muted">
+          No diagnosis yet? <Link className="ref" href="/symptoms">Describe the symptoms</Link> to see candidate diseases.
+        </p>
       </main>
     );
   }

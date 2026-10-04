@@ -533,6 +533,73 @@ class SearchIndex:
             return {"status": "not_a_disease", "groups": [], "pages": []}
         return self.gard.for_disease(entity_id, self.gard_of.get(entity_id, []))
 
+    def symptom_terms(self, text: str) -> list[dict[str, Any]]:
+        """Turn described symptoms into HPO terms, deterministically. Phrases split on commas, semicolons, new
+        lines and "and"; a sentence with no separators is scanned for the longest exact HPO names. An HPO ID is
+        accepted as typed. A phrase that is ambiguous or only fuzzy-matches is reported, never auto-picked."""
+        out: list[dict[str, Any]] = []
+
+        def one(phrase: str) -> dict[str, Any]:
+            if re.fullmatch(r"HP:\d{7}", phrase.strip().upper()):
+                pid = phrase.strip().upper()
+                ok = pid in self.r._labels[PHENOTYPE]
+                return {"text": phrase, "status": "resolved" if ok else "unresolved", "id": pid if ok else None,
+                        "label": self.r.label_of(pid) if ok else "", "method": "HPO identifier as typed"}
+            res = self.r.resolve(phrase, PHENOTYPE)
+            return {"text": phrase, "status": res.status, "id": res.resolved_id,
+                    "label": self.r.label_of(res.resolved_id) if res.resolved_id else "", "method": res.method,
+                    "candidates": [{"id": c.entity_id, "label": c.label} for c in res.candidates[:5]]
+                    if res.status != "resolved" else []}
+
+        parts = [p.strip() for p in re.split(r"[,;\n]|\band\b|\bwith\b", text, flags=re.IGNORECASE) if p.strip()]
+        for part in parts:
+            r = one(part)
+            if r["status"] == "resolved":
+                out.append(r)
+                continue
+            words = part.split()
+            if len(words) > 1:  # a run of words: try the longest exact names first, left to right
+                i, found = 0, []
+                while i < len(words):
+                    for n in range(min(6, len(words) - i), 0, -1):
+                        cand = one(" ".join(words[i:i + n]))
+                        if cand["status"] == "resolved":
+                            found.append(cand)
+                            i += n
+                            break
+                    else:
+                        i += 1
+                if found:
+                    out += found
+                    continue
+            out.append(r)
+        seen: set[str] = set()
+        return [r for r in out if not (r["id"] and (r["id"] in seen or seen.add(r["id"])))]
+
+    def symptom_search(self, text: str, limit: int = 15) -> dict[str, Any]:
+        """Candidate diseases for described symptoms, with the genes linked to each. Research hypotheses only."""
+        terms = self.symptom_terms(text)
+        ids = [t["id"] for t in terms if t["id"]]
+        rows = self.ph.rank_by_symptoms(ids, exclude=self.excluded, limit=limit) if self.ph and ids else []
+        lab = self.r.label_of
+        cands = []
+        for r in rows:
+            genes = self.genes_of.get(r["disease_id"], [])[:5]
+            cands.append({
+                **r, "label": lab(r["disease_id"]),
+                "matched_labels": [lab(t) for t in r["matched"]], "unmatched_labels": [lab(t) for t in r["unmatched"]],
+                "genes": [{"id": g["id"], "label": lab(g["id"]), "claim_id": g["claim_id"], "source": g["source"]} for g in genes],
+                "label_kind": "research hypothesis, not a diagnosis",
+            })
+        return {
+            "terms": terms, "candidates": cands,
+            "definition": self.ph.SYMPTOM_DEFINITION if self.ph else "",
+            "note": ("These are research hypotheses from recorded symptom patterns, not diagnoses. Many diseases share "
+                     "symptoms, a missing symptom in a record is not evidence of absence, and nothing here uses a "
+                     "person's data. Take them to a clinician or geneticist."),
+            "source": "HPO phenotype.hpoa and genes_to_disease", "versions": self.r.versions,
+        }
+
     def claim(self, claim_id: str) -> dict[str, Any] | None:
         c = self._rank_store.claims.get(claim_id)
         return c.model_dump(mode="json") if c else self.trials.claims.get(claim_id)

@@ -101,6 +101,45 @@ class PhenotypeChannel(EvidenceChannel):
         versions = "; ".join(v for k, v in resolver.versions.items() if k in used) or "HPO version not recorded"
         return cls(parents, labels, dict(terms), dict(absent), dict(xref_map), versions)
 
+    # ---- symptoms first: which diseases record these symptoms? ----
+    SYMPTOM_DEFINITION = (
+        "coverage = (sum of information content of the described symptoms that the disease records, counting more "
+        "specific forms) / (sum over all described symptoms). Rare symptoms weigh more. profile_share = (information "
+        "content of the described symptoms the disease records) / (information content of everything the disease "
+        "records), so a disease whose profile is mostly what you described ranks above one that records hundreds of "
+        "other symptoms. Both are shares of recorded annotations, not probabilities that the disease is present."
+    )
+
+    def rank_by_symptoms(self, terms: list[str], *, exclude: set[str] = frozenset(), limit: int = 15) -> list[dict[str, Any]]:
+        """Diseases ranked by how much of a described symptom set they record. A hypothesis generator, not a
+        diagnosis: nothing here uses patient data, and the number is explained in `SYMPTOM_DEFINITION`."""
+        terms = list(dict.fromkeys(t for t in terms if t in self.labels))
+        if not terms:
+            return []
+        weights = {t: self.ic(t) for t in terms}
+        total = sum(weights.values())
+        if total <= 0:  # only generic terms: fall back to plain counting so the answer is still defined
+            weights, total = dict.fromkeys(terms, 1.0), float(len(terms))
+        diseases: set[str] = set()
+        for t in terms:
+            diseases |= self._by_term.get(t, set())
+        rows = []
+        for d in diseases - set(exclude):
+            matched = [t for t in terms if d in self._by_term.get(t, ())]
+            # a symptom is recorded absent if it, or a more general form of it, is recorded as NOT present; the
+            # reverse does not hold (a specific form being absent says nothing about the general symptom)
+            absent = [t for t in terms if self.ancestors(t) & self._absent.get(d, set())]
+            profile = sum(self.ic(t) for t in self._terms.get(d, ())) or 0.0
+            matched_ic = sum(self.ic(t) for t in matched)
+            share = min(1.0, matched_ic / profile) if profile > 0 else 0.0
+            rows.append({
+                "disease_id": d, "matched": matched, "unmatched": [t for t in terms if t not in matched],
+                "recorded_absent": absent, "coverage": round(sum(weights[t] for t in matched) / total, 4),
+                "profile_share": round(share, 4), "recorded_symptoms": len(self._terms.get(d, ())),
+            })
+        rows.sort(key=lambda r: (-r["coverage"], len(r["recorded_absent"]), -r["profile_share"], r["recorded_symptoms"], r["disease_id"]))
+        return rows[:limit]
+
     # ---- ontology maths ----
     def ancestors(self, term: str) -> frozenset[str]:
         """The term and all its is_a ancestors."""
