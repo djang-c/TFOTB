@@ -175,7 +175,9 @@ def run(spec_path: Path, out_dir: Path, seed: int = 0) -> dict:
 
     overall = "pass" if not failures else "fail"
     report = {
-        "run_id": f"run-{hashlib.sha256(f'{spec_hash(spec)}{seed}'.encode()).hexdigest()[:12]}",
+        "run_id": "run-" + hashlib.sha256(
+            f"{spec_hash(spec)}|{seed}|{scene_hash()}|mujoco {mujoco.__version__}|adapter 0.1.0".encode()
+        ).hexdigest()[:12],
         "experiment_spec_hash": plan["experiment_spec_hash"] or spec_hash(spec),
         "scene_hash": scene_hash(),
         "simulator_name": "mujoco",
@@ -242,5 +244,13 @@ if __name__ == "__main__":
         help="recorded in the report; the kinematic check is deterministic",
     )
     args = ap.parse_args()
+    try:
+        raw = json.loads(Path(args.spec).read_text())
+    except OSError as exc:
+        raise SystemExit(f"cannot read {args.spec}: {exc.strerror}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"{args.spec} is not valid JSON: {exc}") from exc
+    if not isinstance(raw, dict):
+        raise SystemExit(f"{args.spec} must contain a JSON object (an experiment specification)")
     rep = run(Path(args.spec), Path(args.out), args.seed)
     print(rep["overall"], [f["check"] for f in rep["failures"]])

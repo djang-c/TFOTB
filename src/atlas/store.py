@@ -83,7 +83,9 @@ class PublicStore:
         return claim
 
     def search(self, term: str) -> list[Claim]:
-        t = term.lower()
+        t = term.strip().lower()
+        if not t:
+            return []  # an empty term must not match every claim
         return [
             c
             for c in self.claims.values()

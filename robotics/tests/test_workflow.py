@@ -122,3 +122,23 @@ def test_real_volume_overdraw_still_fails_with_tolerance():
         {"op": "dispense", "well": "A1", "volume_ul": 0.31},
     ]
     assert [f["check"] for f in compile_spec(spec)["failures"]] == ["operation_order"]
+
+
+def test_run_id_depends_on_seed_and_is_stable_for_the_same_inputs(tmp_path):
+    a = run(FIX / "valid_transfer.json", tmp_path / "a")
+    b = run(FIX / "valid_transfer.json", tmp_path / "b")
+    c = run(FIX / "valid_transfer.json", tmp_path / "c", seed=1)
+    assert a["run_id"] == b["run_id"] != c["run_id"]
+
+
+def test_the_command_line_gives_a_plain_message_for_a_missing_file_bad_json_or_a_non_object(tmp_path):
+    import subprocess
+    import sys
+
+    script = Path(__file__).parent.parent / "simulate.py"
+    bad_json, not_obj = tmp_path / "bad.json", tmp_path / "list.json"
+    bad_json.write_text("{nope")
+    not_obj.write_text("[1]")
+    for spec, words in (("/does/not/exist.json", "cannot read"), (str(bad_json), "not valid JSON"), (str(not_obj), "JSON object")):
+        p = subprocess.run([sys.executable, str(script), spec, "--out", str(tmp_path)], capture_output=True, text=True, check=False)
+        assert p.returncode != 0 and words in p.stderr and "Traceback" not in p.stderr

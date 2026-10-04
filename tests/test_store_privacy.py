@@ -68,3 +68,13 @@ def test_upload_cannot_overwrite_existing_claim():
     assert s.claims["CLAIM:r1"] is reviewed
     assert s.claims["CLAIM:r1"].review_state is ReviewState.reviewed
     assert len(s.quarantine) == 1 and "already exists" in s.quarantine[0]["error"]
+
+
+def test_empty_or_blank_search_term_matches_nothing():
+    from tests.conftest import make_claim
+
+    from atlas.store import PublicStore
+
+    s = PublicStore()
+    s.add(make_claim("CLAIM:x", "PERTURBS_MECHANISM"))
+    assert s.search("") == [] and s.search("   ") == [] and len(s.search("MONDO:0000001")) == 1

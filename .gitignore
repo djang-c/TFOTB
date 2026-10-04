@@ -32,3 +32,4 @@ data/raw/*
 .idea/
 .vscode/
 data/store/
+data/store.*/
