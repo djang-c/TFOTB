@@ -14,6 +14,7 @@ from atlas.api.claimstore import load_claims
 from atlas.api.fixtures import load_fixture
 from atlas.graph import find_paths, neighborhood
 from atlas.search import SearchIndex
+from atlas.simulation import link_claim, run_from_report
 
 router = APIRouter()
 
@@ -132,7 +133,8 @@ def meta(request: Request) -> Any:
         claims=len(d["claims"]), counts_by_source_type=counts["source_type"],
         counts_by_review_state=counts["review_state"], cached_outputs=True,
         featured=_featured(d),
-        simulations=[{"run_id": k, "label": v["label"]} for k, v in d["simulations"]["runs"].items()],
+        simulations=[{"run_id": k, "label": v["label"], "spec": v.get("spec"), "overall": v["report"]["overall"]}
+                     for k, v in sorted(d["simulations"]["runs"].items(), key=lambda kv: kv[1]["report"]["overall"] != "pass")],
         real=_real_meta(request),
     )
 
@@ -396,4 +398,14 @@ def simulation(request: Request, run_id: str) -> Any:
     run = sims["runs"].get(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail=f"no simulation {run_id}")
-    return _wrap(request, scene=sims["scene"], **run)
+    # T23 graph link (atlas.simulation): one SIMULATES_WORKFLOW_FOR claim to the demo entry whose action
+    # card reports this workflow. Computer prediction, unreviewed, never biological support. Runs stay
+    # attached to the demo only: the specs are generic illustrations, not a protocol for a real disease.
+    d = _demo(request)
+    entity = next((eid for eid, cards in d["cards"].items() for c in cards if c["kind"] == "simulation_report"), None)
+    link, linked = None, None
+    if entity:
+        rec = run_from_report(run["report"])
+        link = link_claim(rec, entity).model_dump(mode="json")
+        linked = {"id": entity, "label": next((e["label"] for e in d["entities"] if e["id"] == entity), entity)}
+    return _wrap(request, scene=sims["scene"], **run, graph_link=link, linked_entity=linked)

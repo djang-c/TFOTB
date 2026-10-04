@@ -4,16 +4,13 @@ import { api, ApiError, enc } from "@/lib/api";
 import { ApiDown } from "@/components/ApiDown";
 import { SimReplayLoader } from "@/components/SimReplayLoader";
 
-const RUNS = [
-  ["SIM:syn-pass", "Valid transfer"],
-  ["SIM:syn-fail", "Blocked path"],
-];
+const specName = (spec?: string) => (spec ? spec.charAt(0).toUpperCase() + spec.slice(1).replaceAll("_", " ") : "Run");
 
 export default async function SimulationPage(props: PageProps<"/simulation/[id]">) {
   const id = decodeURIComponent((await props.params).id);
-  let run;
+  let run, meta;
   try {
-    run = await api.simulation(id);
+    [run, meta] = await Promise.all([api.simulation(id), api.meta()]);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
     return <ApiDown what={id} />;
@@ -26,18 +23,22 @@ export default async function SimulationPage(props: PageProps<"/simulation/[id]"
 
   return (
     <main className="mx-auto max-w-[1240px] px-4 py-8">
-      <p className="text-sm text-muted"><Link className="ref" href={`/entity/${enc("SYN:disease-a")}`}>Disease A</Link> / workflow simulation</p>
-      <h1 className="mt-1 text-[34px] font-semibold leading-tight">Can the robot run this plate layout?</h1>
+      <p className="text-sm text-muted">
+        {run.linked_entity && <><Link className="ref" href={`/entity/${enc(run.linked_entity.id)}`}>{run.linked_entity.label}</Link> / </>}
+        workflow simulation
+      </p>
+      <h1 className="mt-1 text-[32px] font-semibold leading-tight tracking-tight">Can the robot run this plate layout?</h1>
       <p className="mt-2 max-w-[70ch] text-muted">
         A liquid-transfer workflow checked in MuJoCo before anyone books lab time. It tests motion
         and volume bookkeeping only. {r.scope_label}.
       </p>
 
       <nav className="mt-5 flex gap-2 text-sm" aria-label="Recorded runs">
-        {RUNS.map(([rid, name]) => (
-          <Link key={rid} href={`/simulation/${enc(rid)}`}
-            className={`rounded-md border px-3 py-1.5 ${rid === id ? "border-ink bg-ink text-white" : "border-rule bg-white text-ink hover:border-ink"}`}>
-            {name}
+        {(meta.simulations ?? []).map((s) => (
+          <Link key={s.run_id} href={`/simulation/${enc(s.run_id)}`}
+            className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 ${s.run_id === id ? "border-ink bg-ink text-white" : "border-rule bg-sheet text-ink hover:border-ink"}`}>
+            <span aria-hidden className={s.overall === "pass" ? "text-pass" : "text-fail"}>{s.overall === "pass" ? "✓" : "✕"}</span>
+            {specName(s.spec)}
           </Link>
         ))}
       </nav>
@@ -46,7 +47,7 @@ export default async function SimulationPage(props: PageProps<"/simulation/[id]"
         <SimReplayLoader run={run} />
 
         <aside className="space-y-5 text-sm">
-          <div className={`rounded-md border-2 bg-white px-4 py-3 ${r.overall === "pass" ? "border-pass" : "border-fail"}`}>
+          <div className={`rounded-md border-2 bg-sheet px-4 py-3 ${r.overall === "pass" ? "border-pass" : "border-fail"}`}>
             <p className={`text-2xl font-semibold ${r.overall === "pass" ? "text-pass" : "text-fail"}`}>
               {r.overall === "pass" ? "Workflow passed its checks" : "Workflow stopped"}
             </p>
@@ -56,7 +57,7 @@ export default async function SimulationPage(props: PageProps<"/simulation/[id]"
 
           <section>
             <h2 className="mb-1 font-semibold">Checks</h2>
-            <ul className="divide-y divide-rule rounded-md border border-rule bg-white">
+            <ul className="divide-y divide-rule rounded-md border border-rule bg-sheet">
               {r.checks.map((c) => (
                 <li key={c.check_name} className="flex gap-2 px-3 py-1.5">
                   <span className={`w-4 font-bold ${tone[c.status]}`} aria-hidden>{mark[c.status]}</span>
@@ -72,8 +73,13 @@ export default async function SimulationPage(props: PageProps<"/simulation/[id]"
 
           <section>
             <h2 className="mb-1 font-semibold">Ledger</h2>
-            <table className="w-full rounded-md border border-rule bg-white text-left">
-              <thead className="text-xs text-muted"><tr><th className="px-3 py-1 font-normal">Well</th><th className="text-right font-normal">Before</th><th className="px-3 text-right font-normal">After</th></tr></thead>
+            <p className="mb-1.5 text-xs text-muted">
+              Volume bookkeeping for the whole planned workflow, checked before any motion.
+              {r.overall !== "pass" && r.failures[0]?.op_index !== undefined &&
+                ` This run stopped at operation ${r.failures[0].op_index + 1}, so the planned values were never reached.`}
+            </p>
+            <table className="w-full rounded-md border border-rule bg-sheet text-left">
+              <thead className="text-xs text-muted"><tr><th className="px-3 py-1 font-normal">Well</th><th className="text-right font-normal">Before</th><th className="px-3 text-right font-normal">After (planned)</th></tr></thead>
               <tbody>
                 {Object.keys({ ...before, ...after }).map((k) => (
                   <tr key={k} className="border-t border-rule">
@@ -93,6 +99,18 @@ export default async function SimulationPage(props: PageProps<"/simulation/[id]"
             <dt className="text-muted">Review</dt><dd>{r.review_state}</dd>
             <dt className="text-muted">Path</dt><dd>{r.path_length_mm.toFixed(0)} mm</dd>
           </dl>
+
+          {run.graph_link && (
+            <section className="rounded-md border border-rule bg-subtle px-3 py-2.5 text-xs">
+              <h2 className="mb-1 text-sm font-semibold">How this run is linked</h2>
+              <p>
+                One link in the graph: this run <i>simulates a lab workflow (engineering only) for</i>{" "}
+                {run.linked_entity?.label}. It is a computer prediction, unreviewed, and never counts as
+                biological support: a pass cannot move any connection or ranking.
+              </p>
+              <p className="mt-1 text-muted">The workflow is a generic illustration, not a protocol for any real disease.</p>
+            </section>
+          )}
         </aside>
       </div>
     </main>
