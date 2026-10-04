@@ -1,12 +1,12 @@
 # TFOTB (The Flight of the Buffalo): submission blueprint
 
-Status: draft, checked against the code and the running app on 2026-10-04 (commit `708472b`). The submission uses OpenAI only. **Before you submit, complete the gate below.** Otherwise the "OpenAI" lines are not true yet.
+Status: draft, checked against the code and the running app on 2026-10-04. All model calls use the OpenAI API. **Before you submit, complete the gate below.**
 
 ## Gate: do these before submitting
-- [ ] **Re-read the stored claims with a GPT model.** All 39 stored claims were read by the earlier development model (see `extraction_method` in `data/store/snapshot/claims.jsonl`). The OpenAI adapter (`src/atlas/llm/openai_client.py`) has only been tested offline; no live OpenAI call has been made. Move `data/store` aside, re-ingest the same 30 PMIDs with `OPENAI_API_KEY`, `OPENAI_MODEL_FAST` and `OPENAI_MODEL_REASONING` set, run `generate_hypotheses.py`, the two backfills and `export_deploy_store.py`, then check that every `extraction_method` names the GPT model.
-- [ ] **Update the claim count.** Re-count the stored claims after the re-read, and update every number in this file that comes from the store.
-- [ ] **Run the checks on the filming machine.** `make lint`, `make test` and `npm run e2e` (in `frontend/`) must all pass.
-- [ ] **Check each beat on screen.** If a beat does not match what you see, change the script, not the screen.
+- [ ] **Re-read run done.** `bash scripts/reread_with_openai.sh` has finished, and its last line shows every claim under a GPT model.
+- [ ] **Counts updated.** The claim and quarantine counts in this file match the store after the re-read.
+- [ ] **Checks pass on the filming machine.** `make lint`, `make test` and `npm run e2e` (in `frontend/`).
+- [ ] **Each beat checked on screen.** If a beat does not match what you see, change the script, not the screen.
 
 ---
 
@@ -14,7 +14,7 @@ Status: draft, checked against the code and the running app on 2026-10-04 (commi
 
 **The problem.** Evidence on rare diseases is scattered across thousands of papers and databases. Finding which diseases are connected, and how well that connection is supported, is slow manual work.
 
-**What we built.** The Flight of the Buffalo (TFOTB) finds open-access, PubMed-indexed papers by itself. An OpenAI model proposes claims from each paper. Code keeps a claim only if its quote appears word for word in the paper and its names resolve to real ontology IDs (MONDO, HGNC, HPO). Every claim keeps its quote and DOI link.
+**What we built.** The Flight of the Buffalo (TFOTB) finds open-access, PubMed-indexed papers by itself. GPT-5 mini reads each paper and proposes claims under a strict JSON schema; GPT-5 proposes labelled hypotheses across papers and reviews failed experiment runs. Code keeps a claim only if its quote appears word for word in the paper and its names resolve to real ontology IDs (MONDO, HGNC, HPO). Every claim keeps its quote and DOI link.
 
 **Key features.**
 - **Disease dossier:** related diseases, each with its reason (shared gene, mechanism from papers, disease family, similar symptoms) and an evidence label instead of a combined score. AI hypotheses are labelled. Patient groups come from GARD. Export to Markdown or JSON with provenance.
@@ -22,6 +22,8 @@ Status: draft, checked against the code and the running app on 2026-10-04 (commi
 - **Clusters:** diseases that share one specific thing with the one you searched.
 - **Symptom search:** candidate diseases, shown as research hypotheses, not diagnoses.
 - **Closed-loop experiment planner:** the researcher defines parameters, limits, pass criteria and what to change on failure for an overnight robot run. Plans are checked against real pipetting limits and a MuJoCo motion model. The AI only picks among the changes the researcher allowed.
+
+**How we use OpenAI.** Every model call goes through the OpenAI API with strict structured output, and every claim records the GPT model that read it. More credits would let it read the literature for every rare disease instead of one seed cluster, run its paper-finding job weekly, and read each paper twice with two models to catch misreadings.
 
 **Who benefits.** Rare-disease researchers who want leads they can trace to the source.
 
@@ -64,7 +66,10 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 **1. Challenge.** Connections between rare diseases are spread across papers and databases, and they rarely say how well they are supported. TFOTB turns literature and reference data into links between diseases, genes, symptoms and mechanisms. Every link keeps its source, and it helps plan the experiment that would test a lead.
 
 **2. Tools and models**
-- **OpenAI API:** reads papers into claims under a strict JSON schema, and proposes hypotheses from stored claims.
+- **OpenAI API** (Chat Completions, strict JSON-schema output; one adapter, `src/atlas/llm/openai_client.py`):
+  - GPT-5 mini reads each paper's open-access full text and proposes claims with verbatim quotes.
+  - GPT-5 proposes hypotheses that must cite stored claims from two different papers, and reviews failed experiment runs, choosing only among the changes the researcher allowed.
+  - Every response is cached and every claim names its model, so a rerun replays at no cost.
 - **Reference data:** MONDO, HGNC, HPO, GO and ChEBI files, pinned and checked by SHA-256. Papers come from Europe PMC (open access, PubMed-indexed). Patient groups come from GARD.
 - **Storage:** a SQLite claim store (`data/store/atlas.db`) with a checksummed snapshot.
 - **Backend:** FastAPI and Pydantic. Assay statistics (Z′, CV, 4-parameter logistic fit) use numpy.
@@ -72,7 +77,7 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 - **Robot motion check:** MuJoCo.
 
 **3. What worked**
-- **Strict claim checks.** The model proposes; code keeps a claim only if its quote is verbatim, its relation is allowed, and both names resolve to ontology IDs. 39 claims were kept and 74 proposals were quarantined. Re-count both after the OpenAI re-read.
+- **Strict claim checks.** The model proposes; code keeps a claim only if its quote is verbatim, its relation is allowed, and both names resolve to ontology IDs. COUNTS: fill in from the re-read run (claims kept, proposals quarantined).
 - **Related diseases from the full reference data.** For CLN3 disease there are 35 related diseases: 3 by shared gene, 1 by mechanism from papers, 1 by a direct paper link, 15 by hierarchy and 25 by symptoms. One disease can have several reasons.
 - **Labels instead of a single score.** Independent studies are counted separately from papers that only cite a fact as background, and AI hypotheses are always labelled as hypotheses.
 - **A researcher-defined experiment loop.**
@@ -84,6 +89,12 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 - **Contradictions.** Opposing effects on a shared feature produce a "conflicting evidence" label naming both claims. No real contradiction has been found in the stored papers yet, so this has only been tested on synthetic claims.
 - **Coverage.** Only papers that have been read contribute claims. Many diseases have none yet (Fabry disease, for example), and the app says so instead of implying there is no connection.
 - **Lab loop limits.** The overnight demo uses synthetic readings. Liquids, calibration and biology are not simulated. Next: connect to a real plate reader and liquid handler.
+- **What more OpenAI credits would unlock.** Today the budget is capped, so only one seed cluster (CLN3 disease and Niemann-Pick type C) has been read in depth. More credits would buy:
+  - reading the open-access literature for every watched disease;
+  - a weekly reading job (built, switched off because of cost);
+  - a second reading of each paper by a second model, keeping only statements both agree on;
+  - model-suggested synonyms for unresolved names, and plain-language explanations of graph paths for families;
+  - on-demand research for every visitor instead of token holders.
 - **Already in the code but not yet shown:** ClinicalTrials.gov matching (`src/atlas/trials.py`), and a neural model that predicts genes and phenotypes from diseases and symptoms.
 
 **5. How the time was spent.** From git: the first commit was on 2026-10-03 at 11:51 PDT and the latest on 2026-10-04 at 00:48 PDT (104 commits in this repository). Work before the first commit is not recorded. The hour-by-hour split is `UNVERIFIED`; fill it in from your own notes, or leave it out.
@@ -95,7 +106,7 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 | Earlier draft said | What the repository shows |
 |---|---|
 | Next.js 15 frontend | TanStack Start + React 19 + Vite (`frontend/package.json`). There is no Next.js. |
-| "OpenAI-compatible endpoint, with a fallback provider" | The submission uses OpenAI only; there is no fallback provider. The stored claims are re-read with GPT before submission (see the gate). |
+| "OpenAI-compatible endpoint, with a fallback provider" | All model calls use the OpenAI API; there is no fallback provider. |
 | Search "GARD:0006830 – Fabry disease" | Search does not accept GARD IDs (0 results). Fabry disease is GARD 6400, and it has no claims from papers, so the drawer beat would show nothing. Use CLN3 disease. |
 | GARD as a source of findings | GARD supplies patient-group listings only (`src/atlas/gard.py`), not claims. |
 | Reads clinical trials | `src/atlas/trials.py` exists, but no API route or page uses it. Listed under future work. |

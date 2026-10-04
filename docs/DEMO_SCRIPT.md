@@ -32,12 +32,12 @@ Demo disease: CLN3 disease (*neuronal ceroid lipofuscinosis 3*, MONDO:0008767). 
 - Don't say the simulation shows a treatment would work, or that its readings are real. The overnight run uses SYNTHETIC readings; measured results come only from readings the researcher uploads.
 - Don't call a replayed or recorded run live.
 - Don't say the lookup "researched" a new term. It checked the term against two public sources and listed papers; no claim was read from them.
-- Don't say OpenAI read the claims until they have been re-read with OpenAI (see the gate in `SUBMISSION.md`). Until then each claim's `extraction_method` names the model that read it.
+- Don't name a model the drawer does not show: each claim's `extraction_method` names the GPT model that read it.
 - Don't claim a 10x speed-up. No milestone was measured.
 - Don't present a name-only collaborator match as the same person.
 
 ## Pre-flight checklist
-- [ ] The gate in `SUBMISSION.md` is done (claims re-read with OpenAI, counts updated).
+- [ ] The gate in `SUBMISSION.md` is done (re-read run finished, counts updated).
 - [ ] `make lint`, `make test` and `npm run e2e` (in `frontend/`) pass on the filming machine.
 - [ ] The real reference data is downloaded and the API serves real entities, not only SYNTHETIC demo ones.
 - [ ] The seed paper is ingested, and its claims open in the drawer with a working DOI link.

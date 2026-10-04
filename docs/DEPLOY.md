@@ -2,7 +2,7 @@
 
 Owners: the project owner now holds both the Hugging Face Space (API) and Vercel (frontend); Builder B's tasks were handed over on 2026-10-04. Deployment happens at the end of the build.
 
-**Before deploying (audit 2026-10-04):** (1) the image only contains the paper claims if the packaged store is committed. `deploy/store/` is now committed (owner decision 2026-10-04; author emails are stripped on export). Regenerate it with `PYTHONPATH=src python scripts/export_deploy_store.py` after new ingests and commit it with `git add -f deploy/store`. It is git-ignored by default. (2) The workflow now runs `ruff` and `pytest` before it deploys. (3) The API image has no GO or ChEBI files, so `POST /api/research` cannot run there; leave `RESEARCH_ENABLED` off. (4) Check `/api/ready` after a cold start: the search index takes about ten seconds to build.
+**Before deploying (audit 2026-10-04):** (1) the image only contains the paper claims if the packaged store is committed. `deploy/store/` is now committed (owner decision 2026-10-04; author emails are stripped on export). Regenerate it with `PYTHONPATH=src python scripts/export_deploy_store.py` after new ingests and commit it with `git add -f deploy/store`. It is git-ignored by default. (2) The workflow now runs `ruff` and `pytest` before it deploys. (3) The API image fetches GO and ChEBI too, so `POST /api/research` can run there (about 260 MB more; a research job adds about 1.2 GB of memory while it runs). (4) The image ships MuJoCo and the robot scene, and the build runs one Simulation plan check, so a broken motion check fails the build instead of the demo. (5) The search index is built in the background at startup (about 10 s on a laptop, longer on the free CPU); `/api/ready` says when it is done. Measured on a laptop: about 1.1 GB peak memory with all reference data loaded; the free CPU Space has 16 GB.
 
 The frontend is a static single-page app (built by Vite) and runs on **Vercel** (Hobby plan). The API runs on a **Hugging Face Docker Space** (free CPU). Neither costs money.
 
@@ -43,4 +43,8 @@ An agent can do this through the `hf` CLI. Install it with `curl -LsSf https://h
   - `data/fixtures/`
   - the pinned runtime dependencies from `requirements.lock`, minus MuJoCo/render and dev tools
 - **Replays** are pre-rendered and shipped as static files, not rendered on the server.
-- **Secrets:** none are in the image. If the API later needs LLM keys, add them as Space **secrets**, never as variables. The read path is offline-first (`LLM_MODE=replay`).
+- **Secrets:** none are in the image. Live AI on the server needs these in the Space's Settings → **Secrets** (never as variables, never in the repo):
+  - `OPENAI_API_KEY`, `OPENAI_MODEL_FAST`, `OPENAI_MODEL_REASONING`: turn on the experiment AI review (capped by `EXPERIMENT_AI_CALLS_PER_HOUR`, default 60 calls an hour; an overnight run counts one call per run).
+  - `RESEARCH_ENABLED=true` and `RESEARCH_TOKEN`: turn on `POST /api/research` for callers who send the token (`RESEARCH_MAX_JOBS_PER_HOUR`, default 6). Claims it adds live in the container and are lost when the Space restarts; packaged claims come from `deploy/store`.
+  - Set a hard spending limit on the OpenAI account as well; the caps above bound the rate, not the total.
+- **Weekly reading job:** not deployed. It can run as a scheduled GitHub Action with `OPENAI_API_KEY` as a repository secret, followed by `export_deploy_store.py` and a commit, but it is too expensive on the current budget.

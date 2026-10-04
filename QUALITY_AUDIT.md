@@ -173,8 +173,11 @@ Dependencies are in brackets. P0 = needed for a valid submission.
 ## Addendum 2026-10-04 (after the audit): what changed
 The audit's open items 1 (frontend), 7 (vendor package pin) and part of 5 (publish `deploy/store`) were acted on by the owner's decisions of 2026-10-04 (`docs/DECISIONS.md`):
 - The frontend was replaced by a new design wired to the real API. **Verified (software):** type-check, lint, 47 unit tests, production build, and a headless-Chrome smoke test with 24 checks against the real API (the seed link and its label, evidence drawer with DOI, treatment ideas labelled as hypotheses, symptoms, clusters, simulation, unknown-term lookup both ways, identifier refusal). **Still not verified:** other browsers, phones, accessibility with a screen reader, a deployed URL.
-- OpenAI is the only provider; the development adapter is gone and no package or lockfile change is needed. The stored claims still came from the earlier model.
+- OpenAI is the only provider; no package or lockfile change is needed.
 - `deploy/store/` is committed; author emails were found in affiliation strings and are now stripped.
 - New: lookup of unknown terms (`POST /api/lookup`), tested offline (25 tests) and live against NLM MeSH and Europe PMC.
 - Python tests: 499 passing. The audit's other findings (claim error rate not re-sampled, no 10x measurement, no variants or funders, no OpenAI run, no video, no deployment) are unchanged.
 
+## Addendum 2026-10-04 (later): OpenAI runs live
+- Open item 5 is closed. The OpenAI adapter has run live: papers are read by GPT-5 mini (`OPENAI_MODEL_FAST`) and hypotheses and experiment reviews use GPT-5 (`OPENAI_MODEL_REASONING`). Every stored claim was re-read with OpenAI into a fresh store (`scripts/reread_with_openai.sh`), so each claim's `extraction_method` names the GPT model that read it. The claim checks are unchanged; the error rate has still not been re-sampled.
+- Deployment fixes found while checking the free-tier deploy: the API image now ships MuJoCo and the robot scene (the Simulation plan check would otherwise fail on the server), GO and ChEBI (so on-demand research can run there), and an hourly cap on the experiment AI review, which any visitor can trigger.
