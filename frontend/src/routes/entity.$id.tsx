@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { BookOpen, ChevronRight, Download, FileJson, FlaskConical, Network } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import { Cards } from "@/components/explorer/Cards";
@@ -139,8 +140,7 @@ function Dossier({ id }: { id: string }) {
         The entry could not be loaded. Check that the API is running.
       </p>
     );
-  if (!entity || !data)
-    return <p className="p-10 text-center text-sm text-muted-foreground">Loading…</p>;
+  if (!entity || !data) return <PageSkeleton label="Loading the entry" />;
 
   const cards = cardsQ.data?.cards ?? [];
   const gap = gapQ.data?.gap ?? null;
@@ -253,7 +253,7 @@ function Dossier({ id }: { id: string }) {
   ];
 
   return (
-    <div className="px-5 py-8 lg:px-10">
+    <div className="fade-in px-5 py-8 lg:px-10">
       <header className="flex flex-col gap-4 border-b border-border pb-6 xl:flex-row xl:items-end">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

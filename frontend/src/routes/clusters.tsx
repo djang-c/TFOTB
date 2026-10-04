@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { z } from "zod";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { ClaimChip } from "@/components/EvidenceDrawer";
@@ -83,9 +84,12 @@ function Clusters({ id }: { id: string }) {
       </section>
 
       {q.isPending && (
-        <p className="mt-8 text-sm text-muted-foreground">
-          Comparing {name} against every disease in the reference files…
-        </p>
+        <div className="mt-8">
+          <p className="mb-4 text-sm text-muted-foreground">
+            Comparing {name} against every disease in the reference files…
+          </p>
+          <PageSkeleton label="Comparing diseases" />
+        </div>
       )}
       {q.isError && (
         <p role="alert" className="mt-8 text-sm text-destructive">

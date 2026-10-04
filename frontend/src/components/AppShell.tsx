@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="relative z-10">
           <TopBar />
           <ApiBanner />
-          <Main>{children}</Main>
+          <main>{children}</main>
           <footer className="border-t border-border px-5 py-5 text-center text-[11px] leading-5 text-muted-foreground">
             Research support only. Not a clinical system: no diagnosis, dosing, eligibility or
             treatment advice. Nothing shown has been reviewed by an expert unless it says so.
@@ -48,16 +48,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
     </EvidenceDrawerProvider>
-  );
-}
-
-/** Fades each page in when the route changes, so moving between pages does not jump. */
-function Main({ children }: { children: ReactNode }) {
-  const path = useRouterState({ select: (s) => s.location.pathname });
-  return (
-    <main key={path} className={HERO_STYLE === "flow" ? "page-in" : undefined}>
-      {children}
-    </main>
   );
 }
 
