@@ -10,15 +10,17 @@ import urllib.request
 from pathlib import Path
 
 RAW = Path(__file__).resolve().parent.parent / "data" / "raw"
-NEEDED = ("mondo/mondo.json", "hpo/hp.json", "hpo/phenotype.hpoa", "hpo/genes_to_disease.txt",
-          "hgnc/hgnc_complete_set.txt",
-          # GO and ChEBI: only paper reading needs these (POST /api/research), ~260 MB more
-          "go/go-basic.json", "chebi/chebi_lite.json")
+CORE = ("mondo/mondo.json", "hpo/hp.json", "hpo/phenotype.hpoa", "hpo/genes_to_disease.txt",
+        "hgnc/hgnc_complete_set.txt")
+# GO and ChEBI: only paper reading needs these (POST /api/research), ~260 MB more. `--core` leaves them out, for hosts
+# where paper reading is not switched on (no OpenAI key): the search, dossiers and Simulation do not use them.
+EXTRA = ("go/go-basic.json", "chebi/chebi_lite.json")
+NEEDED = CORE + EXTRA
 
 
 def main() -> int:
     manifest = json.loads((RAW / "CHECKSUMS.json").read_text())
-    for rel in NEEDED:
+    for rel in (CORE if "--core" in sys.argv[1:] else NEEDED):
         entry, dest = manifest[rel], RAW / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         print(f"downloading {rel}", flush=True)

@@ -1,5 +1,22 @@
 # Deploy (free tier)
 
+## Chosen route (2026-10-04): Google Cloud Run, one service
+
+Hugging Face now requires a paid plan for Docker Spaces, and the free hosts that need no card give 512 MB of memory, while the API needs about 800 MB once its search index is built (measured: 786 MB steady, 888 MB peak). Cloud Run's free tier allows 2 GiB, scales to zero, and needs a card on file for verification but costs nothing within its free quota.
+
+The image (`deploy/cloudrun.Dockerfile`) serves the API **and** the built web app from one address, so there is no Vercel and no cross-origin setup. It has **no OpenAI key**: paper reading, hypotheses, on-demand research and the AI review of experiment runs are off on the deployed app (the experiment loop falls back to the researcher's rules and says so). They work when the repository is run locally with a key in `.env`.
+
+```bash
+python scripts/assemble_cloudrun.py                      # makes build/cloudrun (about 2 MB)
+gcloud run deploy tfotb --source build/cloudrun --region us-central1 --allow-unauthenticated \
+  --memory 2Gi --cpu 1 --cpu-boost --min-instances 0 --max-instances 1 --concurrency 20 --timeout 120
+```
+- Keep `--max-instances 1` and `--min-instances 0` so usage stays inside the free quota. Add a budget alert of $1 in Google Cloud Billing as a safety net.
+- A first request after the service has been idle takes a while (the instance starts and builds the search index in the background, about 10 s on a laptop). Open the URL once before a demo; `/api/ready` says when search is ready.
+- Nothing written at runtime (looked-up terms, uploads) survives an instance restart.
+
+The Hugging Face and Vercel instructions below are the earlier plan and need a paid Hugging Face plan.
+
 Owners: the project owner now holds both the Hugging Face Space (API) and Vercel (frontend); Builder B's tasks were handed over on 2026-10-04. Deployment happens at the end of the build.
 
 **Before deploying (audit 2026-10-04):** (1) the image only contains the paper claims if the packaged store is committed. `deploy/store/` is now committed (owner decision 2026-10-04; author emails are stripped on export). Regenerate it with `PYTHONPATH=src python scripts/export_deploy_store.py` after new ingests and commit it with `git add -f deploy/store`. It is git-ignored by default. (2) The workflow now runs `ruff` and `pytest` before it deploys. (3) The API image fetches GO and ChEBI too, so `POST /api/research` can run there (about 260 MB more; a research job adds about 1.2 GB of memory while it runs). (4) The image ships MuJoCo and the robot scene, and the build runs one Simulation plan check, so a broken motion check fails the build instead of the demo. (5) The search index is built in the background at startup (about 10 s on a laptop, longer on the free CPU); `/api/ready` says when it is done. Measured on a laptop: about 1.1 GB peak memory with all reference data loaded; the free CPU Space has 16 GB.

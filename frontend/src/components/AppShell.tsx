@@ -33,15 +33,28 @@ export const SHELL_OFFSET = "6.25rem";
  * Layout: a bar across the top with the standing pages (Home, Symptoms, Simulation, 10× case) and the search. Once something has been
  * searched, a second row names it and offers the views of it: Dossier, Graph, Clusters.
  */
+/** False on the server-built shell and on the browser's first render, then true. Anything that depends on the address
+ *  or on this visitor waits for it, so the first render matches the shell and React has nothing to complain about. */
+function useMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   useRevealOrigin();
+  const mounted = useMounted();
   return (
     <EvidenceDrawerProvider>
       <div className="relative min-h-screen bg-background text-foreground">
         {HERO_STYLE === "flow" && <div className="ambient-wash" aria-hidden="true" />}
         {HERO_STYLE === "flow" && <TopProgress />}
         <div className="relative z-10">
-          <TopBar />
+          {mounted ? (
+            <TopBar />
+          ) : (
+            <div className="app-header sticky top-0 z-40 h-14 border-b border-border bg-background/95" />
+          )}
           <ApiBanner />
           <main>{children}</main>
           <footer className="border-t border-border px-5 py-5 text-center text-[11px] leading-5 text-muted-foreground">

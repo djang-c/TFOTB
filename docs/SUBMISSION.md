@@ -5,7 +5,7 @@ Status: remade 2026-10-04, checked against the code and the running app. All mod
 ## Gate: do these before submitting
 - [x] **Store packaged.** `deploy/store` holds all 52 claims: 13 read by GPT-5 mini and 39 from the first development runs (shown as `development-model`).
 - [x] **Checks pass on the build machine (2026-10-04).** 516 backend tests, 65 frontend unit tests and 47 of 47 browser checks pass; `ruff` and `eslint` are clean. Re-run them on the machine you film on.
-- [ ] **Live app.** The API is not deployed. Hugging Face now charges for Docker Spaces on free CPU, so a free host or a PRO subscription must be chosen (`docs/DEPLOY.md`). The front end goes on Vercel. Until then judges run it locally with `make setup`, `make api`, `make web` (see the README).
+- [ ] **Live app.** Not deployed yet. Hugging Face now charges for Docker Spaces, so the app goes on Google Cloud Run's free tier as one service (API and web app at one address; `docs/DEPLOY.md`). The deployed app has no OpenAI key: the AI features work only when someone runs the repo locally with their own key, and the README says so.
 - [ ] **One-pager PDF.** The text is in section 4. Export it as `TeamName_OnePager.pdf`.
 - [ ] **Each beat checked on screen.** If a beat does not match what you see, change the script, not the screen.
 - [ ] **The 10× case is not measured.** It is a model with assumptions, and it says so. Do not call it a result.
