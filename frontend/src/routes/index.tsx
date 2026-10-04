@@ -123,13 +123,17 @@ function Index() {
   ];
   return (
     <div>
-      <section className="relative isolate flex min-h-[calc(100svh-64px)] flex-col items-center justify-center overflow-hidden border-b border-border px-5 py-20 text-center sm:px-8">
-        <HeroArt />
+      {/* the artwork is clipped in its own layer, so the search dropdown may extend below the hero */}
+      <section className="relative isolate flex min-h-[calc(100svh-64px)] flex-col items-center justify-center border-b border-border px-5 py-20 text-center sm:px-8">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <HeroArt />
+        </div>
         <div
           className="hero-center-wash pointer-events-none absolute inset-0 z-[1]"
           aria-hidden="true"
         />
-        <div className="relative z-20 mx-auto w-full max-w-[740px]">
+        {/* above the "Explore" link (z-20) so the search dropdown is never covered by it */}
+        <div className="relative z-30 mx-auto w-full max-w-[740px]">
           <img
             src="/logo.png"
             alt=""
