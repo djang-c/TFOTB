@@ -158,6 +158,9 @@ export interface SimRun {
   run_id: string;
   label: string;
   spec: string;
+  /** T23: the one graph edge for the run (computer prediction, never biological support). */
+  graph_link?: Claim | null;
+  linked_entity?: { id: string; label: string } | null;
   scene: { name: string; pos: number[]; size: number[]; collides: boolean }[];
   trajectory: { scope_label: string; units: string; points: number[][] };
   report: {
@@ -249,7 +252,7 @@ export const api = {
   meta: () => get<{ dataset_version: string; as_of: string; schema_version: string;
     entities_by_type: Record<string, number>; claims: number;
     counts_by_review_state: Record<string, number>; counts_by_source_type: Record<string, number>;
-    featured?: Featured[]; simulations?: { run_id: string; label: string }[]; real?: RealMeta | null }>("/meta"),
+    featured?: Featured[]; simulations?: { run_id: string; label: string; spec?: string; overall?: "pass" | "fail" }[]; real?: RealMeta | null }>("/meta"),
   search: (q: string) => get<{ results: SearchHit[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
   related: (id: string) => get<Related>(`/entities/${enc(id)}/related`),
   groups: (id: string) => get<PatientGroups>(`/entities/${enc(id)}/groups`),
