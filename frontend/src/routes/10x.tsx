@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Moon } from "lucide-react";
 import { useState } from "react";
 import { MariaJourneyLive, PersonaTable } from "@/components/MariaJourney";
+import { Measured } from "@/components/Measured";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import {
@@ -209,13 +210,26 @@ function TenxPage() {
         </div>
       </section>
 
+      <section aria-labelledby="measured" className="mt-10">
+        <h2 id="measured" className="text-xl font-semibold">
+          What has been measured
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The product side is measured. The typical-way side is only measured once people have been
+          timed.
+        </p>
+        <div className="mt-4">
+          <Measured />
+        </div>
+      </section>
+
       <section aria-labelledby="people" className="mt-10">
         <h2 id="people" className="text-xl font-semibold">
           The typical way against TFOTB, for each person in the brief
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          The product answers in under a second. What is left is a person checking the sources, so
-          that is the time on the TFOTB side. Change any number.
+          The product answers in about 2.5 seconds (measured on the live app). What is left is a
+          person checking the sources, so that is the time on the TFOTB side. Change any number.
         </p>
         <div className="mt-4">
           <PersonaTable />
@@ -379,6 +393,7 @@ function TenxPage() {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button
             size="sm"
+            className="h-auto min-h-8 whitespace-normal py-1.5 text-left"
             disabled={!example.data || loop.isPending}
             onClick={() => loop.mutate()}
           >

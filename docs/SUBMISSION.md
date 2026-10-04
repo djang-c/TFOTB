@@ -8,7 +8,7 @@ Status: remade 2026-10-04, checked against the code and the running app. All mod
 - [x] **Live app (2026-10-04):** https://tfotb-403661953034.us-central1.run.app. Google Cloud Run free tier, one service for the API and the web app (`docs/DEPLOY.md`), at most 1 instance. All 47 browser checks pass against it. The deployed app has no OpenAI key: the AI features work only when someone runs the repo locally with their own key, and the README says so. The first visit after idle takes a few seconds.
 - [ ] **One-pager PDF.** The text is in section 4. Export it as `TeamName_OnePager.pdf`.
 - [ ] **Each beat checked on screen.** If a beat does not match what you see, change the script, not the screen.
-- [ ] **The 10× case is not measured.** It is a model with assumptions, and it says so. Do not call it a result.
+- [ ] **The 10× case is half measured.** The product side is measured on the live app (median 2.5 s for Maria's five calls, 7 of 7 checklist items pass; `docs/measurements/journey.json`). The typical-way side is NOT: nobody has been timed yet. `docs/TIMING_STUDY.md` is a one-hour protocol for 3 to 5 people, and the `/10x` page shows their timings once `frontend/public/measurements/timing-results.json` exists. Until then do not call the 10× a result.
 
 ---
 
@@ -82,17 +82,17 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis", "measu
 **3. What worked**
 - **Strict claim checks.** The model proposes; code keeps a claim only if its quote is verbatim, its relation is allowed, and both names resolve to ontology IDs. 52 claims are stored. In the latest GPT-5 mini run, 13 proposals were kept and 49 quarantined.
 - **Related diseases from the full reference data.** For CLN3 disease there are 35 related diseases: 3 by shared gene, 1 by mechanism from papers, 1 by a direct paper link, 15 by hierarchy and 25 by symptoms. The mechanism link to Niemann-Pick type C (lysosomal cholesterol) comes from claims in papers about both diseases.
-- **Maria's journey runs end to end.** For CLN3 disease the site returns, each in well under a second: related diseases with reasons, 3 patient groups (1 with a registry link), 2 matched studies, 13 researchers from the papers behind the claims (4 matched by ORCID), and a sourced evidence brief.
+- **Maria's journey runs end to end.** For CLN3 disease the site returns, measured on the live app at a median of 2.5 seconds for all five calls (7 of 7 checklist items pass): related diseases with reasons, 3 patient groups (1 with a registry link), 2 matched studies, 13 researchers from the papers behind the claims (4 matched by ORCID), and a sourced evidence brief.
 - **Labels instead of a single score.** Independent studies are counted separately from papers that only cite a fact as background, and AI hypotheses are always labelled as hypotheses.
 - **A researcher-defined experiment loop.** The plan is checked against real limits. Pass criteria come from published assay guidance: Z′ ≥ 0.5 (Zhang 1999), control CV ≤ 20% (NIH Assay Guidance Manual), and enough points on each flat end of the curve (Sebaugh 2011). The AI can only choose among the changes the researcher allowed.
 
 **3b. The 10× case (`/10x`).** Milestone, from the brief's "What good looks like": Maria approaches a partner with a sourced proposal for shared research.
 - **Typical way** (editable assumptions): who shares our disease characteristics 10 working days; what useful work exists 10; who to approach 5; write the sourced proposal 5. Total 30 working days.
-- **With TFOTB:** the same four steps are answered in under a second (measured live in the browser). What is left is a person checking sources: 3 + 3 + 1 + 4 = 11 working hours. That is about 22×.
+- **With TFOTB:** the same four steps are answered in about 2.5 seconds (measured on the live app, median of 10 runs). What is left is a person checking sources: 3 + 3 + 1 + 4 = 11 working hours. That is about 22×.
 - **Stress test:** if checking takes 3× as long, it is about 7×. 10× is lost beyond 2.2×.
 - **The other people in the brief:** Devon (3 days to 30 minutes), Priya (the brief's "months per mechanism", taken as 40 days, to 8 hours) and Dr. Osei (10 days to 2 hours). Priya and Dr. Osei are only partly built and the page says so.
 - **After the proposal:** a second section models the lab step with the overnight loop: 6× in a lab with its own robot, 12× for a group waiting on a shared one.
-- **Not measured.** To validate: time real people on the same briefs against one quality rubric, run a real plate reader, and measure real turnaround in two or three labs.
+- **Measured and not measured.** Measured: the product side (all five calls a median 2.5 s on the live app over 10 runs; a fixed 7-item checklist passes 7 of 7). Not measured: the typical way. To validate: time 3 to 5 real people on the same tasks against one quality rubric (`docs/TIMING_STUDY.md`), run a real plate reader, and measure real turnaround in two or three labs.
 
 **4. What was hard, and what comes next**
 - **Contradictions.** Opposing effects on a shared feature produce a "conflicting evidence" label naming both claims. No real contradiction has been found in the stored papers yet, so this has only been tested on synthetic claims.
@@ -118,7 +118,7 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis", "measu
 | Graph quality | Evidence graph, Clusters, related diseases with reasons; counterexamples and uncertainty labelled | Built for the seed cluster. Clustering is a stated rule, not validated. |
 | Evidence integrity | Verbatim quotes, DOI links, "found by AI", "unreviewed", hypotheses labelled, contradictions surfaced | Built. No expert has reviewed any claim. 39 of 52 claims come from the first development runs, not GPT-5 mini. |
 | Patient progress | Maria's journey: related disease, patient groups with registries, studies, researchers, sourced brief | Built end to end for CLN3. Contact route and funders are not built. |
-| 10× impact | `/10x`: milestone, typical way against TFOTB for four people, assumptions, stress test, what to validate | A model with assumptions, not measured. |
+| 10× impact | `/10x`: milestone, typical way against TFOTB for four people, assumptions, stress test, a measured product side, a timing protocol for the people side | Product side measured; typical-way side is assumptions until people are timed. |
 | Ambition and product craft | One search, progressive reveal, explain every edge, symptom search, Simulation | Built. Not checked on other browsers or with a screen reader. |
 | Built with OpenAI (extract, reconcile, explain) | Extract: GPT-5 mini. Reconcile: ontology resolution in code, synonyms by AI not yet. Explain: briefs and cards are written from stored claims, not by a model. | Extract live. Reconcile and explain are partial. |
 | Working prototype | Local run documented. Live deployment pending. | **Open** |

@@ -80,7 +80,12 @@ export function MariaJourneyLive() {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
-        <Button size="sm" disabled={run.isPending} onClick={() => run.mutate()}>
+        <Button
+          size="sm"
+          className="h-auto min-h-8 whitespace-normal py-1.5 text-left"
+          disabled={run.isPending}
+          onClick={() => run.mutate()}
+        >
           <Play /> {run.isPending ? "Running…" : `Run Maria's journey for ${MARIA_DISEASE.label}`}
         </Button>
         <span className="text-xs text-muted-foreground">

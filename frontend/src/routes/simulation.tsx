@@ -150,10 +150,10 @@ function SimulationPage() {
 
 function Panel({ title, children, note }: { title: string; children: ReactNode; note?: string }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5">
+    <section className="min-w-0 rounded-lg border border-border bg-card p-5">
       <h2 className="text-sm font-semibold">{title}</h2>
       {note && <p className="mt-1 text-xs leading-5 text-muted-foreground">{note}</p>}
-      <div className="mt-3">{children}</div>
+      <div className="mt-3 overflow-x-auto">{children}</div>
     </section>
   );
 }

@@ -1,0 +1,71 @@
+{
+  "measured_at": "2026-10-04T11:29:55+00:00",
+  "base_url": "https://tfotb-403661953034.us-central1.run.app",
+  "disease": "MONDO:0008767",
+  "runs": 10,
+  "first_request_ms": 107,
+  "what_this_is": "Product-side timing for Maria's four steps, from one client over the internet, plus a fixed checklist. It does NOT measure how long a person takes without the product.",
+  "per_step_ms": {
+    "q1_related_diseases": {
+      "median": 828,
+      "p95": 903,
+      "max": 903
+    },
+    "q2_patient_groups": {
+      "median": 94,
+      "p95": 162,
+      "max": 162
+    },
+    "q2_studies": {
+      "median": 98,
+      "p95": 153,
+      "max": 153
+    },
+    "q3_researchers": {
+      "median": 110,
+      "p95": 196,
+      "max": 196
+    },
+    "q4_evidence_brief": {
+      "median": 1306,
+      "p95": 1627,
+      "max": 1627
+    }
+  },
+  "all_five_calls_ms": {
+    "median": 2479,
+    "p95": 2822
+  },
+  "checklist": [
+    {
+      "check": "lists the known related disease (Niemann-Pick type C)",
+      "pass": true
+    },
+    {
+      "check": "that link has a mechanism reason backed by stored claims",
+      "pass": true
+    },
+    {
+      "check": "at least one patient group with a registry link",
+      "pass": true
+    },
+    {
+      "check": "at least one matched study with a source URL",
+      "pass": true
+    },
+    {
+      "check": "at least one researcher with their papers",
+      "pass": true
+    },
+    {
+      "check": "an evidence brief exists and cites stored claims",
+      "pass": true
+    },
+    {
+      "check": "every claim the brief cites opens with its quote and source URL",
+      "pass": true,
+      "detail": "8 of 8 opened"
+    }
+  ],
+  "checklist_passed": "7 of 7"
+}

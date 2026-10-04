@@ -325,6 +325,12 @@
 ::view-transition-group(root) {
   animation-duration: 560ms;
 }
+/* The browser's default blends the old and new page by adding their colours, so both pages' text shows through each
+   other. Normal blending lets the new page cover the old one inside the circle. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
 ::view-transition-old(root) {
   animation: none;
 }

@@ -132,12 +132,15 @@ function TopBar() {
             The Flight of the Buffalo
           </strong>
         </Link>
-        <nav aria-label="Pages" className="flex items-center gap-1">
+        <nav
+          aria-label="Pages"
+          className="flex min-w-0 items-center gap-0.5 overflow-x-auto sm:gap-1"
+        >
           {PAGES.map(({ to, label }) => (
             <Link
               key={to}
               to={to}
-              className={`rounded-md px-3 py-1.5 text-sm ${path === to ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+              className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] sm:px-3 sm:text-sm ${path === to ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
             >
               {label}
             </Link>

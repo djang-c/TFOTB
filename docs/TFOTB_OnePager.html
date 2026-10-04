@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TFOTB one-page technical report</title>
+<style>
+  @page { size: Letter; margin: 0.45in 0.5in; }
+  * { box-sizing: border-box; }
+  body { font: 8.4pt/1.32 -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1a1a1f; margin: 0; }
+  header { display: flex; align-items: center; gap: 10px; border-bottom: 1.5px solid #6d4fc2; padding-bottom: 5px; margin-bottom: 6px; }
+  header img { width: 38px; height: 38px; object-fit: contain; }
+  h1 { font-size: 14.5pt; margin: 0; line-height: 1.1; }
+  .sub { color: #555; font-size: 8pt; margin-top: 2px; }
+  .links { margin-left: auto; text-align: right; font-size: 7.6pt; color: #333; }
+  h2 { font-size: 8.8pt; margin: 6px 0 2px; color: #4b34a0; text-transform: uppercase; letter-spacing: .04em; }
+  p { margin: 0 0 3px; }
+  ul { margin: 0 0 2px; padding-left: 13px; }
+  li { margin: 0 0 1.2px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 7.8pt; margin: 2px 0 3px; }
+  th, td { border: 1px solid #d5d2e3; padding: 1.5px 4px; text-align: left; }
+  th { background: #f1eefb; }
+  .big { font-weight: 700; color: #4b34a0; }
+  .note { color: #555; font-size: 7.6pt; }
+  code { font-size: 7.6pt; background: #f4f3f8; padding: 0 2px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="assets/logo.png" alt="">
+  <div>
+    <h1>The Flight of the Buffalo (TFOTB)</h1>
+    <div class="sub">Traceable evidence for rare-disease research &middot; Hack-Nation Challenge 05 &middot; one-page technical report</div>
+  </div>
+  <div class="links">
+    Live: tfotb-403661953034.us-central1.run.app<br>
+    Code: github.com/djang-c/TFOTB
+  </div>
+</header>
+
+<h2>1. Challenge</h2>
+<p>Connections between rare diseases are scattered across papers and databases, and they rarely say how well they are supported. A patient-group leader like Maria cannot easily tell which diseases share her disease's mechanism, what work already exists, or whom to approach. TFOTB turns literature and reference data into links between diseases, genes, symptoms and mechanisms. Every link keeps its source, and it helps plan the experiment that would test a lead. Research support only; not a clinical system.</p>
+
+<div class="cols">
+<div>
+<h2>2. Tools and models</h2>
+<ul>
+  <li><b>OpenAI API</b> (Chat Completions, strict JSON-schema output, one adapter): <b>GPT-5 mini</b> reads each paper's open-access full text and proposes claims with verbatim quotes. <b>GPT-5</b> proposes hypotheses that must cite stored claims from two different papers, and reviews failed experiment runs, choosing only among the changes the researcher allowed. Every claim names the model that read it.</li>
+  <li><b>Reference data:</b> MONDO, HGNC, HPO (and GO, ChEBI for paper reading), pinned and checked by SHA-256. Papers from Europe PMC; patient groups from GARD; matched studies from ClinicalTrials.gov.</li>
+  <li><b>Backend:</b> FastAPI, SQLite claim store with a checksummed snapshot, numpy for assay statistics. <b>Frontend:</b> React 19, TanStack Start, Vite, three.js. <b>Robot check:</b> MuJoCo.</li>
+  <li><b>Hosting:</b> Google Cloud Run free tier, one service for API and app. No OpenAI key is deployed: the AI features run locally with your own key.</li>
+</ul>
+
+<h2>3. What worked</h2>
+<ul>
+  <li><b>The model proposes, code decides.</b> A claim is kept only if its quote is verbatim, its relation is allowed and both names resolve to ontology IDs. 52 claims stored (13 read by GPT-5 mini in the latest run, 13 kept and 49 quarantined; 39 from earlier development runs).</li>
+  <li><b>Maria's journey runs end to end for CLN3 disease:</b> 35 related diseases with reasons (Niemann-Pick type C via a lysosomal-cholesterol mechanism seen in papers on both), 3 patient groups, 2 matched studies, 13 researchers, and a sourced evidence brief, all five calls in about 2.5 s on the live app (7 of 7 checklist items pass).</li>
+  <li><b>Labels, not scores.</b> Independent studies are counted apart from background citations; AI hypotheses are always labelled.</li>
+  <li><b>Closed-loop experiment planner.</b> The researcher sets parameters, limits, pass criteria (Z&prime; &ge; 0.5, CV &le; 20%) and failure rules; plans are checked against pipetting limits and a MuJoCo motion model.</li>
+  <li><b>Checks:</b> 520 backend, 70 frontend and 47 browser tests pass, also against the live app.</li>
+</ul>
+</div>
+
+<div>
+<h2>4. The 10&times; case (page <code>/10x</code>)</h2>
+<p><b>Milestone</b> (the brief's &ldquo;What good looks like&rdquo;): Maria approaches a partner with a sourced proposal for shared research. The page runs her journey live, then compares the typical way with TFOTB.</p>
+<table>
+  <tr><th>Person</th><th>Typical way</th><th>With TFOTB</th><th>&times;</th></tr>
+  <tr><td>Maria (4 steps)</td><td>30 working days</td><td>11 working hours</td><td class="big">~22&times;</td></tr>
+  <tr><td>Devon</td><td>3 days</td><td>0.5 h</td><td class="big">~48&times;</td></tr>
+  <tr><td>Priya (partly built)</td><td>40 days (&ldquo;months&rdquo;, from the brief)</td><td>8 h</td><td class="big">~40&times;</td></tr>
+  <tr><td>Dr. Osei (partly built)</td><td>10 days</td><td>2 h</td><td class="big">~40&times;</td></tr>
+</table>
+<p class="note"><b>Measured:</b> the product side. All five calls of Maria's journey take a median of 2.5 s on the live app (10 runs), and a fixed 7-item answer checklist passes 7 of 7. <b>Not measured:</b> the typical way. Those times are editable assumptions (only Priya's comes from the brief), and the TFOTB time in the table is a person checking sources. No person has been timed yet; a protocol is written (<code>docs/TIMING_STUDY.md</code>) and the page shows people's timings once they exist. <b>Stress test:</b> if checking takes 3&times; as long, Maria falls to about 7&times;, and 10&times; is lost beyond 2.2&times;. A second section models the lab step after the proposal: about 6&times; in a lab with its own robot, 12&times; for a group waiting on a shared one.</p>
+<p><b>To validate next:</b> time 3 to 5 real people on the same tasks against one quality rubric; run a real plate reader; measure real turnaround in two or three labs.</p>
+
+<h2>5. What was hard, and what comes next</h2>
+<ul>
+  <li><b>Coverage.</b> Only papers that have been read yield claims; one seed cluster (CLN3, Niemann-Pick C) is read in depth. Diseases without claims (Fabry) are shown from reference data and the app says so.</li>
+  <li><b>Contradictions</b> are labelled when effects oppose, but none has been found in real papers yet; tested on synthetic claims only. <b>No expert has reviewed any claim</b>; precision is unmeasured.</li>
+  <li><b>Lab loop</b> uses synthetic readings; liquids, calibration and biology are not simulated.</li>
+  <li><b>More OpenAI credits would unlock:</b> reading the literature for every watched disease; a weekly reading job (built, off for cost); a second reading by a second model keeping only agreed statements; model-suggested synonyms and plain-language path explanations for families; on-demand research for every visitor; and Priya's missing piece, starting from a mechanism and ranking every disease it could reach.</li>
+</ul>
+
+<h2>6. How the time was spent</h2>
+<p>From git: first commit 2026-10-03 12:01 PDT, latest 2026-10-04 04:24 PDT, 125 commits. Work before the first commit is not recorded; the hour-by-hour split is <code>UNVERIFIED</code>.</p>
+</div>
+</div>
+</body>
+</html>
