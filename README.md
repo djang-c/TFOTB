@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo.png" alt="The Flight of the Buffalo Logo" width="160" />
+</p>
+
 # TFOTB - The Flight of The Buffalo
 
 Hackathon submission (Hack-Nation Challenge 05). An evidence-backed rare-disease connection explorer, plus a bounded MuJoCo simulation of a lab liquid-handling workflow.

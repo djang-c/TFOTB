@@ -45,6 +45,9 @@ export default async function Home() {
     <main>
       <section className="relative flex min-h-[calc(100svh-56px)] flex-col items-center justify-center px-4 pb-24">
         <div className="w-full max-w-[680px] text-center">
+          <div className="mb-6 flex justify-center">
+            <img src="/logo.png" alt="The Flight of the Buffalo Logo" className="h-20 w-20 object-contain drop-shadow-sm" />
+          </div>
           <h1 className="text-[34px] leading-tight font-semibold tracking-tight text-balance sm:text-[40px]">
             What are you looking into?
           </h1>
