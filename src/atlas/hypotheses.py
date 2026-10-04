@@ -17,6 +17,7 @@ human to approve it; the label is what protects the reader, and it travels with 
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -74,8 +75,22 @@ class HypothesisReport:
     from_cache: bool = False
 
 
+# Wording that reads as treatment advice or a cure claim, on top of the schema's dosing/eligibility check.
+_DIRECTIVE = re.compile(
+    r"\b(should be treated|recommend\w*|cure[sd]?|treat(?:ed)? with|administer\w*|prescrib\w*|start(?:ing)? "
+    r"(?:on|treatment)|therapy of choice|first-line|dos(?:e|ing|age)|\d+(?:\.\d+)?\s?mg)\b",
+    re.IGNORECASE,
+)
+
+
 def _observed(c: Claim) -> bool:
-    return c.status is ClaimStatus.reported_observation and c.source_type in CREDIBLE_SOURCES
+    """A claim a hypothesis may rest on: an observation from a credible source that its own source did not
+    hedge ("thought to", "may") and that is not just the paper's own hypothesis."""
+    return (
+        c.status is ClaimStatus.reported_observation
+        and c.source_type in CREDIBLE_SOURCES
+        and c.context.get("hedged") != "yes"
+    )
 
 
 def claims_text(claims: dict[str, Claim], label_of=lambda _i: "") -> str:
@@ -114,6 +129,8 @@ def _reject_reason(h: ProposedHypothesis, claims: dict[str, Claim]) -> str | Non
     weak = [i for i in support if not _observed(claims[i])]
     if weak:
         return f"supporting claims must be observations from credible sources: {weak}"
+    if len({claims[i].lineage_id for i in support}) < 2:
+        return "supporting claims must come from at least two different papers (one paper's own statements are not a hypothesis)"
     ends = {e for i in support for e in (claims[i].subject_id, claims[i].object_id)}
     stray = [e for e in (h.subject_id, h.object_id) if e not in ends]
     if stray:
@@ -132,7 +149,7 @@ def _reject_reason(h: ProposedHypothesis, claims: dict[str, Claim]) -> str | Non
     r = h.rationale.strip()
     if not r or len(r) > MAX_RATIONALE:
         return f"rationale must be 1 to {MAX_RATIONALE} characters"
-    if _CLINICAL.search(r):
+    if _CLINICAL.search(r) or _DIRECTIVE.search(r):
         return "rationale contains clinical directive language"
     return None
 

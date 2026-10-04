@@ -222,3 +222,49 @@ def test_statement_scope_is_recorded_and_unsure_defaults_to_background(resolver)
 
 def test_prompt_asks_the_model_to_separate_new_findings_from_background():
     assert "statement_scope" in SYSTEM_PROMPT and "background" in SYSTEM_PROMPT and "When unsure" in SYSTEM_PROMPT
+
+
+# --- audit regression: a verbatim quote must also SUPPORT the claim it is stored under ---------------
+GATE_TEXT = (
+    "Mice were housed at 22C. SYNA is not associated with synthetic disease alpha in this cohort. "
+    "Gene SYNA is linked to synthetic disease alpha in patients. SYNA may be linked to synthetic disease beta. "
+    "In mice, SYNA was linked to synthetic disease alpha."
+)
+GATE_SRC = SourceText("PMID:0000009", "https://doi.org/10.1000/x", GATE_TEXT)
+
+
+def gate(resolver, quote, **kw):
+    base = dict(
+        subject_mention="SYNA", subject_type="gene", object_mention="synthetic disease alpha", object_type="disease",
+        predicate="GENE_ASSOCIATED_WITH_DISEASE", quote=quote,
+    )
+    return extract_claims(FakeClient([ExtractedStatement(**{**base, **kw})]), GATE_SRC, resolver)
+
+
+def test_a_verbatim_quote_that_names_neither_entity_is_not_stored(resolver):
+    rep = gate(resolver, "Mice were housed at 22C.")
+    assert not rep.claims and "does not name both entities" in rep.quarantined[0]["reason"]
+
+
+def test_a_negated_quote_is_not_stored_as_a_positive_claim(resolver):
+    rep = gate(resolver, "SYNA is not associated with synthetic disease alpha in this cohort.")
+    assert not rep.claims and "negation" in rep.quarantined[0]["reason"]
+
+
+def test_animal_evidence_is_not_stored_as_a_human_gene_disease_association(resolver):
+    rep = gate(resolver, "In mice, SYNA was linked to synthetic disease alpha.", organism="mouse")
+    assert not rep.claims and "not a human gene-disease association" in rep.quarantined[0]["reason"]
+    ok = gate(resolver, "Gene SYNA is linked to synthetic disease alpha in patients.", organism="human")
+    assert len(ok.claims) == 1
+
+
+def test_a_hedged_quote_is_stored_but_flagged_so_it_cannot_pass_as_a_plain_finding(resolver):
+    rep = gate(resolver, "SYNA may be linked to synthetic disease beta.", object_mention="synthetic disease beta")
+    assert rep.claims[0].context.get("hedged") == "yes"
+    assert "hedged" not in gate(resolver, "Gene SYNA is linked to synthetic disease alpha in patients.").claims[0].context
+
+
+def test_the_ontology_label_or_a_bracketed_part_of_the_mention_can_satisfy_the_quote_check(resolver):
+    rep = gate(resolver, "Gene SYNA is linked to synthetic disease alpha in patients.", object_mention="alpha disease (synthetic disease alpha)")
+    # "alpha disease" is not in the quote, but the bracketed part is, and the ontology label is too
+    assert len(rep.claims) == 1

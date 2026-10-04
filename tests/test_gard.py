@@ -34,3 +34,17 @@ def test_no_cross_reference_and_failure_are_reported_honestly():
     def boom(url):
         raise OSError("down")
     assert GardSource(fetch=boom).for_disease("MONDO:9000001", ["GARD:0000001"])["status"] == "failed"
+
+
+def test_a_failed_account_list_fetch_is_not_cached():
+    calls = {"n": 0}
+
+    def flaky(url):
+        calls["n"] += 1
+        if url == ACCOUNTS and calls["n"] == 1:
+            raise OSError("timed out")
+        return ACCTS if url == ACCOUNTS else RECORD
+
+    src = GardSource(fetch=flaky)
+    assert src._account_index() == {}
+    assert src._account_index() != {}  # tried again straight away

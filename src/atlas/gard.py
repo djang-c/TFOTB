@@ -22,6 +22,7 @@ SINGLE = "https://rarediseases.info.nih.gov/assets/singles/{num}.json"
 ACCOUNTS = "https://rarediseases.info.nih.gov/assets/related/all-account-data.json"
 PAGE = "https://rarediseases.info.nih.gov/diseases/{num}/{slug}"
 CACHE_SECONDS = 24 * 3600
+FAILURE_CACHE_SECONDS = 60  # a failed fetch is retried soon; one outage must not hide groups for a day
 NOTE = ("Listed by GARD (NIH). A listing is not an endorsement by NIH or by us, and we have not checked "
         "these groups. Names and links are shown as GARD gives them.")
 
@@ -36,7 +37,7 @@ def _site(url: str) -> str:
 class GardSource:
     def __init__(self, fetch=None) -> None:
         self._fetch = fetch or _http_get
-        self._cache: dict[str, tuple[float, dict[str, Any]]] = {}
+        self._cache: dict[str, tuple[float, dict[str, Any], float]] = {}  # (when, result, ttl)
         self._accounts: tuple[float, dict[str, dict[str, Any]]] | None = None
 
     def _account_index(self) -> dict[str, dict[str, Any]]:
@@ -51,16 +52,16 @@ class GardSource:
                 if a.get("Name"):
                     idx[a["Name"].strip().lower()] = a
         except (OSError, ValueError):
-            idx = {}
+            return {}  # not cached: the next request tries again
         self._accounts = (time.time(), idx)
         return idx
 
     def for_disease(self, mondo_id: str, gard_ids: list[str]) -> dict[str, Any]:
         hit = self._cache.get(mondo_id)
-        if hit and time.time() - hit[0] < CACHE_SECONDS:
+        if hit and time.time() - hit[0] < hit[2]:
             return hit[1]
         out = self._build(mondo_id, gard_ids)
-        self._cache[mondo_id] = (time.time(), out)
+        self._cache[mondo_id] = (time.time(), out, FAILURE_CACHE_SECONDS if out.get("status") == "failed" else CACHE_SECONDS)
         return out
 
     def _build(self, mondo_id: str, gard_ids: list[str]) -> dict[str, Any]:

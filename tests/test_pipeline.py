@@ -142,3 +142,17 @@ def test_a_network_error_on_one_paper_fails_that_paper_only_and_the_run_continue
 
     rep = run(["1", "2"], resolver, AtlasDB(), fetch=fetch)
     assert [r.status for r in rep.runs] == ["failed", "ingested"] and "timed out" in rep.runs[0].reason
+
+
+def test_a_missing_recorded_response_fails_that_paper_only_and_the_run_continues(resolver):
+    from atlas.llm.base import LLMError
+
+    class Flaky(Fake):
+        def parse(self, schema, **kw):
+            if self.calls == 0:
+                self.calls += 1
+                raise LLMError("replay cache miss; no live call made")
+            return super().parse(schema, **kw)
+
+    rep = run(["1", "2"], resolver, AtlasDB(), Flaky())
+    assert [r.status for r in rep.runs] == ["failed", "ingested"] and "replay cache miss" in rep.runs[0].reason

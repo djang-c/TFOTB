@@ -10,10 +10,15 @@ SYN = "/api/entities/SYN:disease-a"
 
 
 def make(tmp_path, runner=None, **kw):
+    if kw.get("research_enabled") and "research_token" not in kw:
+        kw["research_token"] = "tok"  # enabled research always needs a token (it fails closed without one)
     s = Settings(real_search=False, store_path=tmp_path / "store" / "atlas.db", **kw)
     app = create_app(s)
     app.state.research_runner = runner
-    return TestClient(app), app
+    client = TestClient(app)
+    if s.research_token:
+        client.headers.update({"X-Research-Token": s.research_token})
+    return client, app
 
 
 def fake_runner(result=None, fail=None):
@@ -58,15 +63,36 @@ def test_a_failed_job_reports_its_error_and_the_server_keeps_working(tmp_path):
     jid = c.post("/api/research", json={"query": "x"}).json()["job_id"]
     app.state.jobs.wait(jid)
     j = c.get(f"/api/research/{jid}").json()
-    assert j["status"] == "failed" and "no reference files" in j["error"]
+    assert j["status"] == "failed" and "RuntimeError" in j["error"] and "no reference files" not in j["error"]
     assert c.get("/api/health").status_code == 200
 
 
-def test_the_token_is_required_when_set(tmp_path):
+def test_the_token_is_required_and_a_wrong_or_odd_token_is_a_401_not_a_crash(tmp_path):
     c, _ = make(tmp_path, fake_runner(), research_enabled=True, research_token="s3cret")
+    c.headers.pop("X-Research-Token", None)
     assert c.post("/api/research", json={"query": "x"}).status_code == 401
+    assert c.post("/api/research", json={"query": "x"}, headers={"X-Research-Token": "wrong"}).status_code == 401
+    assert c.post("/api/research", json={"query": "x"}, headers={"X-Research-Token": "é".encode("latin-1")}).status_code == 401
     ok = c.post("/api/research", json={"query": "x"}, headers={"X-Research-Token": "s3cret"})
     assert ok.status_code == 202
+
+
+def test_enabling_research_without_a_token_fails_closed(tmp_path):
+    from atlas.api import create_app as make_app
+
+    app = make_app(Settings(real_search=False, store_path=tmp_path / "s" / "a.db", research_enabled=True, research_token=""))
+    c = TestClient(app)
+    r = c.post("/api/research", json={"query": "x"})
+    assert r.status_code == 503 and "RESEARCH_TOKEN" in r.json()["detail"]
+
+
+def test_the_job_list_is_only_shown_to_a_caller_with_the_token(tmp_path):
+    c, app = make(tmp_path, fake_runner(), research_enabled=True)
+    jid = c.post("/api/research", json={"query": "secret topic"}).json()["job_id"]
+    app.state.jobs.wait(jid)
+    assert c.get("/api/research").json()["recent_jobs"][0]["terms"] == ["secret topic"]
+    c.headers.pop("X-Research-Token")
+    assert c.get("/api/research").json()["recent_jobs"] == []
 
 
 def test_jobs_are_rate_limited_per_hour(tmp_path):

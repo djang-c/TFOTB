@@ -11,6 +11,7 @@ from collections import defaultdict
 from typing import Any
 
 from atlas.channels.base import EvidenceChannel
+from atlas.normalize import direction_class
 from atlas.schemas import ChannelComparison, Claim, ClaimStatus
 
 _DIRECT_NOTE = "directly links the two diseases"
@@ -39,6 +40,7 @@ class ClaimOverlapChannel(EvidenceChannel):
     ) -> None:
         self.store, self.channel_id, self.predicates = store, channel_id, predicates
         self.supports_category, self.observed_only, self.note = supports_category, observed_only, note
+        self.kind = "mechanism" if supports_category else "context"
 
     # ---- helpers ----
     def _claims(self) -> list[Claim]:
@@ -93,6 +95,7 @@ class ClaimOverlapChannel(EvidenceChannel):
         support: list[Claim] = list(direct)
         matches = [f"{_DIRECT_NOTE}: {c.predicate} ({c.claim_id})" for c in direct]
         mismatches: set[str] = set()
+        contradicting: set[str] = set()
         limits = [self.note] if self.note else []
         for feat in shared:
             claims_q, claims_c = fq[feat], fc[feat]
@@ -107,10 +110,13 @@ class ClaimOverlapChannel(EvidenceChannel):
                     limits.append(f"predicted, not observed, excluded from support: {c.claim_id}")
             support += kept
             matches.append(f"shared {feat}")
-            dirs_q = {c.context["direction"] for c in claims_q if c.context.get("direction")}
-            dirs_c = {c.context["direction"] for c in claims_c if c.context.get("direction")}
+            # free-text direction is mapped to up/down; unknown never counts as agreeing or disagreeing
+            dirs_q = {d for c in claims_q if (d := direction_class(c.context.get("direction")))}
+            dirs_c = {d for c in claims_c if (d := direction_class(c.context.get("direction")))}
             if dirs_q and dirs_c and dirs_q.isdisjoint(dirs_c):
                 mismatches.add("effect_direction")
+                # opposing effects on the same feature are a contradiction, kept visible, never averaged away
+                contradicting.update(c.claim_id for c in both if direction_class(c.context.get("direction")))
             tissues_q = {c.context.get("tissue") for c in claims_q if c.context.get("tissue")}
             tissues_c = {c.context.get("tissue") for c in claims_c if c.context.get("tissue")}
             if tissues_q and tissues_c and not tissues_q & tissues_c:
@@ -125,12 +131,17 @@ class ClaimOverlapChannel(EvidenceChannel):
             limits.append("both diseases have claims here but share no feature")
         seen: set[str] = set()
         ids = [c.claim_id for c in support if not (c.claim_id in seen or seen.add(c.claim_id))]
+        for c in support:  # a stored claim can name the claims it contradicts
+            for other in c.contradicts:
+                if other in self.store.claims:
+                    contradicting.update({c.claim_id, other})
         return ChannelComparison(
             **base,
             availability="available",
             supporting_claim_ids=ids,
             context_matches=matches,
             context_mismatches=sorted(mismatches),
+            contradicting_claim_ids=sorted(contradicting),
             limitations=limits,
         )
 

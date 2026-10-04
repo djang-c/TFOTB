@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { safeHref } from "@/lib/safeHref";
 import { api, ApiError, enc, type PatientGroups, type SourceCoverage, type AssetResult, type ConnectionResult, type CoverageManifest, type Entity, type GapResult } from "@/lib/api";
 import { ActionCardView } from "@/components/ActionCardView";
 import { ApiDown } from "@/components/ApiDown";
@@ -276,17 +277,17 @@ function PatientGroupsBlock({ g }: { g: PatientGroups }) {
           {g.groups.map((o) => (
             <li key={o.name} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 px-4 py-2.5 text-sm">
               <span>
-                {o.website ? <a className="font-medium hover:text-link hover:underline" href={o.website} target="_blank" rel="noreferrer">{o.name}</a> : <span className="font-medium">{o.name}</span>}
+                {safeHref(o.website) ? <a className="font-medium hover:text-link hover:underline" href={safeHref(o.website)} target="_blank" rel="noreferrer">{o.name}</a> : <span className="font-medium">{o.name}</span>}
                 {o.country && <span className="ml-2 text-xs text-muted">{o.country}</span>}
               </span>
-              {o.registry_url && <a className="ref text-xs" href={o.registry_url} target="_blank" rel="noreferrer">Patient registry</a>}
+              {safeHref(o.registry_url) && <a className="ref text-xs" href={safeHref(o.registry_url)} target="_blank" rel="noreferrer">Patient registry</a>}
             </li>
           ))}
         </ul>
       )}
       <p className="mt-2 text-xs text-muted">
         {g.note} Retrieved {g.retrieved} from{" "}
-        {g.pages.map((p, i) => <span key={p.url}>{i > 0 && ", "}<a className="ref" href={p.url} target="_blank" rel="noreferrer">GARD: {p.label}</a></span>)}.
+        {g.pages.map((p, i) => <span key={p.url}>{i > 0 && ", "}{safeHref(p.url) ? <a className="ref" href={safeHref(p.url)} target="_blank" rel="noreferrer">GARD: {p.label}</a> : <span>GARD: {p.label}</span>}</span>)}.
       </p>
     </div>
   );
@@ -333,7 +334,7 @@ function AssetRow({ a }: { a: AssetResult }) {
         {a.reuse_limits.length > 0 && (<><dt className="text-muted">Differences</dt>
           <dd><ul className="list-disc pl-4">{a.reuse_limits.map((l) => <li key={l}>{l}</li>)}</ul></dd></>)}
         {a.needs_expert_review.length > 0 && (<><dt className="text-muted">Needs review</dt><dd>{a.needs_expert_review.join("; ")}</dd></>)}
-        {a.contact && (<><dt className="text-muted">Record</dt><dd><a className="ref" href={a.contact.url} target="_blank" rel="noreferrer">{a.contact.label}</a></dd></>)}
+        {a.contact && (<><dt className="text-muted">Record</dt><dd>{safeHref(a.contact.url) ? <a className="ref" href={safeHref(a.contact.url)} target="_blank" rel="noreferrer">{a.contact.label}</a> : a.contact.label}</dd></>)}
       </dl>
     </details>
   );

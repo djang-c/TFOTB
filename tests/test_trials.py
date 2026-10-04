@@ -47,3 +47,25 @@ def test_network_failure_is_reported_not_zero():
         raise OSError("timed out")
     out = TrialsSource(fetch=boom).for_disease("MONDO:9000001", "Example disease type C", set())
     assert out["assets"] == [] and out["coverage"]["status"] == "failed"
+
+
+def test_a_failed_fetch_is_retried_soon_not_cached_for_a_day():
+    calls = {"n": 0}
+
+    def flaky(url):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise OSError("timed out")
+        return RESPONSE
+
+    src = TrialsSource(fetch=flaky)
+    first = src.for_disease("MONDO:9000001", "Example disease type C", set())
+    assert first["coverage"]["status"] == "failed"
+    from atlas import trials
+
+    # expire the short failure cache entry, as 60 seconds would
+    when, out, ttl = src._cache["MONDO:9000001"]
+    assert ttl == trials.FAILURE_CACHE_SECONDS < trials.CACHE_SECONDS
+    src._cache["MONDO:9000001"] = (when - ttl - 1, out, ttl)
+    second = src.for_disease("MONDO:9000001", "Example disease type C", set())
+    assert second["coverage"]["status"] != "failed" and calls["n"] == 2

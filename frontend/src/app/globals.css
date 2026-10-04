@@ -20,7 +20,7 @@
   --color-ev-symptom: #55667a;    /* symptom-level lead */
   --color-ev-hypo: #6a46b0;       /* hypothesis only */
   --color-ev-conflict: #9a5b00;   /* conflicting evidence */
-  --color-ev-gap: #7d848c;        /* insufficient coverage */
+  --color-ev-gap: #5f666e;        /* insufficient coverage */
   --color-synthetic: #f3d34a;
   --color-lab: #fff4c2;
   --color-fail: #b3261e;

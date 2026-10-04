@@ -12,6 +12,7 @@ through `atlas.llm.LLMClient` (replay mode by default: no network).
 from __future__ import annotations
 
 import hashlib
+import re
 import unicodedata
 from dataclasses import dataclass, field
 from typing import Literal
@@ -174,7 +175,7 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
                     k: v
                     for k, v in (
                         ("organism", s.organism), ("tissue", s.tissue), ("direction", s.direction), ("substance", substance),
-                        ("scope", s.statement_scope),
+                        ("scope", s.statement_scope), ("hedged", "yes" if _HEDGE.search(s.quote) else None),
                     )
                     if v
                 },
@@ -185,6 +186,58 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
         seen.add(claim_id)
         report.claims.append(claim)
     return report
+
+
+# --- does the quote actually support the claim? (audit finding: a verbatim quote is not enough) ---------
+_NEGATION = re.compile(
+    r"\b(no|not|neither|nor|without|never|none|cannot|can't|isn't|aren't|wasn't|weren't|doesn't|don't|didn't|"
+    r"failed to|fail to|unable to|lack(?:s|ed|ing)?|absence of|unaffected|no evidence)\b",
+    re.IGNORECASE,
+)
+_HEDGE = re.compile(
+    r"\b(may|might|could|possibly|potentially|putative|suggest(?:s|ed)?|thought to|hypothes[ie]s(?:ed)?|"
+    r"appears? to|likely|speculat\w*|propos\w*)\b",
+    re.IGNORECASE,
+)
+_ASSERTING = frozenset({"GENE_ASSOCIATED_WITH_DISEASE", "ACCUMULATES_IN_COMPARTMENT", "CANDIDATE_THERAPY_FOR"})
+
+
+def _norm_text(text: str) -> str:
+    return " ".join(unicodedata.normalize("NFKC", text).casefold().split())
+
+
+def _mention_variants(mention: str, label: str) -> list[str]:
+    outer = re.sub(r"\s*[(\[].*?[)\]]", "", mention).strip()
+    inner = re.findall(r"[(\[]([^)\]]+)[)\]]", mention)
+    return [v for v in {mention, outer, *inner, label} if v and len(v.strip()) >= 2]
+
+
+def _in_quote(mention: str, label: str, quote_norm: str) -> bool:
+    """The entity is named in the quote: the model's wording, a bracketed part of it, or the ontology label
+    (word-bounded, optional plural). The quote is what a reader sees, so it must name what it supports."""
+    for v in _mention_variants(mention, label):
+        pat = r"(?<![a-z0-9])" + re.escape(_norm_text(v)) + r"(?:s|es)?(?![a-z0-9])"
+        if re.search(pat, quote_norm):
+            return True
+    return False
+
+
+def _support_problem(s: ExtractedStatement, ids: list[str], substance: str | None, resolver: Resolver) -> str | None:
+    q = _norm_text(s.quote)
+    subj_ok = _in_quote(s.subject_mention, resolver.label_of(ids[0]), q)
+    obj_ok = _in_quote(s.object_mention, resolver.label_of(ids[1]), q)
+    if s.predicate == "ACCUMULATES_IN_COMPARTMENT":
+        # papers abbreviate the compartment ("LE/Lys"), so require the disease and the substance instead
+        sub_ok = _in_quote(s.substance_mention or "", resolver.label_of(substance or ""), q)
+        if not (subj_ok and sub_ok):
+            return "quote does not name both the disease and the accumulating substance"
+    elif not (subj_ok and obj_ok):
+        return "quote does not name both entities it is stored under"
+    if s.predicate in _ASSERTING and _NEGATION.search(s.quote):
+        return "quote contains a negation; polarity is not modelled, so it is not stored as a positive claim"
+    if s.predicate == "GENE_ASSOCIATED_WITH_DISEASE" and s.organism and "human" not in s.organism.casefold() and "patient" not in s.organism.casefold():
+        return f"evidence is from {s.organism}, not a human gene-disease association"
+    return None
 
 
 def _reject_reason(s: ExtractedStatement, haystack: str, resolver: Resolver, source_id: str | None = None) -> str | tuple[str, str, str | None]:
@@ -211,4 +264,7 @@ def _reject_reason(s: ExtractedStatement, haystack: str, resolver: Resolver, sou
         if res.status != "resolved" or res.resolved_id is None:
             return f"chemical mention {s.substance_mention!r} is {res.status}: {res.method}"
         substance = res.resolved_id
+    problem = _support_problem(s, ids, substance, resolver)
+    if problem:
+        return problem
     return ids[0], ids[1], substance

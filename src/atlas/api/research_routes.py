@@ -33,11 +33,19 @@ class ResearchRequest(BaseModel):
     entity_id: str | None = Field(default=None, max_length=60)
 
 
+def _token_ok(request: Request, token: str | None) -> bool:
+    expected = request.app.state.settings.research_token
+    # compare as bytes: a non-ASCII header must be a 401, not a crash (hmac.compare_digest needs ASCII str)
+    return bool(expected) and hmac.compare_digest((token or "").encode("utf-8"), expected.encode("utf-8"))
+
+
 def _guard(request: Request, token: str | None) -> None:
     s = request.app.state.settings
     if not s.research_enabled:
         raise HTTPException(status_code=403, detail="On-demand research is turned off on this server.")
-    if s.research_token and not hmac.compare_digest(token or "", s.research_token):
+    if not s.research_token:  # fail closed: this endpoint can spend money, so it never runs unauthenticated
+        raise HTTPException(status_code=503, detail="Research is enabled but RESEARCH_TOKEN is not set; refusing to run without one.")
+    if not _token_ok(request, token):
         raise HTTPException(status_code=401, detail="Missing or wrong X-Research-Token.")
 
 
@@ -60,7 +68,7 @@ def _default_work(request: Request, terms: list[str]) -> Any:
 
 
 @router.get("/research")
-def research_status(request: Request) -> dict[str, Any]:
+def research_status(request: Request, x_research_token: str | None = Header(default=None)) -> dict[str, Any]:
     s = request.app.state.settings
     policy = load_policy(s.policy_path)
     return {
@@ -70,7 +78,8 @@ def research_status(request: Request) -> dict[str, Any]:
         "max_papers_per_job": policy.max_papers_per_run,
         "max_jobs_per_hour": s.research_max_jobs_per_hour,
         "sources": "PubMed-indexed journal articles with open-access full text; preprints, retractions and editorials are excluded",
-        "recent_jobs": [j.public() for j in request.app.state.jobs.recent()] if s.research_enabled else [],
+        # job terms and results are only shown to a caller who holds the token
+        "recent_jobs": [j.public() for j in request.app.state.jobs.recent()] if s.research_enabled and _token_ok(request, x_research_token) else [],
     }
 
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { api, enc } from "@/lib/api";
+import { safeHref } from "@/lib/safeHref";
 import { ReviewBadge, SourceBadge, StatusMark } from "./Badges";
 
 type ClaimData = Awaited<ReturnType<typeof api.claim>>;
@@ -137,16 +138,24 @@ export function EvidenceDrawerProvider({ children }: { children: React.ReactNode
   const [data, setData] = useState<ClaimData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const open = useCallback((id: string) => { setClaimId(id); setData(null); setError(null); }, []);
+  const opener = useRef<HTMLElement | null>(null);
+  const open = useCallback((id: string) => {
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setClaimId(id); setData(null); setError(null);
+  }, []);
+  const close = useCallback(() => {
+    setClaimId(null);
+    opener.current?.focus(); // keyboard users land back on the citation they opened
+  }, []);
 
   useEffect(() => {
     if (!claimId) return;
     closeRef.current?.focus();
     loadClaim(claimId).then(setData).catch(() => setError(`Could not load ${claimId}. Check that the API is running.`));
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setClaimId(null);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [claimId]);
+  }, [claimId, close]);
 
   return (
     <Ctx.Provider value={open}>
@@ -161,14 +170,14 @@ export function EvidenceDrawerProvider({ children }: { children: React.ReactNode
         >
           <div className="flex items-center justify-between border-b border-rule px-5 py-3">
             <h2 className="text-base font-semibold">Evidence</h2>
-            <button ref={closeRef} onClick={() => setClaimId(null)} className="rounded px-2 py-1 text-sm text-muted hover:bg-subtle">
+            <button ref={closeRef} onClick={close} className="rounded px-2 py-1 text-sm text-muted hover:bg-subtle">
               Close
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-4">
             {error && <p className="text-sm text-fail">{error}</p>}
             {!data && !error && <p className="text-sm text-muted">Loading {claimId}</p>}
-            {data && <ClaimBody d={data} onClose={() => setClaimId(null)} />}
+            {data && <ClaimBody d={data} onClose={close} />}
           </div>
         </aside>
       )}
@@ -209,7 +218,7 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
           {hypothesis ? c.source_span.replace(/^AI hypothesis:\s*/, "") : tabular ? c.source_span.split("\t").join("  ·  ") : c.source_span}
         </blockquote>
         <figcaption className="mt-2 text-sm text-muted">
-          {c.source_url.startsWith("http") && <a className="ref" href={c.source_url} target="_blank" rel="noreferrer">{foundByAi(c) ? "Open the article" : "Open source"}</a>}
+          {safeHref(c.source_url) && <a className="ref" href={safeHref(c.source_url)} target="_blank" rel="noreferrer">{foundByAi(c) ? "Open the article" : "Open source"}</a>}
           {c.published_at && <> · published {c.published_at}</>}
           {c.retrieved_at && <> · retrieved {c.retrieved_at}</>}
         </figcaption>
@@ -253,7 +262,7 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
               {d.lineage_siblings.map((id) => <ClaimRef key={id} id={id} />)}
             </>
           ) : (
-            c.lineage_id.startsWith("STUDY:") ? "No other claim from this experiment group is indexed." : "Claims from the same record count as one source, not several."
+            c.lineage_id.startsWith("STUDY:") ? "No other claim from this paper or experiment group is stored." : "Claims from the same record count as one source, not several."
           )}
         </p>
       </Section>
@@ -305,7 +314,7 @@ function OriginNote({ c }: { c: ClaimData["claim"] }) {
         <p>
           An AI model ({model}) read the paper and proposed this claim; the sentence below was checked to appear word
           for word in it. {checked}{" "}
-          <a className="ref" href={c.source_url} target="_blank" rel="noreferrer">Open the article</a>.
+          {safeHref(c.source_url) && <a className="ref" href={safeHref(c.source_url)} target="_blank" rel="noreferrer">Open the article</a>}.
         </p>
       </section>
     );

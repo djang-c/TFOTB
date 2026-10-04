@@ -38,6 +38,7 @@ FIELDS = ("NCTId,BriefTitle,OverallStatus,Condition,StudyType,Phase,LeadSponsorN
           "StartDate,EnrollmentCount,LastUpdatePostDate,PatientRegistry")
 OPEN = {"RECRUITING", "NOT_YET_RECRUITING", "ENROLLING_BY_INVITATION", "ACTIVE_NOT_RECRUITING", "AVAILABLE"}
 CACHE_SECONDS = 24 * 3600
+FAILURE_CACHE_SECONDS = 60  # a failed fetch is retried soon; one outage must not hide studies for a day
 PAGE_SIZE = 100
 MAX_SHOWN = 50
 MODIFICATIONS = ("Only studies that list this disease by name are shown; titles and conditions are verbatim; "
@@ -47,16 +48,17 @@ MODIFICATIONS = ("Only studies that list this disease by name are shown; titles 
 class TrialsSource:
     def __init__(self, fetch=None) -> None:
         self._fetch = fetch or _http_get
-        self._cache: dict[str, tuple[float, dict[str, Any]]] = {}
+        self._cache: dict[str, tuple[float, dict[str, Any], float]] = {}  # (when, result, ttl)
         self.claims: dict[str, dict[str, Any]] = {}  # every ASSET_RELEVANT_TO claim served so far
 
     def for_disease(self, disease_id: str, label: str, names: set[str], query_names: list[str] | None = None) -> dict[str, Any]:
         hit = self._cache.get(disease_id)
-        if hit and time.time() - hit[0] < CACHE_SECONDS:
+        if hit and time.time() - hit[0] < hit[2]:
             return hit[1]
         out = self._build(disease_id, label, names, query_names or [label])
         self.claims.update(out["claims"])
-        self._cache[disease_id] = (time.time(), out)
+        failed = out["coverage"].get("status") == "failed"
+        self._cache[disease_id] = (time.time(), out, FAILURE_CACHE_SECONDS if failed else CACHE_SECONDS)
         return out
 
     def _build(self, disease_id: str, label: str, names: set[str], query_names: list[str]) -> dict[str, Any]:

@@ -91,14 +91,16 @@ def test_phenotype_similarity_orders_only_candidates_that_tie_on_everything_else
     assert [r.result.candidate_id for r in out.ranked] == [B, A]  # higher similarity first, not ID order
 
 
-def test_similarity_never_crosses_a_category():
+def test_a_hypothesis_link_does_not_change_the_category_and_a_direct_link_still_beats_similarity():
     store = PublicStore()
     store.add(make_claim("CLAIM:d", "SHARES_PATHOGENIC_PATHWAY_WITH", subject_id=Q, object_id=A, status="inference"))
     reg = registry(store)
     reg.register(_Phenotype({A: 0.01, B: 0.99}))
-    cats = {r.result.candidate_id: r.result.category for r in run(store, reg).ranked}
-    assert cats == {B: EvidenceCategory.symptom_level_lead, A: EvidenceCategory.hypothesis_only}
-    assert list(cats) == [B, A]  # category order, with the lower similarity (A) placed by its category
+    out = run(store, reg)
+    cats = {r.result.candidate_id: r.result.category for r in out.ranked}
+    # PLAN revision 2026-10-04: a hypothesis never changes an evidence category (it used to demote A)
+    assert cats == {A: EvidenceCategory.symptom_level_lead, B: EvidenceCategory.symptom_level_lead}
+    assert [r.result.candidate_id for r in out.ranked] == [A, B]  # direct link outranks the higher similarity
 
 
 def test_similarity_never_outranks_a_direct_link_or_reviewed_support_in_the_same_category():

@@ -28,6 +28,13 @@ DEFAULT_K = 3
 REVIEWER_ROLE = "domain expert (unassigned; claims are unreviewed)"
 
 
+_NODE_TYPE = {"MONDO": "disease", "HGNC": "gene", "HP": "phenotype", "GO": "compartment", "CHEBI": "chemical"}
+
+
+def node_type(entity_id: str) -> str:
+    return _NODE_TYPE.get(entity_id.partition(":")[0], "other")
+
+
 def build_graph(claims: dict[str, Claim]) -> nx.MultiDiGraph:
     g = nx.MultiDiGraph()
     for cid in sorted(claims):
@@ -155,6 +162,6 @@ def neighborhood(
         for cid, c in sorted(claims.items())
         if c.subject_id in kept and c.object_id in kept
     ]
-    nodes = [{"id": n, "label": label_of(n) or n, "is_query": n == entity_id} for n in keep]
+    nodes = [{"id": n, "label": label_of(n) or n, "type": node_type(n), "is_query": n == entity_id} for n in keep]
     omitted = len(reachable) - len(keep)
     return {"nodes": nodes, "edges": edges, "truncated": omitted > 0, "omitted": omitted}

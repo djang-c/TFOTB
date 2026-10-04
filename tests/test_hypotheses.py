@@ -25,7 +25,7 @@ class Fake:
 def store(**kw):
     s = PublicStore()
     for cid, d in (("CLAIM:a", A), ("CLAIM:b", B)):
-        s.add(make_claim(cid, "ACCUMULATES_IN_COMPARTMENT", subject_id=d, object_id=GO, source_type="published", **kw))
+        s.add(make_claim(cid, "ACCUMULATES_IN_COMPARTMENT", subject_id=d, object_id=GO, source_type="published", lineage=f"STUDY:{cid}", **kw))
     return s
 
 
@@ -125,3 +125,25 @@ def test_ids_copied_without_the_claim_prefix_are_matched_only_when_they_are_stor
     assert rep.claims and rep.claims[0].derived_from == ("CLAIM:a", "CLAIM:b")
     rep, _ = run(hyp(supporting_claim_ids=["a", "invented"]))
     assert not rep.claims and "not stored" in rep.rejected[0]["reason"]
+
+
+def test_supporting_claims_from_a_single_paper_are_not_enough():
+    s = PublicStore()
+    for cid, d in (("CLAIM:a", A), ("CLAIM:b", B)):
+        s.add(make_claim(cid, "ACCUMULATES_IN_COMPARTMENT", subject_id=d, object_id=GO, source_type="published", lineage="STUDY:same"))
+    rep, _ = run(hyp(), s=s)
+    assert not rep.claims and "two different papers" in rep.rejected[0]["reason"]
+
+
+def test_hedged_claims_cannot_support_a_hypothesis_and_are_not_shown_to_the_model():
+    s = store(context={"hedged": "yes"})
+    rep, client = run(hyp(), s=s)
+    assert not rep.claims and client.calls == 0  # nothing credible left, so no model call
+
+
+def test_rationale_that_reads_as_treatment_advice_or_a_cure_claim_is_rejected():
+    for text in ("Patients should be treated with miglustat because both diseases store lipid.",
+                 "We recommend administering the compound since the pathway is shared.",
+                 "This could cure both diseases because the lysosome is the common site."):
+        rep, _ = run(hyp(rationale=text))
+        assert not rep.claims and "clinical directive" in rep.rejected[0]["reason"], text

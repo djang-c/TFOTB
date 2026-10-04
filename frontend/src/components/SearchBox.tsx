@@ -46,12 +46,13 @@ export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: bool
 
   useEffect(() => {
     if (!q.trim()) return;
+    let current = true; // an older, slower answer must never overwrite the answer to what was typed last
     const t = setTimeout(() => {
       api.search(q)
-        .then((r) => { setHits(r.results); setAmbiguous(!!r.ambiguous); setActive(0); setError(null); })
-        .catch(() => setError("Search is unavailable. Check that the API is running."));
+        .then((r) => { if (!current) return; setHits(r.results); setAmbiguous(!!r.ambiguous); setActive(0); setError(null); })
+        .catch(() => { if (current) setError("Search is unavailable. Check that the API is running."); });
     }, 150);
-    return () => clearTimeout(t);
+    return () => { current = false; clearTimeout(t); };
   }, [q]);
 
   const go = (h: Hit) => { setOpen(false); setQ(""); router.push(`/entity/${enc(h.id)}`); };
@@ -65,7 +66,7 @@ export function SearchBox({ autoFocus = false, size = "sm" }: { autoFocus?: bool
         type="search"
         role="combobox"
         aria-expanded={open && hits.length > 0}
-        aria-controls={listId}
+        aria-controls={open && hits.length > 0 ? listId : undefined}
         aria-activedescendant={open && hits[active] ? `${listId}-${active}` : undefined}
         aria-label="Search a disease, gene, symptom or mechanism"
         autoFocus={autoFocus}

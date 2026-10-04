@@ -22,7 +22,7 @@ from xml.etree.ElementTree import ParseError
 
 from atlas.db import AtlasDB
 from atlas.extraction import SourceText, extract_claims
-from atlas.llm.base import LLMClient
+from atlas.llm.base import LLMClient, LLMError
 from atlas.resolver import Resolver
 from atlas.schemas import Claim, SourceCoverage, SourceStatus
 from atlas.sources import FullText, SourceError, fetch_full_text
@@ -123,7 +123,11 @@ def ingest_papers(
                 PaperRun(sid, "skipped", f"text is {len(ft.text)} chars, over the {max_chars} cap", ft.license)
             )
             continue
-        ex = extract_claims(client, SourceText(sid, ft.citation_url, ft.text), resolver)
+        try:
+            ex = extract_claims(client, SourceText(sid, ft.citation_url, ft.text), resolver)
+        except LLMError as exc:  # e.g. replay-only run and no recorded response for this paper
+            report.runs.append(PaperRun(sid, "failed", f"model call not made or failed: {exc}"[:300], ft.license))
+            continue
         if ex.status != "extracted":
             report.runs.append(PaperRun(sid, "failed", ex.reason, ft.license))
             continue

@@ -114,3 +114,62 @@ def test_same_compartment_and_same_substance_is_shared(store):
     out = ch.compare(Q, C, {})
     assert out.supporting_claim_ids == ["CLAIM:a", "CLAIM:b"] and out.context_matches == ["shared GO:0005764[CHEBI:16113]"]
     assert ch.retrieve_candidates(Q, {}) == [C]
+
+
+def _share(store, cid, disease, direction, lineage):
+    from tests.conftest import make_claim
+
+    store.add(make_claim(cid, "PERTURBS_MECHANISM", subject_id=disease, object_id="GO:0005764", source_type="published",
+                         lineage=lineage, context={"direction": direction}))
+
+
+def _query(store):
+    from datetime import UTC, datetime
+
+    from atlas.channels.base import ChannelRegistry
+    from atlas.connections import run_query
+
+    reg = ChannelRegistry()
+    for ch in build_claim_channels(store):
+        reg.register(ch)
+    return run_query("MONDO:0000001", reg, store.claims, dataset_version="t", per_source=[], now=datetime(2026, 10, 3, tzinfo=UTC))
+
+
+def test_opposing_directions_on_a_shared_feature_are_a_visible_contradiction_end_to_end():
+    from atlas.schemas import EvidenceCategory
+
+    store = PublicStore()
+    _share(store, "CLAIM:q", "MONDO:0000001", "increased", "STUDY:q")
+    _share(store, "CLAIM:a", "MONDO:0000002", "down-regulated", "STUDY:a")
+    res = _query(store).ranked[0].result
+    assert res.category is EvidenceCategory.conflicting_evidence
+    assert not res.shared_treatment_inference_allowed
+    comp = next(c for c in res.comparisons if c.channel_id == "molecular_mechanisms")
+    assert set(comp.contradicting_claim_ids) == {"CLAIM:q", "CLAIM:a"} and "effect_direction" in comp.context_mismatches
+
+
+def test_different_wordings_of_the_same_direction_are_not_a_contradiction():
+    store = PublicStore()
+    _share(store, "CLAIM:q", "MONDO:0000001", "increased", "STUDY:q")
+    _share(store, "CLAIM:a", "MONDO:0000002", "upregulated", "STUDY:a")
+    comp = next(c for c in _query(store).ranked[0].result.comparisons if c.channel_id == "molecular_mechanisms")
+    assert not comp.contradicting_claim_ids and "effect_direction" not in comp.context_mismatches
+
+
+def test_an_unclear_direction_is_neither_agreement_nor_contradiction():
+    store = PublicStore()
+    _share(store, "CLAIM:q", "MONDO:0000001", "changed", "STUDY:q")
+    _share(store, "CLAIM:a", "MONDO:0000002", "decreased", "STUDY:a")
+    comp = next(c for c in _query(store).ranked[0].result.comparisons if c.channel_id == "molecular_mechanisms")
+    assert not comp.contradicting_claim_ids
+
+
+def test_a_claim_that_names_a_contradicting_claim_is_reported_as_a_contradiction():
+    from tests.conftest import make_claim
+
+    store = PublicStore()
+    _share(store, "CLAIM:q", "MONDO:0000001", None, "STUDY:q")
+    store.add(make_claim("CLAIM:a", "PERTURBS_MECHANISM", subject_id="MONDO:0000002", object_id="GO:0005764",
+                         source_type="published", lineage="STUDY:a", contradicts=("CLAIM:q",)))
+    comp = next(c for c in _query(store).ranked[0].result.comparisons if c.channel_id == "molecular_mechanisms")
+    assert set(comp.contradicting_claim_ids) == {"CLAIM:a", "CLAIM:q"}

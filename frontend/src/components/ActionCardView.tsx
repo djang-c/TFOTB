@@ -3,6 +3,7 @@
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import type { ActionCard } from "@/lib/api";
+import { safeHref } from "@/lib/safeHref";
 import { ClaimRef, PREDICATE_PLAIN } from "./EvidenceDrawer";
 
 const KIND: Record<ActionCard["kind"], string> = {
@@ -60,7 +61,7 @@ export function ActionCardView({ card, simulationHref }: { card: ActionCard; sim
         ) : <Markdown md={md} />}
         {card.contact && (
           <p className="text-sm">
-            {isRecord ? "Study record" : "Contact route"}: <a className="ref" href={card.contact.url} target="_blank" rel="noreferrer">{card.contact.label}</a>
+            {isRecord ? "Study record" : "Contact route"}: {safeHref(card.contact.url) ? <a className="ref" href={safeHref(card.contact.url)} target="_blank" rel="noreferrer">{card.contact.label}</a> : card.contact.label}
             <span className="text-muted"> (public page, checked {card.contact.verified_at})</span>
           </p>
         )}

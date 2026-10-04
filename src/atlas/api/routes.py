@@ -6,14 +6,15 @@ these once T03/T04/T09 land. Every response carries the `_synthetic` label.
 import threading
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Body, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, ConfigDict, Field
 
-from atlas.api.claimstore import load_claims
+from atlas.api.claimstore import load_claims, paper_coverage
 from atlas.api.fixtures import load_fixture
 from atlas.graph import find_paths, neighborhood
-from atlas.policy import load_policy
+from atlas.policy import IngestPolicy, load_policy
 from atlas.search import SearchIndex
 from atlas.simulation import link_claim, run_from_report
 
@@ -50,9 +51,19 @@ def _build_index(raw_dir: Path) -> SearchIndex | None:
 
 
 def _index(request: Request) -> SearchIndex | None:
-    """The real-ontology search index, or None (files not fetched, or disabled in settings)."""
+    """The real-ontology search index, or None (files not fetched, or disabled in settings).
+
+    Claims read from papers are handed to the index on every call; it only rebuilds when the store file
+    changed, so they take part in the connection ranking and the evidence brief, not just the graph."""
     s = request.app.state.settings
-    return _index_cached(s.raw_dir) if s.real_search else None
+    ix = _index_cached(s.raw_dir) if s.real_search else None
+    if ix is not None:
+        try:
+            version = (s.store_path.stat().st_mtime_ns, _policy(request).hide_drug_claims)
+        except OSError:
+            version = (None, False)
+        ix.set_paper_claims(_stored_claims(request), version, paper_coverage(s.store_path.parent))
+    return ix
 
 
 def _real_entity(request: Request, entity_id: str) -> dict[str, Any] | None:
@@ -84,10 +95,18 @@ REAL_NOTE = ("Not synthetic: read from pinned public files (MONDO, HGNC, HPO; ve
 DRUG_PREDICATES = frozenset({"CANDIDATE_THERAPY_FOR"})
 
 
+def _policy(request: Request) -> IngestPolicy:
+    """The standing policy. An unreadable or invalid file fails CLOSED for display: treatment-idea claims stay
+    hidden until the file is fixed (and a bad file never turns every endpoint into a 500)."""
+    try:
+        return load_policy(request.app.state.settings.policy_path)
+    except (OSError, ValueError):
+        return IngestPolicy(hide_drug_claims=True)
+
+
 def _stored_claims(request: Request) -> dict[str, Any]:
-    s = request.app.state.settings
-    hide = DRUG_PREDICATES if load_policy(s.policy_path).hide_drug_claims else frozenset()
-    return load_claims(s.store_path, hide_predicates=hide)
+    hide = DRUG_PREDICATES if _policy(request).hide_drug_claims else frozenset()
+    return load_claims(request.app.state.settings.store_path, hide_predicates=hide)
 
 
 def _label_of(request: Request) -> Any:
@@ -203,8 +222,9 @@ def search(request: Request, q: str = "") -> Any:
     if ix is None or not t:
         return _wrap(request, query=q, results=hits[:20], ambiguous=len(hits) > 1 and bool(t))
     real = ix.search(q)
-    return _wrap(request, query=q, results=(real["results"] + hits)[:20],
-                 ambiguous=real["ambiguous"] or (not real["results"] and len(hits) > 1))
+    wrap = _wrap_real if real["results"] else (lambda **kw: _wrap(request, **kw))  # real hits are not "synthetic"
+    return wrap(query=q, results=(real["results"] + hits)[:20],
+                ambiguous=real["ambiguous"] or (not real["results"] and len(hits) > 1))
 
 
 @router.get("/entities/{entity_id}/related")
@@ -359,13 +379,18 @@ def claim(request: Request, claim_id: str) -> Any:
         subject = ix.r.label_of(real["subject_id"]) or real["context"].get("study_title") or real["subject_id"]
         return _wrap_real(claim=real, subject_label=subject,
                           object_label=ix.r.label_of(real["object_id"]), lineage_siblings=[], contradicting_claims=[])
-    stored = _stored_claims(request).get(claim_id)
+    store = _stored_claims(request)
+    stored = store.get(claim_id)
     if stored is not None:
         lab = _label_of(request)
+        siblings = sorted(i for i, c in store.items() if c.lineage_id == stored.lineage_id and i != claim_id)
+        contradicting = sorted(
+            i for i, c in store.items() if claim_id in c.contradicts or i in stored.contradicts
+        )
         return {"_synthetic": STORE_NOTE, "claim": stored.model_dump(mode="json"),
                 "subject_label": lab(stored.subject_id) or stored.subject_id,
                 "object_label": lab(stored.object_id) or stored.object_id,
-                "lineage_siblings": [], "contradicting_claims": []}
+                "lineage_siblings": siblings, "contradicting_claims": contradicting}
     d = _demo(request)
     c = next((c for c in d["claims"] if c["claim_id"] == claim_id), None)
     if c is None:
@@ -382,15 +407,31 @@ def claim(request: Request, claim_id: str) -> Any:
     )
 
 
+class EntityBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    entity_id: str | None = Field(default=None, max_length=60)
+
+
+def _real_id(request: Request, entity_id: str | None) -> bool:
+    ix = _index(request)
+    return bool(ix and entity_id and not entity_id.startswith("SYN:") and ix.entity(entity_id))
+
+
 @router.post("/explain")
-def explain(request: Request, body: Annotated[dict[str, Any] | None, Body()] = None) -> Any:
-    sentences = _demo(request)["summaries"].get((body or {}).get("entity_id", ""), [])
-    return _wrap(request, sentences=sentences, dropped=0, cached=True)
+def explain(request: Request, body: EntityBody | None = None) -> Any:
+    eid = (body.entity_id if body else None) or ""
+    if _real_id(request, eid):
+        return _wrap_real(sentences=_index(request).summary(eid), dropped=0, cached=False)  # type: ignore[union-attr]
+    return _wrap(request, sentences=_demo(request)["summaries"].get(eid, []), dropped=0, cached=True)
 
 
 @router.post("/actions")
-def actions(request: Request, body: Annotated[dict[str, Any] | None, Body()] = None) -> Any:
-    return _wrap(request, cards=_demo(request)["cards"].get((body or {}).get("entity_id", ""), []))
+def actions(request: Request, body: EntityBody | None = None) -> Any:
+    eid = (body.entity_id if body else None) or ""
+    if _real_id(request, eid):
+        return _wrap_real(cards=_index(request).actions(eid))  # type: ignore[union-attr]
+    return _wrap(request, cards=_demo(request)["cards"].get(eid, []))
 
 
 @router.post("/uploads")

@@ -7,6 +7,7 @@ finished jobs, but everything a job stored is in the claim store and the run log
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 import uuid
@@ -16,6 +17,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
+
+log = logging.getLogger("atlas.research")
 
 
 class RateLimited(RuntimeError):
@@ -67,8 +70,10 @@ class JobManager:
         try:
             job.result = work()
             job.status = "done"
-        except Exception as exc:  # noqa: BLE001 - a job reports its failure; it never takes the server down
-            job.error, job.status = f"{type(exc).__name__}: {exc}"[:500], "failed"
+        except Exception as exc:
+            # the full error goes to the server log; the API shows only its type (messages can hold paths or keys)
+            log.exception("research job %s failed", job.job_id)
+            job.error, job.status = f"{type(exc).__name__} (see the server log)", "failed"
         job.finished_at = datetime.now(UTC).isoformat(timespec="seconds")
 
     def get(self, job_id: str) -> Job | None:

@@ -16,6 +16,7 @@ import csv
 import json
 import re
 import sqlite3
+import threading
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -118,12 +119,39 @@ class SearchIndex:
                 for i in ids:
                     self.gard_of.setdefault(i, []).append("GARD:" + xref.split(":", 1)[1])
         self._outcomes: dict[str, Any] = {}  # T09 outcome per disease, reused by the action cards
-        self.registry = ChannelRegistry()
-        if phenotype:
-            self.registry.register(phenotype)
-        for ch in build_claim_channels(self.store):
-            if ch.channel_id == "dna_variants":
-                self.registry.register(ch)
+        self._phenotype = phenotype
+        self._lock = threading.Lock()
+        self._paper_version: object = None
+        self._paper_coverage: SourceCoverage | None = None
+        self._rank_store = self.store  # the claims the ranking engine reads (HPO claims, plus paper claims if set)
+        self.registry = self._build_registry(self.store)
+
+    def _build_registry(self, store: PublicStore) -> ChannelRegistry:
+        reg = ChannelRegistry()
+        if self._phenotype:
+            reg.register(self._phenotype)
+        for ch in build_claim_channels(store):  # all four claim channels read the same combined store
+            reg.register(ch)
+        return reg
+
+    def set_paper_claims(self, claims: dict[str, Claim], version: object, coverage: SourceCoverage | None = None) -> None:
+        """Make claims read from papers part of the ranking, not only of the graph.
+
+        The ranking then sees the HPO claims AND the paper claims, so a disease pair that shares a paper-reported
+        feature can reach "literature-supported lead". Cheap when `version` (the store file's mtime) is unchanged;
+        when it changes, cached connection results are dropped so they are never served stale.
+        """
+        with self._lock:
+            if version == self._paper_version:
+                return
+            store = PublicStore()
+            for c in self.store.claims.values():
+                store.add(c)
+            for c in claims.values():
+                store.add(c)
+            self._rank_store, self._paper_version, self._paper_coverage = store, version, coverage
+            self.registry = self._build_registry(store)
+            self._outcomes.clear()
 
     @classmethod
     def from_raw(cls, raw_dir: Path) -> SearchIndex:
@@ -287,9 +315,11 @@ class SearchIndex:
             per_source.append(SourceCoverage(source="HPO phenotype.hpoa", version=versions.get("hpo/phenotype.hpoa"),
                                              status=SourceStatus.ok, fetched=self.ph.n_diseases,
                                              screened=self.ph.n_diseases - self.ph._unmapped))
+        if self._paper_coverage is not None:
+            per_source.append(self._paper_coverage)
         out = self._outcomes.get(entity_id)
         if out is None:
-            out = run_query(entity_id, self.registry, self.store.claims, dataset_version="pinned-ontologies",
+            out = run_query(entity_id, self.registry, self._rank_store.claims, dataset_version="pinned-ontologies",
                             per_source=per_source, source_versions=versions, context={"max_candidates": RELATED_LIMIT})
             self._outcomes[entity_id] = out
         results = [r.result.model_dump(mode="json") for r in out.ranked if r.result.candidate_id not in self.excluded]
@@ -479,8 +509,12 @@ class SearchIndex:
         if entity_id not in self.r._labels[DISEASE]:
             return []
         self.connections(entity_id)
-        outcome = self._outcomes[entity_id]
-        cards = [evidence_brief(outcome, self.store.claims, label_of=self.r.label_of, audience="science")]
+        with self._lock:  # take one consistent snapshot: the paper claims can be swapped by another request
+            outcome, ranked_claims = self._outcomes.get(entity_id), self._rank_store.claims
+        if outcome is None:
+            self.connections(entity_id)
+            outcome, ranked_claims = self._outcomes[entity_id], self._rank_store.claims
+        cards = [evidence_brief(outcome, ranked_claims, label_of=self.r.label_of, audience="science")]
         assets = self.assets(entity_id)
         claims = {k: Claim.model_validate(v) for k, v in assets.get("claims", {}).items()}
         for a in [x for x in assets.get("assets", []) if "open" in x["ranking_reasons"]][:2]:
@@ -500,7 +534,7 @@ class SearchIndex:
         return self.gard.for_disease(entity_id, self.gard_of.get(entity_id, []))
 
     def claim(self, claim_id: str) -> dict[str, Any] | None:
-        c = self.store.claims.get(claim_id)
+        c = self._rank_store.claims.get(claim_id)
         return c.model_dump(mode="json") if c else self.trials.claims.get(claim_id)
 
     def entity(self, entity_id: str) -> dict[str, Any] | None:

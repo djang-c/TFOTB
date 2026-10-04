@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Literal
 
+from atlas.ranking import register_mechanism_channel
 from atlas.schemas import ChannelComparison
 
 
@@ -12,6 +13,10 @@ class EvidenceChannel(ABC):
     channel_id: str
     version: str
     required_fields: tuple[str, ...] = ()
+    # How the channel may contribute to an evidence category. "mechanism": its supporting claims can make a
+    # mechanistic or literature-supported lead; "phenotype": symptom-level only; "context": reported, never
+    # a category on its own. A new channel declares this; no edit to ranking.py is needed.
+    kind: Literal["mechanism", "phenotype", "context"] = "context"
 
     @abstractmethod
     def retrieve_candidates(self, query_id: str, context: dict[str, Any]) -> list[str]:
@@ -32,6 +37,8 @@ class ChannelRegistry:
         if channel.channel_id in self._channels:
             raise ValueError(f"channel already registered: {channel.channel_id}")
         self._channels[channel.channel_id] = channel
+        if channel.kind == "mechanism":
+            register_mechanism_channel(channel.channel_id)
 
     def channels(self) -> list[EvidenceChannel]:
         return list(self._channels.values())

@@ -31,6 +31,7 @@ def _curie(purl: str) -> str:
 
 class PhenotypeChannel(EvidenceChannel):
     channel_id = "phenotype"
+    kind = "phenotype"
 
     def __init__(
         self,

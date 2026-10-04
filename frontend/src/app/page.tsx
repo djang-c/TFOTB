@@ -201,9 +201,10 @@ function RealExplore({ real, demo }: { real: RealMeta; demo: Featured[] }) {
             <span className="flex-1">
               <span className="font-semibold">See the full journey on placeholder data</span>
               <span className="mt-1 block text-sm text-muted">
-                Evidence from papers is not extracted yet, so the three questions (who shares our
-                characteristics, what already exists, what to do next) are shown on a synthetic
-                example. Every name in it is made up and labelled Synthetic.
+                The three questions (who shares our characteristics, what already exists, what to do
+                next) are shown here on a synthetic example, so the whole journey can be seen. Every
+                name in it is made up and labelled Synthetic. For real diseases, claims read from papers
+                appear in the evidence panel and the graph.
               </span>
             </span>
             <span className="inline-flex items-center gap-1 text-sm text-link">

@@ -159,3 +159,11 @@ def test_a_paper_that_both_found_and_restated_counts_once_as_independent_and_not
 def test_claims_without_a_scope_such_as_database_records_count_as_independent_sources(mk):
     claims = {"CLAIM:d": _scoped(mk, "CLAIM:d", "SOURCE:db", None)}
     assert independent_support_count(["CLAIM:d"], claims) == 1
+
+
+def test_an_ai_hypothesis_never_changes_a_category_or_counts_as_an_independent_study(mk):
+    sym = comp("phenotype", score=0.4, score_definition="IC-sim v0")
+    hyp = mk("CLAIM:h", pred="SHARES_PATHOGENIC_PATHWAY_WITH", status="inference", source_type="ai_generated", lineage="STUDY:hyp")
+    mech = comp("molecular_mechanisms", supporting_claim_ids=["CLAIM:h"])
+    assert categorize([sym, mech], {"CLAIM:h": hyp}) is EvidenceCategory.symptom_level_lead
+    assert independent_support_count(["CLAIM:h"], {"CLAIM:h": hyp}) == 0
