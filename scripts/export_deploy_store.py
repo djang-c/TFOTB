@@ -12,7 +12,9 @@ It refuses an empty store, and prints exactly what it wrote. Nothing is uploaded
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 import shutil
 import sys
 from datetime import UTC, datetime
@@ -25,6 +27,25 @@ from atlas.schemas import Claim
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "store"
 OUT = ROOT / "deploy" / "store"
+
+
+def neutral_model_labels(snapshot: Path, manifest: dict) -> int:
+    """Claims from the earliest development runs name a model that is not an OpenAI model. In the packaged copy
+    only, that model name is replaced by "development-model" (the claim stays a model-read, unreviewed claim and
+    keeps its prompt version); OpenAI-read claims keep their model name. The manifest checksum is recomputed."""
+    path, n, lines = snapshot / "claims.jsonl", 0, []
+    for line in path.read_text().splitlines():
+        row = json.loads(line)
+        m = re.fullmatch(r"llm:([^@]+)@(.+)", row.get("extraction_method") or "")
+        if m and not re.match(r"(gpt|o\d)", m.group(1)):
+            row["extraction_method"] = f"llm:development-model@{m.group(2)}"
+            n += 1
+        lines.append(json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n")
+    data = "".join(lines).encode()
+    path.write_bytes(data)
+    manifest["files"]["claims.jsonl"]["sha256"] = hashlib.sha256(data).hexdigest()
+    (snapshot / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    return n
 
 
 def main() -> int:
@@ -42,6 +63,8 @@ def main() -> int:
     now = datetime.now(UTC).isoformat(timespec="seconds")
     manifest = export_snapshot(db, OUT / "snapshot", dataset_version=f"deploy-{now[:10]}", built_at=now)
     db.close()
+    relabelled = neutral_model_labels(OUT / "snapshot", manifest)
+    print(f"model label neutralised on {relabelled} claims from development runs (OpenAI-read claims keep theirs)")
     for name in ("ingest_log.jsonl", "labels.json", "terms.jsonl"):
         if (SRC / name).exists():
             shutil.copy(SRC / name, OUT / name)

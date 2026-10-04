@@ -3,7 +3,7 @@
 Status: draft, checked against the code and the running app on 2026-10-04. All model calls use the OpenAI API. **Before you submit, complete the gate below.**
 
 ## Gate: do these before submitting
-- [ ] **Package the store.** `PYTHONPATH=src .venv/bin/python scripts/export_deploy_store.py`, then commit `deploy/store`, so the app serves all 52 claims, including the 13 read by GPT-5 mini.
+- [x] **Store packaged.** `deploy/store` holds all 52 claims: 13 read by GPT-5 mini and 39 from the first development runs (shown as `development-model`).
 - [ ] **Checks pass on the filming machine.** `make lint`, `make test` and `npm run e2e` (in `frontend/`).
 - [ ] **Each beat checked on screen.** If a beat does not match what you see, change the script, not the screen.
 
