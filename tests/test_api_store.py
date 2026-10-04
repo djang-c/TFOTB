@@ -58,3 +58,20 @@ def test_missing_store_means_no_claims_and_the_old_behaviour(tmp_path):
 def test_routes_requires_a_target_and_an_unknown_entity_is_404(client):
     assert client.get(f"/api/entities/{A}/routes").status_code == 422
     assert client.get("/api/entities/SYN:nope/routes", params={"to": B}).status_code == 404
+
+
+def test_an_ai_hypothesis_opens_in_the_drawer_route_with_its_origin_fields(tmp_path):
+    path = tmp_path / "atlas.db"
+    db = AtlasDB(path)
+    db.put(make_claim("CLAIM:one", "ACCUMULATES_IN_COMPARTMENT", subject_id=A, object_id="GO:0005764", source_type="published"))
+    db.put(make_claim("CLAIM:two", "ACCUMULATES_IN_COMPARTMENT", subject_id=B, object_id="GO:0005764", source_type="published"))
+    db.put(make_claim(
+        "CLAIM:HYP-1", "SHARES_PATHOGENIC_PATHWAY_WITH", subject_id=A, object_id=B, status="inference",
+        source_type="ai_generated", source_url="atlas:ai-hypothesis", source_span="AI hypothesis: both accumulate in lysosome",
+        derived_from=("CLAIM:one", "CLAIM:two"), extraction_method="llm:m@hypothesis-v1",
+    ))
+    db.close()
+    c = TestClient(create_app(Settings(real_search=False, store_path=path)))
+    claim = c.get("/api/claims/CLAIM:HYP-1").json()["claim"]
+    assert claim["source_type"] == "ai_generated" and claim["derived_from"] == ["CLAIM:one", "CLAIM:two"]
+    assert claim["review_state"] == "unreviewed" and claim["extraction_method"].startswith("llm:")

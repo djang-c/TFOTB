@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     raw_dir: Path = REPO_ROOT / "data" / "raw"
     # Claims written by scripts/ingest_papers.py (read-only here); missing file = no stored claims.
     store_path: Path = REPO_ROOT / "data" / "store" / "atlas.db"
+    # On-demand research (POST /api/research) can spend money, so it is OFF unless a server turns it on.
+    # If a token is set, requests must send it as the X-Research-Token header.
+    research_enabled: bool = False
+    research_token: str = ""
+    research_max_jobs_per_hour: int = 6
+    policy_path: Path = REPO_ROOT / "config" / "ingest_policy.json"
     # Search the pinned ontologies when scripts/fetch_ontologies.py has been run.
     real_search: bool = True
 

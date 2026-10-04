@@ -49,7 +49,7 @@ function meaning(c: ClaimData["claim"]): string[] {
     ai_generated: "A hypothesis written by an AI model, not found in any source. It never counts as evidence.",
   }[c.source_type]];
   // Origin labels (PLAN revision 2026-10-04): the label, not a review gate, is the protection.
-  if (c.source_type === "published" && c.extraction_method?.startsWith("llm")) out.push("Found by AI in this article and checked word for word against it; not reviewed by a human.");
+  if (foundByAi(c)) out.push("Found by AI in this article and checked word for word against it; not reviewed by a human.");
   if (c.predicate === "GENE_ASSOCIATED_WITH_DISEASE") out.push("A link between a gene and a disease is an association; on its own it does not show the gene causes it.");
   if (c.predicate === "ASSET_RELEVANT_TO" && c.subject_id.startsWith("NCT:")) out.push("The study's registry record names this condition. That alone says nothing about what the study found.");
   if (c.status === "computational_prediction") out.push("This is a computer prediction, not an observation.");
@@ -57,6 +57,16 @@ function meaning(c: ClaimData["claim"]): string[] {
   if (["SHARES_PATHOGENIC_PATHWAY_WITH", "CANDIDATE_THERAPY_FOR"].includes(c.predicate)) out.push("Recorded as a hypothesis only, never as a finding.");
   out.push(c.review_state === "reviewed" ? "Reviewed by an expert." : c.review_state === "disputed" ? "Disputed: a reviewer disagrees." : "Not reviewed by an expert.");
   return out;
+}
+
+/** The AI model named in the claim's extraction method ("llm:<model>@<prompt>"), if an AI made it. */
+function aiModel(c: ClaimData["claim"]): string | null {
+  return /^llm:([^@]+)@/.exec(c.extraction_method ?? "")?.[1] ?? null;
+}
+
+/** A claim an AI model read out of a published paper (as opposed to a database record or an AI hypothesis). */
+function foundByAi(c: ClaimData["claim"]): boolean {
+  return c.source_type === "published" && aiModel(c) !== null;
 }
 
 const NumCtx = createContext<{ number: (id: string) => number }>({ number: () => 0 });
@@ -108,6 +118,8 @@ export function ClaimRef({ id, n, className = "" }: { id: string; n?: number; cl
               <span className="mt-1.5 block border-l-2 border-ink/60 pl-2 font-mono text-[11px] break-words">
                 {preview.claim.source_span.length > 180 ? `${preview.claim.source_span.slice(0, 180)}…` : preview.claim.source_span.replaceAll("\t", " · ")}
               </span>
+              {preview.claim.source_type === "ai_generated" && <span className="mt-1.5 block font-semibold text-ev-hypo">AI hypothesis, not a finding.</span>}
+              {foundByAi(preview.claim) && <span className="mt-1.5 block text-muted">Found by AI in the paper. Not checked by a human unless it says so.</span>}
               <span className="mt-1.5 block text-muted">{meaning(preview.claim).at(-1)} Click for the full evidence.</span>
             </>
           ) : (
@@ -168,6 +180,7 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
   const c = d.claim;
   const predicate = PREDICATE_PLAIN[c.predicate] ?? c.predicate.toLowerCase().replaceAll("_", " ");
   const tabular = c.source_span.includes("\t");
+  const hypothesis = c.source_type === "ai_generated";
   return (
     <div className="space-y-5 text-[15px]">
       <p className="text-[17px] leading-snug">
@@ -181,18 +194,22 @@ function ClaimBody({ d, onClose }: { d: ClaimData; onClose: () => void }) {
         <StatusMark status={c.status} />
       </div>
 
+      <OriginNote c={c} />
+
       <section className="rounded-md bg-subtle px-4 py-3 text-sm">
         <h3 className="mb-1 font-semibold">What this means</h3>
         <ul className="list-disc space-y-0.5 pl-4">{meaning(c).map((m) => <li key={m}>{m}</li>)}</ul>
       </section>
 
       <figure className="border-l-2 border-ink/70 pl-4">
-        <figcaption className="mb-1 text-xs text-muted">{tabular ? "The source record, verbatim" : "The source, quoted verbatim"}</figcaption>
+        <figcaption className="mb-1 text-xs text-muted">
+          {hypothesis ? "The AI's reasoning (not a quotation from any paper)" : tabular ? "The source record, verbatim" : "The source, quoted verbatim"}
+        </figcaption>
         <blockquote className={tabular ? "font-mono text-[13px] break-words" : "text-[16px] leading-relaxed"}>
-          {tabular ? c.source_span.split("\t").join("  ·  ") : c.source_span}
+          {hypothesis ? c.source_span.replace(/^AI hypothesis:\s*/, "") : tabular ? c.source_span.split("\t").join("  ·  ") : c.source_span}
         </blockquote>
         <figcaption className="mt-2 text-sm text-muted">
-          <a className="ref" href={c.source_url} target="_blank" rel="noreferrer">Open source</a>
+          {c.source_url.startsWith("http") && <a className="ref" href={c.source_url} target="_blank" rel="noreferrer">{foundByAi(c) ? "Open the article" : "Open source"}</a>}
           {c.published_at && <> · published {c.published_at}</>}
           {c.retrieved_at && <> · retrieved {c.retrieved_at}</>}
         </figcaption>
@@ -261,6 +278,40 @@ const CONTEXT_LABEL: Record<string, string> = {
   listed_conditions: "All listed conditions",
   study_title: "Study",
 };
+
+/** Says plainly who produced a claim when an AI was involved, and what was and was not checked. */
+function OriginNote({ c }: { c: ClaimData["claim"] }) {
+  const model = aiModel(c);
+  const checked = c.review_state === "reviewed" ? "A reviewer has checked it." : "No human has reviewed it.";
+  if (c.source_type === "ai_generated") {
+    return (
+      <section className="rounded-md border border-ev-hypo bg-white px-4 py-3 text-sm" aria-label="Origin: AI hypothesis">
+        <h3 className="mb-1 font-semibold text-ev-hypo">AI hypothesis, not a finding</h3>
+        <p>
+          An AI model{model ? ` (${model})` : ""} proposed this link. No paper states it. {checked}
+        </p>
+        {c.derived_from.length > 0 && (
+          <p className="mt-1">
+            It was built from these stored claims: {c.derived_from.map((id) => <ClaimRef key={id} id={id} />)}
+          </p>
+        )}
+      </section>
+    );
+  }
+  if (foundByAi(c)) {
+    return (
+      <section className="rounded-md border border-rule bg-white px-4 py-3 text-sm" aria-label="Origin: found by AI">
+        <h3 className="mb-1 font-semibold">Found by AI in this article</h3>
+        <p>
+          An AI model ({model}) read the paper and proposed this claim; the sentence below was checked to appear word
+          for word in it. {checked}{" "}
+          <a className="ref" href={c.source_url} target="_blank" rel="noreferrer">Open the article</a>.
+        </p>
+      </section>
+    );
+  }
+  return null;
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
