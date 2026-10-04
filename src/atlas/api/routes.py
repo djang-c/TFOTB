@@ -204,7 +204,9 @@ def entity(request: Request, entity_id: str) -> Any:
     e = _entity(request, entity_id)
     d = _demo(request)
     if e.get("source_type") == "database_record" and not entity_id.startswith("SYN:"):
-        return _wrap_real(entity=e, claims=[], claim_counts_by_predicate={}, reviewed_claims=0, summary=[])
+        ix = _index(request)
+        return _wrap_real(entity=e, claims=[], claim_counts_by_predicate={}, reviewed_claims=0,
+                          summary=ix.summary(entity_id) if ix else [], summary_method="template")
     claims = [c for c in d["claims"] if entity_id in (c["subject_id"], c["object_id"])]
     by_pred: dict[str, int] = {}
     for c in claims:

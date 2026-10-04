@@ -70,6 +70,11 @@ class SearchIndex:
         self.r, self.ph = resolver, phenotype
         self.parents = parents or {}
         self.excluded = {x for x in self.parents if NON_HUMAN_ROOT in self.ancestors(x)}
+        self.children: dict[str, set[str]] = {}
+        for child, ps in self.parents.items():
+            if child not in self.excluded:
+                for p in ps:
+                    self.children.setdefault(p, set()).add(child)
         self.db = sqlite3.connect(":memory:", check_same_thread=False)
         self.db.execute("CREATE VIRTUAL TABLE names USING fts5(norm, entity_id UNINDEXED, type UNINDEXED, "
                         "text UNINDEXED, tier UNINDEXED, tokenize='trigram')")
@@ -223,6 +228,14 @@ class SearchIndex:
                                "source": "HPO genes_to_disease (via OMIM / Orphanet cross-references)",
                                "total": len(genes),
                                "items": [{**g, "label": lab(g["id"]), "type": GENE} for g in genes[:RELATED_LIMIT]]})
+            elif self.subtype_genes(entity_id):
+                sub = self.subtype_genes(entity_id)
+                groups.append({"kind": "subtype_genes", "title": "Genes recorded on more specific forms of this disease",
+                               "source": "HPO genes_to_disease (on the subtypes shown) + MONDO hierarchy",
+                               "total": len(sub),
+                               "items": [{**g, "label": lab(g["id"]), "type": GENE,
+                                          "association": g["association"], "source_id": f"{g['source_id']}, on {lab(g['via'])}"}
+                                         for g in sub[:RELATED_LIMIT]]})
             if self.ph:
                 cands = [c for c in self.ph.retrieve_candidates(entity_id, {"max_candidates": RELATED_LIMIT * 2})
                          if c not in self.excluded][:RELATED_LIMIT]
@@ -257,7 +270,7 @@ class SearchIndex:
         """Q1 for a real disease: the T09 engine over the phenotype channel and gene-level claims.
         Coverage counts are the rows this process loaded, recorded at load time."""
         if entity_id not in self.r._labels[DISEASE]:
-            return {"results": [], "labels": {}, "coverage": None, "gap": None}
+            return {"results": [], "labels": {}, "hierarchy": {}, "coverage": None, "gap": None}
         versions = self.r.versions
         per_source = [
             SourceCoverage(source="HPO genes_to_disease", version=versions.get("hpo/genes_to_disease.txt"),
@@ -274,12 +287,14 @@ class SearchIndex:
             self._outcomes[entity_id] = out
         results = [r.result.model_dump(mode="json") for r in out.ranked if r.result.candidate_id not in self.excluded]
         labels = {r["candidate_id"]: self.r.label_of(r["candidate_id"]) for r in results}
+        hierarchy = {r["candidate_id"]: n for r in results if (n := self.hierarchy_note(entity_id, r["candidate_id"]))}
         for r in results:  # features named in channel matches ("shared HGNC:2074")
             for c in r["comparisons"]:
                 for m in c["context_matches"]:
                     for tok in re.findall(r"\b(?:HGNC|MONDO|HP|GO):\d+", m):
                         labels.setdefault(tok, self.r.label_of(tok) or tok)
-        return {"results": results, "labels": labels, "coverage": out.coverage.model_dump(mode="json"),
+        return {"results": results, "labels": labels, "hierarchy": hierarchy,
+                "coverage": out.coverage.model_dump(mode="json"),
                 "gap": out.gap.model_dump(mode="json") if out.gap else None}
 
     def assets(self, entity_id: str) -> dict[str, Any]:
@@ -348,6 +363,104 @@ class SearchIndex:
         return {"nodes": [{"id": i, "label": self.r.label_of(i), "type": t} for i, t in nodes.items()],
                 "edges": edges, "truncated": omitted > 0, "omitted": omitted}
 
+    def descendants(self, entity_id: str, depth: int = 3) -> set[str]:
+        out: set[str] = set()
+        frontier = {entity_id}
+        for _ in range(depth):
+            frontier = {c for f in frontier for c in self.children.get(f, ())} - out
+            out |= frontier
+        return out
+
+    def hierarchy_note(self, query: str, other: str) -> str | None:
+        """Says when a 'related' disease is simply a subtype or a parent group of the query."""
+        if other in self.descendants(query):
+            return "a more specific form of this disease"
+        if other in self.ancestors(query):
+            return "a broader group that includes this disease"
+        return None
+
+    def subtype_genes(self, entity_id: str, depth: int = 2) -> list[dict[str, str]]:
+        """Genes recorded on more specific forms of a disease (MONDO children, up to `depth` levels):
+        HPO often links the gene to the subtype (NPC1 -> "Niemann-Pick disease, type C1"), not the parent."""
+        found: dict[str, dict[str, str]] = {}
+        frontier = {entity_id}
+        for _ in range(depth):
+            frontier = {c for f in frontier for c in self.children.get(f, ())}
+            for d in sorted(frontier):
+                for g in self.genes_of.get(d, []):
+                    found.setdefault(g["id"], {**g, "via": d})
+        return list(found.values())
+
+    def summary(self, entity_id: str) -> list[dict[str, Any]]:
+        """A plain-language summary written by template from the records shown on the page: nothing
+        added, nothing inferred. Each sentence names its source; gene sentences cite their claims."""
+        etype = next((t for t in ENTITY_TYPES if entity_id in self.r._labels[t]), None)
+        lab = self.r.label_of
+        out: list[dict[str, Any]] = []
+
+        def say(text: str, claim_ids: list[str] | None = None, source: str = "") -> None:
+            out.append({"text": text, "claim_ids": claim_ids or [], "source": source})
+
+        if etype == DISEASE:
+            terms = self.ph._terms.get(entity_id, set()) if self.ph else set()
+            if terms:
+                rare = sorted(self.ph.specific(terms), key=lambda t: (-self.ph.ic(t), t))[:3]
+                names = _join([self.ph.labels.get(t, t).lower() for t in rare])
+                say(f"The Human Phenotype Ontology records {len(terms)} features for it; the most distinctive "
+                    f"(recorded for the fewest other diseases) are {names}.", source="HPO phenotype.hpoa")
+            else:
+                say("No symptoms are recorded for it in the Human Phenotype Ontology files used here.",
+                    source="HPO phenotype.hpoa")
+            genes = self.genes_of.get(entity_id, [])
+            if genes:
+                kinds = {g["association"] for g in genes}
+                what = "a single-gene (Mendelian) link" if kinds == {"mendelian"} else "a recorded link"
+                say(f"It is linked to {'the gene' if len(genes) == 1 else f'{len(genes)} genes:'} "
+                    f"{_join([lab(g['id']) for g in genes[:5]])}{' and others' if len(genes) > 5 else ''} ({what}; "
+                    "a link alone does not show that a gene causes the disease).",
+                    [g["claim_id"] for g in genes[:5]], "HPO genes_to_disease")
+            else:
+                sub = self.subtype_genes(entity_id)
+                if sub:
+                    say("No gene is linked to this entry itself, but genes are recorded on its more specific forms: "
+                        + _join([f"{lab(g['id'])} ({lab(g['via'])})" for g in sub[:4]])
+                        + (" and others" if len(sub) > 4 else "") + ".",
+                        [g["claim_id"] for g in sub[:4]], "HPO genes_to_disease + MONDO hierarchy")
+                else:
+                    say("No gene is linked to it in the HPO gene-disease file.", source="HPO genes_to_disease")
+            kids = self.children.get(entity_id, set())
+            if kids:
+                say(f"It is a broader grouping: MONDO lists {len(kids)} more specific "
+                    f"{'disease' if len(kids) == 1 else 'diseases'} directly under it.", source="MONDO hierarchy")
+            conn = self.connections(entity_id)
+            top = [r for r in conn["results"]
+                   if r["category"] == "symptom-level lead" and r["candidate_id"] not in conn["hierarchy"]][:2]
+            if top:
+                lead = "Apart from its own subtypes, the" if conn["hierarchy"] else "The"
+                say(f"{lead} diseases with the most similar recorded symptoms are "
+                    f"{_join([lab(r['candidate_id']) for r in top])}. "
+                    "Similar symptoms are not a diagnosis and do not show a shared cause.", source="Phenotype channel")
+            a = self.assets(entity_id)
+            if a.get("coverage", {}) and a["coverage"].get("status") == "ok":
+                n = a.get("total", 0)
+                opened = sum(1 for x in a["assets"] if "open" in x["ranking_reasons"])
+                say(f"{n} {'study lists' if n == 1 else 'studies list'} it as a condition on ClinicalTrials.gov"
+                    + (f"; {opened} {'is' if opened == 1 else 'are'} open now." if n else "."), source="ClinicalTrials.gov")
+        elif etype == GENE:
+            ds = self.diseases_of.get(entity_id, [])
+            if ds:
+                say(f"The HPO gene-disease file links {lab(entity_id)} to {len(ds)} "
+                    f"{'disease' if len(ds) == 1 else 'diseases'}: {_join([lab(d['id']) for d in ds[:5]])}"
+                    f"{' and others' if len(ds) > 5 else ''}. A link alone does not show that the gene causes them.",
+                    [d["claim_id"] for d in ds[:5]], "HPO genes_to_disease")
+            else:
+                say(f"No disease is linked to {lab(entity_id)} in the HPO gene-disease file.", source="HPO genes_to_disease")
+        elif etype == PHENOTYPE and self.ph:
+            n = len(set(self.ph._by_term.get(entity_id, ())) - self.excluded)
+            say(f"This symptom term is recorded for {n} {'disease' if n == 1 else 'diseases'} in the Human Phenotype "
+                "Ontology, counting more specific forms of it.", source="HPO phenotype.hpoa")
+        return out
+
     def actions(self, entity_id: str) -> list[dict[str, Any]]:
         """Q3 for a real disease: T10 template cards over the real Q1/Q2 facts (no LLM, no invented
         content). Evidence brief always; asset-reuse cards for up to two open studies. No outreach
@@ -393,3 +506,7 @@ def _word_closeness(query_words: list[str], name_words: list[str]) -> float:
     if not name_words:
         return 0.0
     return min(max(SequenceMatcher(None, w, n).ratio() for n in name_words) for w in query_words)
+
+
+def _join(items: list[str]) -> str:
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1] if items else ""

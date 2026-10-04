@@ -42,3 +42,18 @@ def test_graph_marks_computed_links_as_unsourced_and_gene_links_as_claims():
     for e in ix.graph("MONDO:9000001")["edges"]:
         if e["predicate"] == "SIMILAR_SYMPTOMS":
             assert e["claim_id"] is None and e["status"] == "computational_prediction"
+
+
+def test_summary_points_to_genes_on_subtypes_instead_of_saying_none():
+    r = Resolver()
+    r.add(DISEASE, "MONDO:9000010", "Parent disease", [])
+    r.add(DISEASE, "MONDO:9000011", "Parent disease, type 1", [], ["OMIM:900011"])
+    r.add(GENE, "HGNC:900011", "PDG1", [])
+    rows = [{"gene_symbol": "PDG1", "association_type": "MENDELIAN", "disease_id": "OMIM:900011"}]
+    ix = SearchIndex(r, None, rows, {"MONDO:9000011": {"MONDO:9000010"}})
+    ix.trials = TrialsSource(fetch=lambda url: {"studies": []})
+    text = " ".join(x["text"] for x in ix.summary("MONDO:9000010"))
+    assert "No gene is linked to it" not in text
+    assert "PDG1 (Parent disease, type 1)" in text and "broader grouping" in text
+    assert ix.hierarchy_note("MONDO:9000010", "MONDO:9000011") == "a more specific form of this disease"
+    assert ix.hierarchy_note("MONDO:9000011", "MONDO:9000010") == "a broader group that includes this disease"

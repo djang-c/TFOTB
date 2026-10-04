@@ -244,8 +244,8 @@ export const api = {
   related: (id: string) => get<Related>(`/entities/${enc(id)}/related`),
   entities: () => get<{ items: Entity[] }>("/entities"),
   entity: (id: string) => get<{ entity: Entity; claims: Claim[]; claim_counts_by_predicate: Record<string, number>;
-    reviewed_claims: number; summary: { text: string; claim_ids: string[] }[] }>(`/entities/${enc(id)}`),
-  connections: (id: string) => get<{ results: ConnectionResult[]; coverage: CoverageManifest | null; labels?: Record<string, string> }>(`/entities/${enc(id)}/connections`),
+    reviewed_claims: number; summary: { text: string; claim_ids: string[]; source?: string }[]; summary_method?: string }>(`/entities/${enc(id)}`),
+  connections: (id: string) => get<{ results: ConnectionResult[]; coverage: CoverageManifest | null; labels?: Record<string, string>; hierarchy?: Record<string, string> }>(`/entities/${enc(id)}/connections`),
   assets: (id: string) => get<{ assets: AssetResult[]; coverage?: SourceCoverage | null; total?: number | null; attribution?: string | null; modifications?: string | null }>(`/entities/${enc(id)}/assets`),
   graph: (id: string) => get<GraphData>(`/entities/${enc(id)}/graph`),
   gap: (id: string) => get<{ gap: GapResult | null; coverage: CoverageManifest | null }>(`/entities/${enc(id)}/gap`),

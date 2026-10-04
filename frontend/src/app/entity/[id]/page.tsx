@@ -91,6 +91,12 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
         {(synthetic || ent.summary.length > 0) && (
           <Section id="summary" title="Summary">
             <Summary sentences={ent.summary} attributes={e.attributes} />
+            {ent.summary_method === "template" && (
+              <p className="mt-2 text-xs text-muted">
+                Written automatically from the records on this page; nothing is added or inferred. Sources:{" "}
+                {[...new Set(ent.summary.map((x) => x.source).filter(Boolean))].join(" · ")}.
+              </p>
+            )}
           </Section>
         )}
 
@@ -132,7 +138,7 @@ export default async function EntityPage(props: PageProps<"/entity/[id]">) {
               <Reveal items={conn.results} first={5} noun="connections"
                 render={(rs) => (
                   <ol className="divide-y divide-rule rounded-lg border border-rule">
-                    {rs.map((r) => <ConnectionRow key={r.candidate_id} r={{ ...r, comparisons: r.comparisons.filter((c) => !silent.includes(c.channel_id)) }} label={labels[r.candidate_id] ?? r.candidate_id} labels={labels} />)}
+                    {rs.map((r) => <ConnectionRow key={r.candidate_id} r={{ ...r, comparisons: r.comparisons.filter((c) => !silent.includes(c.channel_id)) }} label={labels[r.candidate_id] ?? r.candidate_id} labels={labels} note={conn.hierarchy?.[r.candidate_id]} />)}
                   </ol>
                 )} />
               </>
@@ -224,7 +230,7 @@ function Summary({ sentences, attributes }: { sentences: { text: string; claim_i
     return <p className="text-muted">No plain-language summary is drafted for this entry. {missing}</p>;
   }
   return (
-    <p className="max-w-[68ch] text-[18px] leading-relaxed">
+    <p className="max-w-[68ch] text-[17px] leading-relaxed">
       {sentences.map((s, i) => (
         <span key={i}>
           {s.text}
@@ -235,11 +241,12 @@ function Summary({ sentences, attributes }: { sentences: { text: string; claim_i
   );
 }
 
-function ConnectionRow({ r, label, labels }: { r: ConnectionResult; label: string; labels: Record<string, string> }) {
+function ConnectionRow({ r, label, labels, note }: { r: ConnectionResult; label: string; labels: Record<string, string>; note?: string }) {
   return (
     <li className="grid gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div>
         <Link href={`/entity/${enc(r.candidate_id)}`} className="font-semibold hover:text-link hover:underline hover:underline-offset-2">{label}</Link>
+        {note && <p className="text-xs text-muted">{note[0].toUpperCase() + note.slice(1)}</p>}
         <div className="mt-1"><CategoryPill category={r.category} /></div>
         {r.compatibility_flags.map((f) => (
           <p key={f} className={`mt-2 text-sm ${f.startsWith("Opposite") || f.startsWith("symptoms") ? "font-medium text-ev-conflict" : "text-muted"}`}>
