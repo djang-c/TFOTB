@@ -33,7 +33,7 @@ Demo disease: CLN3 disease (*neuronal ceroid lipofuscinosis 3*, MONDO:0008767). 
 - Don't call a replayed or recorded run live.
 - Don't say the lookup "researched" a new term. It checked the term against two public sources and listed papers; no claim was read from them.
 - Don't say every claim was read by GPT. Each claim's drawer names the model that read it; show a GPT-5 mini claim if you show the model.
-- Don't claim a measured 10x speed-up. The **10× case** page is arithmetic on stated assumptions (11.5× for a group waiting on a shared robot, 6.2× for a lab with its own). Say that, not a result.
+- Don't claim a measured 10x speed-up. The **10× case** page is Maria's journey run live plus editable assumptions: about 22× on the starting values (30 working days to 11 working hours), about 7× if checking sources takes 3× as long. Say that, not a result.. Say that, not a result.
 - Don't present a name-only collaborator match as the same person.
 
 ## Pre-flight checklist

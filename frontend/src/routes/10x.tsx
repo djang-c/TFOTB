@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Moon } from "lucide-react";
 import { useState } from "react";
+import { MariaJourneyLive, PersonaTable } from "@/components/MariaJourney";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import {
@@ -182,55 +183,55 @@ function TenxPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-10 sm:px-8">
       <header className="border-b border-border pb-8">
-        <p className="section-kicker">10× case · from a lead to a decision-ready result</p>
+        <p className="section-kicker">10× case · Maria, Devon, Priya and Dr. Osei</p>
         <h1 className="mt-2 text-3xl font-semibold">
-          Could this get a rare-disease lead to its first real result 10× faster?
+          How much faster does Maria get from her disease to a sourced proposal for a partner?
         </h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-          The answer depends on how slow the manual route is, so this page shows the arithmetic and
-          lets you change every assumption. Nothing here is a measured result. The milestone is not
-          a treatment or a trial: it is a sourced evidence brief for a lead, followed by a
-          quality-checked dose-response for it.
+          The challenge brief asks for one meaningful milestone, the typical timeline against our
+          route, and the assumptions behind a 10× claim. The typical way is what the brief describes
+          for each person: assembling everything from scratch, one disease at a time. Our route is
+          this product. Every time below is an editable assumption unless it says it comes from the
+          brief, and none is measured on real people yet.
         </p>
       </header>
 
-      <section aria-labelledby="route" className="mt-8">
-        <h2 id="route" className="text-xl font-semibold">
-          The two routes
+      <section aria-labelledby="live" className="mt-8">
+        <h2 id="live" className="text-xl font-semibold">
+          Maria's journey, run for real
         </h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-5">
-            <p className="section-kicker">Today, by hand</p>
-            <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-6">
-              <li>Search papers and databases, reconcile names, write the brief.</li>
-              <li>Define the experiment.</li>
-              <li>
-                Run, read, analyse, decide one change, book the robot again. Repeat until the plate
-                passes.
-              </li>
-              <li>Review the result.</li>
-            </ol>
-          </div>
-          <div className="rounded-lg border border-primary/40 bg-primary/5 p-5">
-            <p className="section-kicker">With TFOTB</p>
-            <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-6">
-              <li>
-                <Link to="/" className="text-primary underline-offset-2 hover:underline">
-                  The dossier
-                </Link>{" "}
-                assembles the connection with a source behind every statement. A person checks them.
-              </li>
-              <li>The researcher defines the experiment, with limits, pass criteria and rules.</li>
-              <li>
-                <Link to="/simulation" className="text-primary underline-offset-2 hover:underline">
-                  The loop
-                </Link>{" "}
-                runs overnight, scores each run, and changes only what the rules allow.
-              </li>
-              <li>A person reviews the result in the morning.</li>
-            </ol>
-          </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The brief's three questions plus the next step, answered by this product for CLN3 disease,
+          our seed disease.
+        </p>
+        <div className="mt-4">
+          <MariaJourneyLive />
         </div>
+      </section>
+
+      <section aria-labelledby="people" className="mt-10">
+        <h2 id="people" className="text-xl font-semibold">
+          The typical way against TFOTB, for each person in the brief
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The product answers in under a second. What is left is a person checking the sources, so
+          that is the time on the TFOTB side. Change any number.
+        </p>
+        <div className="mt-4">
+          <PersonaTable />
+        </div>
+      </section>
+
+      <section aria-labelledby="after" className="mt-14 border-t border-border pt-8">
+        <p className="section-kicker">Stretch goal · propose an experiment</p>
+        <h2 id="after" className="mt-2 text-2xl font-semibold">
+          After the proposal: testing the lead in the lab
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
+          Once Maria has a partner and a lead, the next milestone is a first quality-checked
+          dose-response. This part compares a manual run-by-run route with the overnight loop on the
+          Simulation page. It is a separate model with its own assumptions.
+        </p>
       </section>
 
       <section

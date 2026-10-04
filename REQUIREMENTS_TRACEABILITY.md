@@ -16,7 +16,7 @@ Evidence labels: **[A]** [E] = audit agent reports in `docs/audit/raw/` (A deliv
 | D4 | One-minute walkthrough | `docs/DEMO_SCRIPT.md` (draft, not recorded) | MISSING (script only) |
 | D5 | One complete journey disease -> connection -> asset -> collaborator -> action | See section 2 | PARTIAL: every step returns real data via the API [run]; collaborator step is author-based and name-matched; UI UNVERIFIED |
 | D6 | Honest "no supported route" with coverage and missing evidence | `connections._gap`, `graph.find_paths` gap; tests `test_acceptance.py`, `test_graph.py`; real gap observed for MONDO:0002561 [run] | WORKING |
-| D7 | 10x milestone with baseline, route and assumptions | `docs/PLAN.md` section only | PARTIAL: `/10x` page (milestone chosen, manual vs overnight route, editable assumptions, break-even; `frontend/src/lib/tenx.ts`, tested). Nothing measured. |
+| D7 | 10x milestone with baseline, route and assumptions | `docs/PLAN.md` section only | PARTIAL: `/10x` page (Maria's milestone, typical way vs TFOTB for the brief's four people, editable assumptions, stress test; `frontend/src/lib/journey.ts`, tested). Nothing measured on real people. |
 | D8 | Actual OpenAI model use (track prizes) | `src/atlas/llm/openai_client.py`, `tests/test_openai_client.py`; live runs with GPT-5 mini (extraction) and GPT-5 (hypotheses, experiment review). Each claim's `extraction_method` names its model: 13 by GPT-5 mini so far; claims from the first development runs keep their own model until `scripts/reread_with_openai.sh` is run. | WORKING (live) |
 
 ## 2. The journey, traced (from the API after the fixes) [run]
@@ -57,7 +57,7 @@ Evidence labels: **[A]** [E] = audit agent reports in `docs/audit/raw/` (A deliv
 | Graph quality | claim-edge graph, routes, neighbourhood, mechanism clusters; no counterexamples on real data; similarity unvalidated | PARTIAL |
 | Evidence integrity | quote + entity + negation + species checks; origin labels; independent vs background; audit sample found 26% of an earlier store defective, checks tightened, not yet re-sampled | PARTIAL (strong design; empirical error rate after the fix UNVERIFIED) |
 | Patient progress | journey reaches studies, patient groups, researchers and a brief | PARTIAL (no sourced partner proposal beyond the brief) |
-| 10x impact | `/10x` page: milestone, two routes, assumptions, what must be validated | PARTIAL (model, not measured) |
+| 10x impact | `/10x` page: Maria's journey run live, four people, assumptions, stress test, what must be validated | PARTIAL (model, not measured) |
 | Ambition and product craft | UI exists as source; not built or viewed in the audit | UNVERIFIED |
 
 ## 5. Owner's end-goal capabilities

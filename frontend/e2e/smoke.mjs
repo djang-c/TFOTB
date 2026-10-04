@@ -243,10 +243,16 @@ try {
 
   // 8. Simulation: the researcher's experiment, the robot plan against real limits, the closed loop
   await page.goto(`${BASE}/10x`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: /Run Maria/ }).click();
+  await page.getByText("Open it on the dossier").first().waitFor({ timeout: 15000 });
   const tenx = await text("main");
   check(
-    "10x: states the speedup, what 10x needs, and that nothing is measured",
-    /\d+(\.\d)?×/.test(tenx) && /What 10× needs/.test(tenx) && /No measured speedup/.test(tenx),
+    "10x: Maria's journey runs live, the four people appear, and nothing is claimed as measured",
+    /\d+(\.\d)?×/.test(tenx) &&
+      /Maria/i.test(tenx) &&
+      /Priya/i.test(tenx) &&
+      /Dr\. Osei/i.test(tenx) &&
+      /No measured speedup/i.test(tenx),
   );
   await shot("07z-10x");
   await page.goto(`${BASE}/simulation`, { waitUntil: "networkidle" });

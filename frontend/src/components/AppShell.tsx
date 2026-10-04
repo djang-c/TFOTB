@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { EvidenceDrawerProvider } from "@/components/EvidenceDrawer";
 import { useFocusId } from "@/lib/focus";
+import { HERO_STYLE } from "@/lib/heroStyle";
 import { clean } from "@/lib/labels";
 import { isLocalId } from "@/lib/localTerms";
 import { useEntity } from "@/lib/queries";
@@ -34,16 +35,29 @@ export const SHELL_OFFSET = "6.25rem";
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <EvidenceDrawerProvider>
-      <div className="min-h-screen bg-background text-foreground">
-        <TopBar />
-        <ApiBanner />
-        <main>{children}</main>
-        <footer className="border-t border-border px-5 py-5 text-center text-[11px] leading-5 text-muted-foreground">
-          Research support only. Not a clinical system: no diagnosis, dosing, eligibility or
-          treatment advice. Nothing shown has been reviewed by an expert unless it says so.
-        </footer>
+      <div className="relative min-h-screen bg-background text-foreground">
+        {HERO_STYLE === "flow" && <div className="ambient-wash" aria-hidden="true" />}
+        <div className="relative z-10">
+          <TopBar />
+          <ApiBanner />
+          <Main>{children}</Main>
+          <footer className="border-t border-border px-5 py-5 text-center text-[11px] leading-5 text-muted-foreground">
+            Research support only. Not a clinical system: no diagnosis, dosing, eligibility or
+            treatment advice. Nothing shown has been reviewed by an expert unless it says so.
+          </footer>
+        </div>
       </div>
     </EvidenceDrawerProvider>
+  );
+}
+
+/** Fades each page in when the route changes, so moving between pages does not jump. */
+function Main({ children }: { children: ReactNode }) {
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  return (
+    <main key={path} className={HERO_STYLE === "flow" ? "page-in" : undefined}>
+      {children}
+    </main>
   );
 }
 
