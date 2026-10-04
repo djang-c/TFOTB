@@ -8,9 +8,9 @@ Seed cluster: CLN3 disease and Niemann-Pick disease type C (NPC). Seed paper: PM
 | Time | Show | Say |
 |---|---|---|
 | 0:00 | Home page, type "CLN3", pick "neuronal ceroid lipofuscinosis 3" | "A family hears a rare diagnosis and asks: is anyone working on something related?" |
-| 0:08 | The dossier page opens on **Related diseases**: the Niemann-Pick type C row, "Show route" | "TFOTB lists related diseases and labels how strong the evidence is. Niemann-Pick type C is a literature-supported lead: both diseases store cholesterol in the lysosome, according to published papers. The route says 'shared feature, not a causal step'." |
+| 0:08 | The dossier: **Related diseases**, the Niemann-Pick type C row, "Show route"; then **Clusters** in the left bar ("Share an observed mechanism: lysosome (cholesterol)") | "TFOTB lists related diseases and labels how strong the evidence is. Niemann-Pick type C is a literature-supported lead: both diseases store cholesterol in the lysosome, according to published papers. The route says 'shared feature, not a causal step'." |
 | 0:22 | Click a citation chip to open the evidence drawer | "Every line opens its evidence: the exact sentence, a link to the paper's DOI, and who found it. Here an AI read the article. No human has reviewed it, and the page says so." |
-| 0:34 | Open Niemann-Pick type C: "Hypotheses and treatment ideas" in the right column | "Treatment ideas are shown, but labelled hypothesis only, never a recommendation, with the passage, the paper and the reasoning." |
+| 0:34 | Open Niemann-Pick type C: "Hypotheses and treatment ideas"; then **Graph** in the left bar, click a node, open a link's evidence | "Treatment ideas are shown, but labelled hypothesis only, never a recommendation, with the passage, the paper and the reasoning." |
 | 0:44 | Search a term nobody has searched (for example "ibuprofen" on a throwaway or reset store), press Enter | "If a term is new, it is checked against NLM MeSH and Europe PMC. A real medical term joins the catalogue with its papers. Anything else stays on this device only." |
 | 0:54 | Simulation page, play the run | "Separately, a simulated robot checks a lab workflow. A pass says nothing about biology, and the page says so." |
 | 0:58 | Footer line | "Research support only. No expert has reviewed these claims." |

@@ -18,7 +18,7 @@ Hackathon submission (Hack-Nation Challenge 05). An evidence-backed rare-disease
 8. **Shows contradictions.** Opposing effect directions on a shared feature produce the *conflicting evidence* category and name both claims. (No real contradiction has been found in the stored papers yet; the behaviour is tested on synthetic claims.)
 9. **Says when it found nothing.** A gap is dated and limited to the indexed evidence. It never says "no connection exists".
 10. **Shows who works on it.** The collaborator view lists authors of the papers behind the stored claims and who also appears on papers about other diseases. Matches are by ORCID where the record has one, otherwise by name only (labelled unverified). It is not a contact route.
-11. **Groups diseases by mechanism.** `/clusters` groups diseases that share an observed mechanism feature (same compartment and substance). It is an organisation of the evidence under a stated rule, not a validated clustering and not a claim of shared treatment.
+11. **Groups diseases around a search.** The Clusters page shows the groups the searched disease belongs to: a shared observed mechanism (same compartment and substance), a shared gene, a direct link from a paper (a hypothesis), and similar symptoms, each with the claims behind it. It is an organisation of the evidence under a stated rule, not a validated clustering and not a claim of shared treatment.
 12. **Simulates a workflow check.** A MuJoCo model checks a proposed plate-preparation sequence for resource and motion failures. A pass says nothing about biology.
 
 ## Architecture

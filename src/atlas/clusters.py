@@ -148,7 +148,9 @@ def groups_for(entity_id: str, results: list[dict[str, Any]], *, label_of=lambda
                 similar.append({**base, "score": round(c["score"], 2), "shared": shared, "claim_ids": refs})
             for m in c["context_matches"]:
                 if c["channel_id"] == "dna_variants" and (g := re.fullmatch(rf"shared ({_ID})", m)):
-                    add("gene", g.group(1), name(g.group(1)), {**base, "claim_ids": refs})
+                    # the gene channel names the claims on both sides in its limitation note, not as support
+                    noted = [x for lim in c.get("limitations", []) if g.group(1) in lim for x in re.findall(r"CLAIM:[\w-]+", lim)]
+                    add("gene", g.group(1), name(g.group(1)), {**base, "claim_ids": refs or list(dict.fromkeys(noted))})
                 elif c["channel_id"] == "molecular_mechanisms":
                     if f := re.fullmatch(rf"shared ({_ID}(?:\[{_ID}\])?)", m):
                         own = (feature_claims or {}).get(f.group(1))

@@ -87,7 +87,7 @@ def test_groups_around_one_entry_name_the_shared_feature_and_keep_the_evidence()
             _cmp("phenotype", ["HP:0000709 Psychosis"], score=0.41),
         ]},
         {"candidate_id": "MONDO:3", "category": "symptom-level lead", "comparisons": [
-            _cmp("dna_variants", ["shared HGNC:2074"], refs=["CLAIM:g"]),
+            {**_cmp("dna_variants", ["shared HGNC:2074"]), "limitations": ["same HGNC:2074 reported on both sides, not variant-level evidence: CLAIM:g1, CLAIM:g2"]},
             _cmp("phenotype", score=0.2),  # below the similarity floor: not a symptom-group member
             _cmp("molecular_mechanisms", ["shared GO:0005764[CHEBI:16113]"], availability="missing"),  # missing never counts
         ]},
@@ -97,6 +97,7 @@ def test_groups_around_one_entry_name_the_shared_feature_and_keep_the_evidence()
         ("mechanism", "lysosome (cholesterol)"), ("gene", "CLN3"), ("direct", "SHARES_PATHOGENIC_PATHWAY_WITH"),
         ("symptoms", "similar recorded symptoms")]
     assert g[0]["members"] == [{"id": "MONDO:2", "label": "B", "category": "literature-supported lead", "claim_ids": ["CLAIM:a"]}]
+    assert g[1]["members"][0]["claim_ids"] == ["CLAIM:g1", "CLAIM:g2"]  # gene membership cites the claims on both sides
     assert g[2]["members"][0]["claim_ids"] == ["CLAIM:x"]  # a direct link cites the claim that states it, nothing else
     own = groups_for("MONDO:1", results, label_of=lambda i: names.get(i, ""), feature_claims={"GO:0005764[CHEBI:16113]": ["CLAIM:obs"]})
     assert own[0]["members"][0]["claim_ids"] == ["CLAIM:obs"]  # a mechanism group cites only that feature's observed claims
