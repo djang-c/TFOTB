@@ -25,3 +25,5 @@ Legend: DONE-verified (tests pass), PARTIAL, TODO, BLOCKED (needs human/science)
 Deviation from PLAN: `simulation_time` is recorded as `simulation_steps` + `simulation_time_note` (kinematic samples, not physical time).
 
 <!-- 2026-10-03: T10 now also has routes in the brief and the simulation_report card; graph.py (T05/T09) built; src/atlas/pipeline.py + scripts/ingest_papers.py ingest papers into the SQLite store. Still open: API/UI wiring for cards and graph, paper discovery, Databricks wrapper, spend cap. -->
+
+<!-- 2026-10-03: T23 graph-linked record built: src/atlas/simulation.py (SimulationRun + one SIMULATES_WORKFLOW_FOR claim, unreviewed computational_prediction; a pass changes no ranking; biology/physical execution must be not_modeled). Not done: persist runs in the DB, API/UI display of the graph link. -->

@@ -87,3 +87,6 @@
 
 ## 2026-10-03 - Licence allow-list removed from the ingest pipeline (owner decision)
 - The owner ruled that this is a hackathon project, not a commercial use, so ingestion accepts any open-access paper. The paper's reported licence is still recorded per run in `data/store/ingest_log.jsonl`; `--only-licence` can restrict if wanted. This supersedes the earlier line in this file that NC/ND papers need an explicit flag. Generated store output stays git-ignored. If the project ever moves beyond the hackathon, the NC/ND and HPO terms need revisiting.
+
+## 2026-10-03 - T23 SimulationRun
+- `src/atlas/simulation.py` restates a recorded simulator report as a `SimulationRun` and links it with one `SIMULATES_WORKFLOW_FOR` claim (subject `SIM:<run>`, object the entity). The claim is `computational_prediction`, `unreviewed`, `source_type=synthetic_fixture` (no engineering source type exists in the shared schema; the specs are generic illustrations; adding one is a schema change for Builder B). `ranking.categorize` already ignores this predicate; a test proves a passing run changes no category or order. Runs are not yet persisted in the SQLite store (that needs a new table in `db.py`, Builder B's file).
