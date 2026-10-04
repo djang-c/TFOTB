@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as R10xRouteImport } from './routes/10x'
 import { Route as ClustersRouteImport } from './routes/clusters'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as SimulationRouteImport } from './routes/simulation'
@@ -19,6 +20,11 @@ import { Route as EntityIdRouteImport } from './routes/entity.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R10xRoute = R10xRouteImport.update({
+  id: '/10x',
+  path: '/10x',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClustersRoute = ClustersRouteImport.update({
@@ -49,6 +55,7 @@ const EntityIdRoute = EntityIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/10x': typeof R10xRoute
   '/clusters': typeof ClustersRoute
   '/explorer': typeof ExplorerRoute
   '/simulation': typeof SimulationRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/10x': typeof R10xRoute
   '/clusters': typeof ClustersRoute
   '/explorer': typeof ExplorerRoute
   '/simulation': typeof SimulationRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/10x': typeof R10xRoute
   '/clusters': typeof ClustersRoute
   '/explorer': typeof ExplorerRoute
   '/simulation': typeof SimulationRoute
@@ -76,6 +85,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/10x'
     | '/clusters'
     | '/explorer'
     | '/simulation'
@@ -84,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/10x'
     | '/clusters'
     | '/explorer'
     | '/simulation'
@@ -92,6 +103,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/10x'
     | '/clusters'
     | '/explorer'
     | '/simulation'
@@ -101,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  R10xRoute: typeof R10xRoute
   ClustersRoute: typeof ClustersRoute
   ExplorerRoute: typeof ExplorerRoute
   SimulationRoute: typeof SimulationRoute
@@ -115,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/10x': {
+      id: '/10x'
+      path: '/10x'
+      fullPath: '/10x'
+      preLoaderRoute: typeof R10xRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clusters': {
@@ -157,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  R10xRoute: R10xRoute,
   ClustersRoute: ClustersRoute,
   ExplorerRoute: ExplorerRoute,
   SimulationRoute: SimulationRoute,

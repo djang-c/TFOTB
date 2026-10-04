@@ -201,8 +201,9 @@ try {
   // 7. The top bar: only Home and Symptoms stand alone; the views of a search appear once something is searched
   const pages = page.getByRole("navigation", { name: "Pages" });
   check(
-    "top bar: only Home, Symptoms and Simulation",
-    (await pages.getByRole("link").allInnerTexts()).join("|") === "Home|Symptoms|Simulation",
+    "top bar: Home, Symptoms, Simulation and the 10× case",
+    (await pages.getByRole("link").allInnerTexts()).join("|") ===
+      "Home|Symptoms|Simulation|10× case",
   );
   check(
     "top bar: no views on the standalone pages",
@@ -241,6 +242,13 @@ try {
   );
 
   // 8. Simulation: the researcher's experiment, the robot plan against real limits, the closed loop
+  await page.goto(`${BASE}/10x`, { waitUntil: "networkidle" });
+  const tenx = await text("main");
+  check(
+    "10x: states the speedup, what 10x needs, and that nothing is measured",
+    /\d+(\.\d)?×/.test(tenx) && /What 10× needs/.test(tenx) && /No measured speedup/.test(tenx),
+  );
+  await shot("07z-10x");
   await page.goto(`${BASE}/simulation`, { waitUntil: "networkidle" });
   await page.evaluate(() => window.localStorage.removeItem("tfotb.experiment.v1"));
   await page.reload({ waitUntil: "networkidle" });

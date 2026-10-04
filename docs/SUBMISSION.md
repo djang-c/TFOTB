@@ -21,6 +21,7 @@ Status: draft, checked against the code and the running app on 2026-10-04. All m
 - **Clusters:** diseases that share one specific thing with the one you searched.
 - **Symptom search:** candidate diseases, shown as research hypotheses, not diagnoses.
 - **Closed-loop experiment planner:** the researcher defines parameters, limits, pass criteria and what to change on failure for an overnight robot run. Plans are checked against real pipetting limits and a MuJoCo motion model. The AI only picks among the changes the researcher allowed.
+- **10× case:** a page next to Simulation that compares the manual route with the overnight loop for one milestone (a sourced evidence brief, then a quality-checked dose-response). It is arithmetic on editable assumptions, each tagged. On the starting values it gives about 6×, and it shows that 10× needs a slow manual turnaround (about 6 days between runs, as in a shared facility). It is a model, not a measurement.
 
 **How we use OpenAI.** Every model call goes through the OpenAI API with strict structured output, and every claim records the model that read it. More credits would let it read the literature for every rare disease instead of one seed cluster, run its paper-finding job weekly, and read each paper twice with two models to catch misreadings.
 
@@ -84,6 +85,8 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
   - Pass criteria come from published assay guidance: Z′ ≥ 0.5 (Zhang 1999), control CV ≤ 20% (NIH Assay Guidance Manual), and enough points on each flat end of the curve (Sebaugh 2011).
   - The AI can only choose among the changes the researcher allowed.
 
+**3b. The 10× case (`/10x`).** Milestone: from a candidate connection to a decision-ready first result, meaning a sourced evidence brief followed by a quality-checked dose-response. By hand: 5 days for the brief, 1 to define the experiment, 4 runs at 3 days each, 0.5 to review = 18.5 working days. With TFOTB: 0.5 to check sources, 1 to define, 1 night for the 4 runs (the loop needs 4 on synthetic readings), 0.5 to review = 3 days. That is 6.2×. 10× needs about 5.9 days between manual runs, and even a free loop is capped at about 9× because people still define, check and review. Every input except the number of runs is an assumption (not measured). To validate: time people on real briefs, run a real plate reader, measure real turnaround in two or three labs.
+
 **4. What was hard, and what comes next**
 - **Contradictions.** Opposing effects on a shared feature produce a "conflicting evidence" label naming both claims. No real contradiction has been found in the stored papers yet, so this has only been tested on synthetic claims.
 - **Coverage.** Only papers that have been read contribute claims. Many diseases have none yet (Fabry disease, for example), and the app says so instead of implying there is no connection.
@@ -110,7 +113,7 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis" or "rea
 | GARD as a source of findings | GARD supplies patient-group listings only (`src/atlas/gard.py`), not claims. |
 | Reads clinical trials | `src/atlas/trials.py` exists, but no API route or page uses it. Listed under future work. |
 | "Confidence score" in the drawer | No stored claim has a score (0 of 39). The app uses evidence labels and avoids combined scores on purpose. |
-| `/search` page, `Graph3D.tsx`, `ActionCardView.tsx`, "View Hypothesis", "Export Spec" | The pages are `/`, `/entity/$id`, `/explorer`, `/clusters`, `/symptoms` and `/simulation`. The files are `KnowledgeGraph.tsx` and `explorer/Cards.tsx`. Exports are dossier Markdown/JSON and Markdown per card. |
+| `/search` page, `Graph3D.tsx`, `ActionCardView.tsx`, "View Hypothesis", "Export Spec" | The pages are `/`, `/entity/$id`, `/explorer`, `/clusters`, `/symptoms`, `/simulation` and `/10x`. The files are `KnowledgeGraph.tsx` and `explorer/Cards.tsx`. Exports are dossier Markdown/JSON and Markdown per card. |
 | Force-directed 3D graph | A shell layout: the searched node in the centre, direct links on the inner shell (`KnowledgeGraph.tsx`, `layout`). |
 | `hypotheses.py` weighs findings by source reliability | `hypotheses.py` makes AI hypotheses that must cite two or more stored claims. Evidence labels and counting independent studies live in `ranking.py`. |
 | Robotics simulation is "future expansion" | Built: a researcher-defined closed loop (`src/atlas/experiment.py`, the `/simulation` page) with the MuJoCo motion check. |

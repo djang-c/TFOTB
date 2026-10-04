@@ -14,6 +14,7 @@ const PAGES = [
   { to: "/", label: "Home" },
   { to: "/symptoms", label: "Symptoms" },
   { to: "/simulation", label: "Simulation" },
+  { to: "/10x", label: "10× case" },
 ] as const;
 
 /** Ways to look at the entry being searched: shown only after a search. */
@@ -27,7 +28,7 @@ const VIEWS = [
 export const SHELL_OFFSET = "6.25rem";
 
 /**
- * Layout: a bar across the top with the standing pages (Home, Symptoms, Simulation) and the search. Once something has been
+ * Layout: a bar across the top with the standing pages (Home, Symptoms, Simulation, 10× case) and the search. Once something has been
  * searched, a second row names it and offers the views of it: Dossier, Graph, Clusters.
  */
 export function AppShell({ children }: { children: ReactNode }) {

@@ -5,6 +5,7 @@ import { lazy, Suspense, useState } from "react";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { Button } from "@/components/ui/button";
 import { api, type EntityType } from "@/lib/api";
+import { HERO_FADE, HERO_STYLE } from "@/lib/heroStyle";
 import { clean, REASON_ORDER, REASON_SHORT } from "@/lib/labels";
 import { useMeta, useStarters } from "@/lib/queries";
 
@@ -53,7 +54,11 @@ function HeroArt() {
       width={1920}
       height={1088}
       onError={() => setMissing(true)}
-      className="absolute left-0 top-1/2 h-auto w-full -translate-y-1/2 object-contain"
+      className={
+        HERO_STYLE === "flow"
+          ? "h-full w-full object-cover object-center dark:opacity-25 dark:invert"
+          : "absolute left-0 top-1/2 h-auto w-full -translate-y-1/2 object-contain"
+      }
       aria-hidden="true"
     />
   );
@@ -124,10 +129,23 @@ function Index() {
   return (
     <div>
       {/* the artwork is clipped in its own layer, so the search dropdown may extend below the hero */}
-      <section className="relative isolate flex min-h-[calc(100svh-64px)] flex-col items-center justify-center border-b border-border px-5 py-20 text-center sm:px-8">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <HeroArt />
-        </div>
+      <section
+        className={`relative isolate flex min-h-[calc(100svh-64px)] flex-col items-center justify-center px-5 py-20 text-center sm:px-8 ${HERO_STYLE === "flow" ? "" : "border-b border-border"}`}
+      >
+        {HERO_STYLE === "flow" ? (
+          // runs 14rem past the hero and fades out on every side, so it flows into the page as you scroll
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+14rem)] overflow-hidden"
+            style={{ maskImage: HERO_FADE, WebkitMaskImage: HERO_FADE }}
+            aria-hidden="true"
+          >
+            <HeroArt />
+          </div>
+        ) : (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+            <HeroArt />
+          </div>
+        )}
         <div
           className="hero-center-wash pointer-events-none absolute inset-0 z-[1]"
           aria-hidden="true"
@@ -188,7 +206,7 @@ function Index() {
         </a>
       </section>
 
-      <section id="explore" className="mx-auto max-w-[1200px] px-5 py-12 sm:px-8">
+      <section id="explore" className="relative z-10 mx-auto max-w-[1200px] px-5 py-12 sm:px-8">
         <div className="grid grid-cols-2 gap-3 rounded-lg border border-border/60 bg-muted/30 p-6 sm:grid-cols-4">
           {metrics.map((m) => (
             <div key={m.label} className="text-center sm:text-left">
