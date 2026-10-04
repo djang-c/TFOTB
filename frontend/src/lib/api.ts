@@ -1,9 +1,10 @@
 // Typed client for the TFOTB API (src/atlas/api). Shapes mirror src/atlas/schemas.py and the routes in
 // src/atlas/api/routes.py. Nothing here is bundled data: every screen reads from the running API.
 
-export const API_BASE = (
-  (import.meta.env["VITE_API_BASE"] as string | undefined) ?? "http://localhost:8000/api"
-).replace(/\/$/, "");
+const rawBase = (import.meta.env["VITE_API_BASE"] as string | undefined)?.trim().replace(/\/$/, "");
+export const API_BASE = rawBase
+  ? (rawBase.endsWith("/api") ? rawBase : `${rawBase}/api`)
+  : "http://localhost:8000/api";
 
 export type EntityType =
   | "disease"

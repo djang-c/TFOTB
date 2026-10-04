@@ -242,6 +242,7 @@ def test_real_jncl_means_cln3_disease_only_in_the_paper_that_defines_it(real_ext
     assert real_extraction.resolve("JNCL", DISEASE, "PMID:37245481").resolved_id == "MONDO:0008767"
 
 
+@pytest.mark.skipif(not (RAW / "go" / "go-basic.json").exists() and not (RAW / "go" / "go.json").exists(), reason="GO/ChEBI not downloaded")
 def test_real_plural_late_endosomes_resolves_by_owner_alias_in_the_extraction_profile_only(real, real_extraction):
     hit = real_extraction.resolve("late endosomes", "compartment")
     assert hit.resolved_id == "GO:0005770" and "owner-approved alias" in hit.method

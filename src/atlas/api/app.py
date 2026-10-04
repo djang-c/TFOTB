@@ -49,8 +49,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(research_router, prefix="/api")
     app.include_router(term_router, prefix="/api")
     app.include_router(experiment_router, prefix="/api")
+    @app.get("/health")
+    async def root_health():
+        return {"status": "ok"}
+
     if settings.frontend_dist and (settings.frontend_dist / "_shell.html").is_file():
         _serve_frontend(app, settings.frontend_dist)
+
     return app
 
 

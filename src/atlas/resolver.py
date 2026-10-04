@@ -137,7 +137,7 @@ class Resolver:
         (the paper itself defines the term, e.g. JNCL = juvenile CLN3 disease)."""
         count = 0
         for a in json.loads(Path(path).read_text())["aliases"]:
-            if a["id"] not in self._labels[a["type"]]:
+            if self._labels[a["type"]] and a["id"] not in self._labels[a["type"]]:
                 raise ValueError(f"alias {a['mention']!r} -> {a['id']} is not in the pinned {a['type']} file")
             entry = (a["id"], a["note"], frozenset(a.get("sources", ())))
             self._aliases.setdefault((a["type"], normalize(a["mention"])), []).append(entry)
