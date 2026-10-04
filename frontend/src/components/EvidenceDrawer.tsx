@@ -46,13 +46,16 @@ function meaning(c: ClaimData["claim"]): string[] {
     published: "Quoted from a published paper.",
     lab_reported: "Reported by a lab; not peer reviewed.",
     synthetic_fixture: "Made-up demo data. Not a real finding.",
+    ai_generated: "A hypothesis written by an AI model, not found in any source. It never counts as evidence.",
   }[c.source_type]];
+  // Origin labels (PLAN revision 2026-10-04): the label, not a review gate, is the protection.
+  if (c.source_type === "published" && c.extraction_method?.startsWith("llm")) out.push("Found by AI in this article and checked word for word against it; not reviewed by a human.");
   if (c.predicate === "GENE_ASSOCIATED_WITH_DISEASE") out.push("A link between a gene and a disease is an association; on its own it does not show the gene causes it.");
   if (c.predicate === "ASSET_RELEVANT_TO" && c.subject_id.startsWith("NCT:")) out.push("The study's registry record names this condition. That alone says nothing about what the study found.");
   if (c.status === "computational_prediction") out.push("This is a computer prediction, not an observation.");
   if (c.status === "inference") out.push("This is an inference, not something directly observed.");
   if (["SHARES_PATHOGENIC_PATHWAY_WITH", "CANDIDATE_THERAPY_FOR"].includes(c.predicate)) out.push("Recorded as a hypothesis only, never as a finding.");
-  out.push(c.review_state === "reviewed" ? "Checked by a reviewer." : c.review_state === "disputed" ? "Disputed: a reviewer disagrees." : "Not yet checked by an expert.");
+  out.push(c.review_state === "reviewed" ? "Reviewed by an expert." : c.review_state === "disputed" ? "Disputed: a reviewer disagrees." : "Not reviewed by an expert.");
   return out;
 }
 
