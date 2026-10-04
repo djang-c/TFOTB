@@ -42,10 +42,14 @@ const text = async (sel) =>
 try {
   // 1. Home reads live numbers from the API
   await page.goto(BASE, { waitUntil: "networkidle" });
-  check(
-    "home: API status shows connected",
-    /Connected to the API/.test(await page.locator("[role=status]").first().innerText()),
-  );
+  // right after an API restart the index is still building; the page says so, then shows connected
+  const connected = await page
+    .locator("[role=status]", { hasText: "Connected to the API" })
+    .first()
+    .waitFor({ timeout: 60000 })
+    .then(() => true)
+    .catch(() => false);
+  check("home: API status shows connected", connected);
   check("home: catalogue tile shows a real count", /\d{2},\d{3}/.test(await text("#explore")));
   await shot("01-home");
 
@@ -236,15 +240,51 @@ try {
     /Search a disease first/.test(await text("main")),
   );
 
-  // 8. Simulation page: a pass and the intended failure, from the API
+  // 8. Simulation: the researcher's experiment, the robot plan against real limits, the closed loop
   await page.goto(`${BASE}/simulation`, { waitUntil: "networkidle" });
-  await page.getByText("Checks passing").waitFor({ timeout: 15000 });
-  check("simulation: the valid run passes", true);
-  await page.getByRole("button", { name: "blocked_path" }).click();
-  await page.getByText(/Run failed \(intended\)/).waitFor({ timeout: 15000 });
-  check("simulation: the blocked_path run fails, as intended", true);
-  await page.getByRole("button", { name: "Play replay" }).click();
-  await shot("07-simulation");
+  await page.evaluate(() => window.localStorage.removeItem("tfotb.experiment.v1"));
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByText("Pass criteria (what result you expect)").waitFor({ timeout: 15000 });
+  check("simulation: the researcher defines parameters, pass criteria and failure rules", true);
+  const steps = page.getByRole("navigation", { name: "Experiment steps" });
+  await steps.getByRole("button", { name: /Robot plan/ }).click();
+  await page.getByText("The robot can run this plan").waitFor({ timeout: 30000 });
+  check(
+    "simulation: the plan is checked against pipette, DMSO, stock, tips and robot motion",
+    /DMSO limit/.test(await text("main")) && /Robot motion \(MuJoCo\)/.test(await text("main")),
+  );
+  await shot("08a-simulation-plan");
+  // a real constraint: 2 uL of DMSO stock in 100 uL is 2%, over the 1% the example cells tolerate
+  await steps.getByRole("button", { name: /Define/ }).click();
+  const transfer = page.locator("tr", { hasText: "Compound transfer" }).locator("input").first();
+  await transfer.fill("2");
+  await steps.getByRole("button", { name: /Robot plan/ }).click();
+  await page.getByText("The robot cannot run this plan").waitFor({ timeout: 30000 });
+  check(
+    "simulation: a plan over the DMSO limit is refused, not adjusted",
+    /final DMSO is 2\.00%/.test(await text("main")),
+  );
+  await steps.getByRole("button", { name: /Define/ }).click();
+  await transfer.fill("1");
+  await steps.getByRole("button", { name: /Run and evaluate/ }).click();
+  await page.getByRole("button", { name: /Run overnight/ }).click();
+  await page
+    .getByRole("navigation", { name: "Experiment steps" })
+    .getByRole("button", { name: /Overnight log \(/ })
+    .waitFor({ timeout: 60000 });
+  const log = await text("main");
+  check(
+    "simulation: the overnight loop ends by the researcher's stop rule",
+    /Done: confirmed/.test(log),
+    log.match(/Done: confirmed[^\n]*/)?.[0] ?? "",
+  );
+  check("simulation: synthetic readings are labelled", /SYNTHETIC/.test(log));
+  check("simulation: the log shows each change the rules made", /Top concentration → /.test(log));
+  await shot("08b-simulation-log");
+  await steps.getByRole("button", { name: /Run and evaluate/ }).click();
+  await page.getByRole("img", { name: "Dose-response curve" }).waitFor({ timeout: 15000 });
+  check("simulation: each run is scored against the criteria with a fitted curve", true);
+  await shot("08c-simulation-run");
 
   // 9. A term the catalogue has never seen and that cannot be verified stays on this device only
   await page.goto(BASE, { waitUntil: "networkidle" });

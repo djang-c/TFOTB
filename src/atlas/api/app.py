@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from atlas import __version__
+from atlas.api.experiment_routes import router as experiment_router
 from atlas.api.jobs import JobManager
 from atlas.api.research_routes import router as research_router
 from atlas.api.routes import router
@@ -45,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(router, prefix="/api")
     app.include_router(research_router, prefix="/api")
     app.include_router(term_router, prefix="/api")
+    app.include_router(experiment_router, prefix="/api")
     return app
 
 

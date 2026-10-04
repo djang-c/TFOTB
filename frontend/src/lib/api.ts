@@ -423,6 +423,169 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const enc = (id: string) => encodeURIComponent(id);
 
+/** POST JSON. A rejected definition comes back as 422 with the reasons; they are passed on in plain words. */
+async function post<T>(path: string, body: unknown): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError(0, "The API could not be reached.");
+  }
+  if (!res.ok) {
+    let msg = `${res.status} on ${path}`;
+    try {
+      const d = (await res.json()) as { detail?: unknown };
+      if (typeof d.detail === "string") msg = d.detail;
+      else if (Array.isArray(d.detail))
+        msg = d.detail
+          .map((x: { msg?: string }) => (x.msg ?? "").replace(/^Value error, /, ""))
+          .filter(Boolean)
+          .join("; ");
+    } catch {
+      /* keep the status line */
+    }
+    throw new ApiError(res.status, msg);
+  }
+  return (await res.json()) as T;
+}
+
+/** A closed-loop experiment as the researcher defines it (atlas.experiment.Definition). */
+export interface ExpParameter {
+  name: string;
+  label: string;
+  unit: string;
+  role: "varied" | "fixed";
+  value: number;
+  min: number;
+  max: number;
+  max_change_factor: number | null;
+}
+export type ExpMetric =
+  | "z_prime"
+  | "signal_to_background"
+  | "cv_vehicle_pct"
+  | "cv_positive_pct"
+  | "fit_r2"
+  | "points_low_plateau"
+  | "points_high_plateau"
+  | "ic50_inside_range";
+export interface ExpCriterion {
+  id: string;
+  metric: ExpMetric;
+  op: ">=" | "<=";
+  threshold: number;
+  severity: "technical" | "assay";
+  why: string;
+}
+export interface ExpRule {
+  id: string;
+  when: string;
+  action: "change" | "rerun" | "stop";
+  parameter: string | null;
+  operation: "multiply" | "add" | "set" | null;
+  amount: number | null;
+  max_uses: number;
+  why: string;
+}
+export interface ExpDefinition {
+  title: string;
+  assay: "dose_response";
+  readout: "luminescence" | "fluorescence" | "absorbance";
+  hypothesis: string;
+  expected: string;
+  parameters: ExpParameter[];
+  instrument: {
+    pipette: string;
+    pipette_min_ul: number;
+    pipette_max_ul: number;
+    tips_available: number;
+    well_max_ul: number;
+  };
+  edge_policy: "buffer_outer_wells" | "use_all_wells";
+  controls_per_type: number;
+  criteria: ExpCriterion[];
+  rules: ExpRule[];
+  passes_needed: number;
+  max_runs: number;
+}
+export interface ExpWell {
+  role: "buffer" | "vehicle" | "positive" | "sample";
+  conc_um?: number;
+  index?: number;
+}
+export interface ExpPlan {
+  values: Record<string, number>;
+  wells: Record<string, ExpWell>;
+  concentrations_um: number[];
+  operations: number;
+  ops: {
+    op: "pick_tip" | "aspirate" | "dispense" | "drop_tip";
+    well?: string;
+    volume_ul?: number;
+  }[];
+  tips: number;
+  dilution_series: { top_tube_um: number; factor: number; steps: number };
+  checks: { check: string; status: "pass" | "fail" | "not_run"; detail: string }[];
+  feasible: boolean;
+  robot: { overall: "pass" | "fail"; path_length_mm: number; steps: number } | null;
+  scope: string;
+}
+export interface ExpChange {
+  rule: string;
+  action: "change" | "rerun";
+  parameter?: string;
+  label?: string;
+  unit?: string;
+  from?: number;
+  to?: number;
+  why: string;
+}
+export interface ExpRun {
+  run: number;
+  values: Record<string, number>;
+  plan: ExpPlan;
+  readings_label: "MEASURED" | "SYNTHETIC";
+  readings?: Record<string, number>;
+  evaluation: {
+    verdict: "pass" | "technical_fail" | "assay_fail" | "plan_fail";
+    failed: string[];
+    metrics: Partial<Record<ExpMetric, number | null>>;
+    fit: { bottom: number; top: number; ic50_um: number; hill: number; r2: number } | null;
+    criteria: {
+      id: string;
+      metric: ExpMetric;
+      value: number | null;
+      op: string;
+      threshold: number;
+      severity: string;
+      pass: boolean;
+      why: string;
+    }[];
+  };
+  decision: {
+    changes: ExpChange[];
+    rejected: { rule: string; reason: string }[];
+    status: "continue" | "done" | "stopped" | "needs_researcher";
+    why: string;
+    decided_by: "rules" | "ai_review";
+    ai: { reasoning: string; model: string; dropped_unoffered: string[]; label: string } | null;
+  };
+  next_values: Record<string, number>;
+  decided_note?: string;
+}
+export interface ExpOvernight {
+  definition_hash: string;
+  runs: ExpRun[];
+  status: ExpRun["decision"]["status"];
+  why: string;
+  label: string;
+  decided_note: string;
+}
+
 export const api = {
   health: () => request<{ status: string }>("/health"),
   ready: () => request<{ ready: boolean; index: string }>("/ready"),
@@ -479,4 +642,16 @@ export const api = {
   relatedDiseases: (id: string) =>
     request<RelatedDiseases>(`/entities/${enc(id)}/related-diseases`),
   simulation: (id: string) => request<SimRun>(`/simulations/${enc(id)}`),
+  experimentExample: () =>
+    request<{ definition: ExpDefinition; note: string }>("/experiments/example"),
+  experimentPlan: (definition: ExpDefinition) => post<ExpPlan>("/experiments/plan", { definition }),
+  experimentStep: (body: {
+    definition: ExpDefinition;
+    history: ExpRun[];
+    readings?: Record<string, number>;
+    synthetic_seed?: number;
+    ai?: boolean;
+  }) => post<ExpRun>("/experiments/step", body),
+  experimentOvernight: (body: { definition: ExpDefinition; seed?: number; ai?: boolean }) =>
+    post<ExpOvernight>("/experiments/overnight", body),
 };
