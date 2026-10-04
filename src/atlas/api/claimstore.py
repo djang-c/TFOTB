@@ -25,8 +25,12 @@ def _load(path: str, mtime_ns: int) -> dict[str, Claim]:  # mtime is part of the
     return {c.claim_id: c for c in claims}
 
 
-def load_claims(path: Path) -> dict[str, Claim]:
+def load_claims(path: Path, *, hide_predicates: frozenset[str] = frozenset()) -> dict[str, Claim]:
+    """Stored claims, minus any predicates the owner chose to hide from display."""
     try:
-        return _load(str(path), path.stat().st_mtime_ns)
+        claims = _load(str(path), path.stat().st_mtime_ns)
     except (OSError, sqlite3.Error):
         return {}
+    if not hide_predicates:
+        return claims
+    return {i: c for i, c in claims.items() if c.predicate not in hide_predicates}

@@ -75,3 +75,10 @@ def test_live_calls_need_both_the_policy_and_a_key(monkeypatch):
     assert live_allowed(on) is False
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     assert live_allowed(on) is True and live_allowed(IngestPolicy()) is False and live_allowed(on, offline=True) is False
+
+
+def test_the_log_records_only_papers_that_were_attempted_not_those_skipped_by_the_cap(tmp_path):
+    s, _ = go(tmp_path, [Found(str(i), "t", "alpha") for i in range(1, 5)], max_papers_per_run=2)
+    assert len(s["papers"]) == 4  # the summary still shows what was skipped
+    log = [json.loads(x) for x in (tmp_path / "store" / "ingest_log.jsonl").read_text().splitlines()]
+    assert [r["source_id"] for r in log] == ["PMID:1", "PMID:2"]

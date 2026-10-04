@@ -160,9 +160,12 @@ def _connection_section(
 ) -> list[str]:
     r = rc.result
     lines = [f"## {n}. {_name(label_of, r.candidate_id)}", "", f"Evidence category: **{r.category.value}**"]
+    background = (
+        f" (also restated as known background in {rc.background_citations} other paper(s))" if rc.background_citations else ""
+    )
     lines.append(
-        f"Direct link: {'yes' if rc.direct else 'no'}; independent studies behind it: {rc.independent_lineages}; "
-        f"reviewed supporting claims: {rc.reviewed_support}."
+        f"Direct link: {'yes' if rc.direct else 'no'}; independent studies behind it: {rc.independent_lineages}"
+        f"{background}; reviewed supporting claims: {rc.reviewed_support}."
     )
     if r.compatibility_flags:
         lines.append(f"Context mismatches: {', '.join(r.compatibility_flags)}.")

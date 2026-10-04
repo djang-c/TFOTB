@@ -21,9 +21,24 @@ BLOCKING_MISMATCHES = frozenset({"effect_direction"})
 CREDIBLE_SOURCES = frozenset({SourceType.published, SourceType.database_record})
 
 
+def _is_background(c: Claim) -> bool:
+    return c.context.get("scope") == "background"
+
+
 def independent_support_count(claim_ids: list[str], claims: dict[str, Claim]) -> int:
-    """Claims sharing a lineage (same experiment) count once."""
-    return len({claims[c].lineage_id for c in claim_ids if c in claims})
+    """Independent studies: lineages with at least one claim that is the study's own finding. Claims
+    sharing a lineage (same experiment) count once. A paper that only cites a statement as already
+    known is not an independent study of it; see `background_support_count`."""
+    return len({claims[c].lineage_id for c in claim_ids if c in claims and not _is_background(claims[c])})
+
+
+def background_support_count(claim_ids: list[str], claims: dict[str, Claim]) -> int:
+    """Papers that restate the claim as background knowledge and do not report it as their own finding.
+    This adds some weight (the statement is widely accepted) but far less than an independent study,
+    and it is shown as its own number, never merged into the independent count."""
+    own = {claims[c].lineage_id for c in claim_ids if c in claims and not _is_background(claims[c])}
+    cited = {claims[c].lineage_id for c in claim_ids if c in claims and _is_background(claims[c])}
+    return len(cited - own)
 
 
 def shared_treatment_inference_allowed(comps: list[ChannelComparison]) -> bool:

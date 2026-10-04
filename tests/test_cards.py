@@ -248,7 +248,7 @@ def test_brief_labels_ai_found_claims_with_their_article_and_ai_hypotheses_with_
     store = shared_store()
     paper = make_claim(
         "CLAIM:p", "ACCUMULATES_IN_COMPARTMENT", subject_id=Q, object_id="GO:0005770", source_type="published",
-        source_url="https://doi.org/10.1000/real", extraction_method="llm:m@extract-v4",
+        source_url="https://doi.org/10.1000/real", extraction_method="llm:m@extract-v5",
     )
     hyp = make_claim(
         "CLAIM:HYP-1", "SHARES_PATHOGENIC_PATHWAY_WITH", subject_id=Q, object_id=A, status="inference",
@@ -262,3 +262,10 @@ def test_brief_labels_ai_found_claims_with_their_article_and_ai_hypotheses_with_
     h = lines["CLAIM:HYP-1"]
     assert "AI hypothesis, not a finding" in h and "built from [^c:CLAIM:q] [^c:CLAIM:a]" in h and "**hypothesis only**" in h
     assert {"CLAIM:q", "CLAIM:a"} <= set(card.claim_ids)
+
+
+def test_brief_shows_background_citations_separately_from_independent_studies():
+    store = shared_store(context={"scope": "new_finding"})
+    store.add(make_claim("CLAIM:bg", "ACCUMULATES_IN_COMPARTMENT", subject_id=A, object_id="GO:0005764", lineage="STUDY:bg", context={"scope": "background"}))
+    body = evidence_brief(outcome(store), store.claims, now=NOW).body_markdown
+    assert "independent studies behind it: 1 (also restated as known background in 1 other paper(s))" in body

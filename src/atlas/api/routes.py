@@ -13,6 +13,7 @@ from fastapi import APIRouter, Body, HTTPException, Request
 from atlas.api.claimstore import load_claims
 from atlas.api.fixtures import load_fixture
 from atlas.graph import find_paths, neighborhood
+from atlas.policy import load_policy
 from atlas.search import SearchIndex
 from atlas.simulation import link_claim, run_from_report
 
@@ -80,8 +81,13 @@ REAL_NOTE = ("Not synthetic: read from pinned public files (MONDO, HGNC, HPO; ve
              "Unreviewed by any expert.")
 
 
+DRUG_PREDICATES = frozenset({"CANDIDATE_THERAPY_FOR"})
+
+
 def _stored_claims(request: Request) -> dict[str, Any]:
-    return load_claims(request.app.state.settings.store_path)
+    s = request.app.state.settings
+    hide = DRUG_PREDICATES if load_policy(s.policy_path).hide_drug_claims else frozenset()
+    return load_claims(s.store_path, hide_predicates=hide)
 
 
 def _label_of(request: Request) -> Any:

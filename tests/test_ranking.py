@@ -120,3 +120,42 @@ def test_a_contradiction_still_beats_literature_support(mk):
     c1 = mk(source_type="published")
     comps = [comp("molecular_mechanisms", supporting_claim_ids=[c1.claim_id], contradicting_claim_ids=["CLAIM:x"])]
     assert categorize(comps, {c1.claim_id: c1}) is EvidenceCategory.conflicting_evidence
+
+
+def _scoped(mk, cid, lineage, scope):
+    return mk(cid, lineage=lineage, context={"scope": scope} if scope else {})
+
+
+def test_background_restatements_are_not_independent_studies(mk):
+    from atlas.ranking import background_support_count
+
+    claims = {
+        "CLAIM:own": _scoped(mk, "CLAIM:own", "STUDY:a", "new_finding"),
+        "CLAIM:bg1": _scoped(mk, "CLAIM:bg1", "STUDY:b", "background"),
+        "CLAIM:bg2": _scoped(mk, "CLAIM:bg2", "STUDY:c", "background"),
+    }
+    ids = list(claims)
+    assert independent_support_count(ids, claims) == 1  # only the paper that found it
+    assert background_support_count(ids, claims) == 2  # two more papers cite it as known
+
+
+def test_one_study_is_enough_for_a_category_and_background_never_becomes_independent(mk):
+    from atlas.ranking import background_support_count
+
+    only_bg = {"CLAIM:x": _scoped(mk, "CLAIM:x", "STUDY:b", "background")}
+    assert independent_support_count(["CLAIM:x"], only_bg) == 0 and background_support_count(["CLAIM:x"], only_bg) == 1
+
+
+def test_a_paper_that_both_found_and_restated_counts_once_as_independent_and_not_as_background(mk):
+    from atlas.ranking import background_support_count
+
+    claims = {
+        "CLAIM:f": _scoped(mk, "CLAIM:f", "STUDY:a", "new_finding"),
+        "CLAIM:r": _scoped(mk, "CLAIM:r", "STUDY:a", "background"),
+    }
+    assert independent_support_count(list(claims), claims) == 1 and background_support_count(list(claims), claims) == 0
+
+
+def test_claims_without_a_scope_such_as_database_records_count_as_independent_sources(mk):
+    claims = {"CLAIM:d": _scoped(mk, "CLAIM:d", "SOURCE:db", None)}
+    assert independent_support_count(["CLAIM:d"], claims) == 1

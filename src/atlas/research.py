@@ -81,6 +81,8 @@ def run_research(
         rows = ledger_rows(report)
         with (store_dir / "ingest_log.jsonl").open("a") as f:
             for row in rows:
+                if row["reason"].startswith("per-run cap"):
+                    continue  # not attempted this run; it stays in the summary but not in the log
                 f.write(json.dumps({"at": now, **row}) + "\n")
         manifest = export_snapshot(db, store_dir / "snapshot", dataset_version=f"local-{now[:10]}", built_at=now)
     finally:

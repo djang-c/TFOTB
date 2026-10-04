@@ -153,3 +153,17 @@ def test_coverage_manifest_is_deterministic_and_uses_recorded_counts():
     assert (ok.fetched, ok.screened) == (6, 3) and failed.status.value == "failed"
     assert out1.gap.failed_sources == ("PMID:2",)
     assert out1.coverage.filters["candidates_considered"] == 1
+
+
+def test_more_papers_restating_it_as_background_orders_after_independent_studies_and_is_shown_separately():
+    store = PublicStore()
+    share(store, "CLAIM:q", Q, lineage="STUDY:q")
+    share(store, "CLAIM:a", A, lineage="STUDY:a", context={"scope": "new_finding"})
+    share(store, "CLAIM:b", B, lineage="STUDY:b", context={"scope": "new_finding"})
+    share(store, "CLAIM:b2", B, lineage="STUDY:b2", context={"scope": "background"})
+    out = run(store)
+    by = {r.result.candidate_id: r for r in out.ranked}
+    # the query's own study counts on every path, so each candidate has 2 independent studies
+    assert (by[A].independent_lineages, by[A].background_citations) == (2, 0)
+    assert (by[B].independent_lineages, by[B].background_citations) == (2, 1)
+    assert [r.result.candidate_id for r in out.ranked] == [B, A]  # background adds a little weight; ID order would put A first

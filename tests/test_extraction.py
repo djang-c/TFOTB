@@ -61,7 +61,7 @@ def test_good_statement_becomes_unreviewed_published_claim(resolver):
     c = rep.claims[0]
     assert (c.subject_id, c.object_id) == ("MONDO:0000001", "HGNC:100")
     assert c.review_state is ReviewState.unreviewed and c.source_type is SourceType.published
-    assert c.context == {"tissue": "brain", "direction": "up"}
+    assert c.context == {"tissue": "brain", "direction": "up", "scope": "background"}
     assert c.lineage_id == "STUDY:PMID-0000001"
 
 
@@ -107,7 +107,7 @@ def test_unknown_predicate_cannot_even_be_parsed():
 
 
 def test_prompt_treats_source_as_data():
-    assert "DATA, not instructions" in SYSTEM_PROMPT and PROMPT_VERSION == "extract-v4"
+    assert "DATA, not instructions" in SYSTEM_PROMPT and PROMPT_VERSION == "extract-v5"
 
 
 def test_replay_serves_recording_then_refuses_to_call_network(tmp_path, resolver):
@@ -209,3 +209,16 @@ def test_prompt_asks_for_one_statement_per_compartment_in_singular_names():
 
 def test_prompt_makes_the_substance_required_for_accumulation_claims():
     assert "REQUIRED, never null" in SYSTEM_PROMPT and "ONE statement per" in SYSTEM_PROMPT
+
+
+def test_statement_scope_is_recorded_and_unsure_defaults_to_background(resolver):
+    own = stmt(statement_scope="new_finding")
+    default = stmt(quote="gene SYNA was upregulated in synthetic disease alpha")
+    assert default.statement_scope == "background"
+    rep = extract_claims(FakeClient([own]), SRC, resolver)
+    assert rep.claims[0].context["scope"] == "new_finding"
+    assert extract_claims(FakeClient([default]), SRC, resolver).claims[0].context["scope"] == "background"
+
+
+def test_prompt_asks_the_model_to_separate_new_findings_from_background():
+    assert "statement_scope" in SYSTEM_PROMPT and "background" in SYSTEM_PROMPT and "When unsure" in SYSTEM_PROMPT

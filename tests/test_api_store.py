@@ -75,3 +75,24 @@ def test_an_ai_hypothesis_opens_in_the_drawer_route_with_its_origin_fields(tmp_p
     claim = c.get("/api/claims/CLAIM:HYP-1").json()["claim"]
     assert claim["source_type"] == "ai_generated" and claim["derived_from"] == ["CLAIM:one", "CLAIM:two"]
     assert claim["review_state"] == "unreviewed" and claim["extraction_method"].startswith("llm:")
+
+
+def test_drug_claims_can_be_hidden_by_policy_and_are_shown_otherwise(tmp_path):
+    import json
+
+    path = tmp_path / "atlas.db"
+    db = AtlasDB(path)
+    db.put(make_claim("CLAIM:drug", "CANDIDATE_THERAPY_FOR", subject_id="CHEBI:1", object_id=A, status="inference", source_type="published"))
+    db.put(make_claim("CLAIM:gene", "GENE_ASSOCIATED_WITH_DISEASE", subject_id=G, object_id=A, source_type="published"))
+    db.close()
+    show, hide = tmp_path / "show.json", tmp_path / "hide.json"
+    show.write_text(json.dumps({"hide_drug_claims": False}))
+    hide.write_text(json.dumps({"hide_drug_claims": True}))
+
+    def ids(policy):
+        c = TestClient(create_app(Settings(real_search=False, store_path=path, policy_path=policy)))
+        body = c.get(f"/api/entities/{A}/graph").json()
+        return {e["claim_id"] for e in body["edges"]}, c.get("/api/claims/CLAIM:drug").status_code
+
+    assert ids(show) == ({"CLAIM:drug", "CLAIM:gene"}, 200)
+    assert ids(hide) == ({"CLAIM:gene"}, 404)

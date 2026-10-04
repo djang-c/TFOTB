@@ -29,7 +29,7 @@ from atlas.schemas import (
     SourceType,
 )
 
-PROMPT_VERSION = "extract-v4"
+PROMPT_VERSION = "extract-v5"
 NONE_FITS = "NONE_FITS"
 EntityKind = Literal["disease", "gene", "phenotype", "compartment", "chemical"]
 # Required entity types at each end. Enforced in code (a wrong-way or wrong-type statement is
@@ -61,7 +61,11 @@ SYSTEM_PROMPT = (
     "statement. If the text names two "
     "or more compartments together (for example 'late endosomes/lysosomes'), give ONE statement per "
     "compartment, each with the singular standard name ('late endosome', 'lysosome') and the same "
-    "verbatim quote; do not merge them into one statement."
+    "verbatim quote; do not merge them into one statement.\n"
+    "For EVERY statement set statement_scope: 'new_finding' if this paper reports the statement as its own "
+    "result (we found, we show, our data), or 'background' if the paper cites it as already known (previous "
+    "studies showed, it is established that, reviews of the literature). A review article's statements are "
+    "'background' unless the review reports a new analysis of its own. When unsure, choose 'background'."
 )
 
 
@@ -70,7 +74,8 @@ class ExtractedStatement(BaseModel):
     subject_type: EntityKind
     object_mention: str
     object_type: EntityKind
-    substance_mention: str | None = None  # the chemical that accumulates (ACCUMULATES_IN_COMPARTMENT)
+    substance_mention: str | None = None
+    statement_scope: Literal["new_finding", "background"] = "background"  # unsure counts as background  # the chemical that accumulates (ACCUMULATES_IN_COMPARTMENT)
     predicate: Predicate
     quote: str = Field(min_length=1)
     organism: str | None = None
@@ -169,6 +174,7 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
                     k: v
                     for k, v in (
                         ("organism", s.organism), ("tissue", s.tissue), ("direction", s.direction), ("substance", substance),
+                        ("scope", s.statement_scope),
                     )
                     if v
                 },

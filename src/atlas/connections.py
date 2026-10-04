@@ -3,7 +3,8 @@
 Rules (PLAN, docs/implementation/05 section 6):
 - Results are grouped by evidence category; the category comes from `ranking.categorize`.
 - Within a category the order uses evidence tie-breakers first (direct link > indirect, reviewed
-  support > unreviewed, fewer context mismatches, more independent lineages). Only when all of those
+  support > unreviewed, fewer context mismatches, more independent lineages, then more papers that
+  restate it as background). Only when all of those
   tie does the phenotype channel's similarity order the remainder (higher first), then ID. That number
   is a display-only similarity, never a probability, and never moves a result across categories or
   past any evidence tie-breaker. Owner-approved 2026-10-03; no combined score exists.
@@ -19,7 +20,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from atlas.channels.base import ChannelRegistry
-from atlas.ranking import build_result, independent_support_count
+from atlas.ranking import background_support_count, build_result, independent_support_count
 from atlas.schemas import (
     Availability,
     ChannelCoverage,
@@ -44,6 +45,7 @@ class RankedConnection:
     direct: bool
     reviewed_support: int
     independent_lineages: int
+    background_citations: int = 0  # other papers that restate it as known background; shown separately
 
 
 @dataclass(frozen=True)
@@ -95,6 +97,7 @@ def _rank_key(r: RankedConnection) -> tuple:
         -r.reviewed_support,
         len(r.result.compatibility_flags),
         -r.independent_lineages,
+        -r.background_citations,
         -_phenotype_similarity(r),
         r.result.candidate_id,
     )
@@ -149,7 +152,10 @@ def run_query(
         res = build_result(query_id, cand, comps, claims, coverage_manifest_id=manifest.manifest_id)
         reviewed = sum(1 for i in res.path_claim_ids if i in claims and claims[i].review_state is ReviewState.reviewed)
         ranked.append(
-            RankedConnection(res, _is_direct(res, claims), reviewed, independent_support_count(res.path_claim_ids, claims))
+            RankedConnection(
+                res, _is_direct(res, claims), reviewed, independent_support_count(res.path_claim_ids, claims),
+                background_support_count(res.path_claim_ids, claims),
+            )
         )
     ranked.sort(key=_rank_key)
     return QueryOutcome(query_id, ranked, manifest, _gap(query_id, ranked, manifest, now))
