@@ -163,6 +163,7 @@ def extract_claims(client: LLMClient, source: SourceText, resolver: Resolver) ->
                     else ClaimStatus.reported_observation
                 ),
                 review_state=ReviewState.unreviewed,
+                extraction_method=f"llm:{result.model}@{result.prompt_version}",
                 lineage_id=f"STUDY:{source.source_id.replace(':', '-')}",
                 context={
                     k: v

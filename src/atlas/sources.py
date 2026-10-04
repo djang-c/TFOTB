@@ -35,6 +35,15 @@ class FullText:
     license: str
     text: str
     url: str  # the API URL the text came from
+    doi: str = ""
+    journal: str = ""
+    year: str = ""
+    pub_types: tuple[str, ...] = ()
+
+    @property
+    def citation_url(self) -> str:
+        """The link a reader can follow to the paper itself (DOI if the record has one)."""
+        return f"https://doi.org/{self.doi}" if self.doi else f"https://europepmc.org/article/MED/{self.pmid}"
 
 
 def _get(url: str) -> bytes:
@@ -80,6 +89,31 @@ def _paragraphs(root: ET.Element) -> list[str]:
     return out
 
 
+# Owner decision 2026-10-04: only credible published sources. A record must come from PubMed (so not a
+# preprint), be a journal article in a named journal, and not be a retraction, editorial or similar.
+# This checks the record's own metadata; peer review itself is not independently verified here.
+_ARTICLE_TYPES = {"journal article", "research-article", "review-article", "review"}
+_REJECT_TYPES = {
+    "retracted publication", "retraction of publication", "preprint", "editorial", "comment", "letter",
+    "news", "published erratum", "expression of concern", "withdrawn publication", "interview",
+}
+
+
+def credibility_problem(rec: dict) -> str | None:
+    """Why a Europe PMC record is not an acceptable source, or None if it is."""
+    if rec.get("source") != "MED":
+        return f"not a PubMed-indexed article (source {rec.get('source')!r})"
+    types = {t.lower() for t in (rec.get("pubTypeList") or {}).get("pubType", [])}
+    bad = sorted(types & _REJECT_TYPES)
+    if bad:
+        return f"publication type excluded: {', '.join(bad)}"
+    if not types & _ARTICLE_TYPES:
+        return "not recorded as a journal article"
+    if not (rec.get("journalInfo", {}).get("journal", {}).get("title") or "").strip():
+        return "no journal recorded"
+    return None
+
+
 def fetch_full_text(pmid: str, fetch: Fetch = _get) -> FullText:
     """Open-access full text for a PMID, or SourceError. Never falls back to another source."""
     query = urllib.parse.quote(f"EXT_ID:{pmid} AND SRC:MED")
@@ -87,6 +121,9 @@ def fetch_full_text(pmid: str, fetch: Fetch = _get) -> FullText:
     if not found:
         raise SourceError(f"PMID {pmid} not found in Europe PMC")
     rec = found[0]
+    problem = credibility_problem(rec)
+    if problem:
+        raise SourceError(f"PMID {pmid} rejected as a source: {problem}")
     pmcid = rec.get("pmcid")
     if rec.get("isOpenAccess") != "Y" or not pmcid:
         raise SourceError(f"PMID {pmid} has no open-access full text in Europe PMC")
@@ -97,5 +134,7 @@ def fetch_full_text(pmid: str, fetch: Fetch = _get) -> FullText:
         raise SourceError(f"{pmcid} XML contained no paragraphs")
     return FullText(
         pmid=pmid, pmcid=pmcid, title=rec.get("title", ""), license=rec.get("license", "UNKNOWN"),
-        text="\n".join(paras), url=url,
+        text="\n".join(paras), url=url, doi=rec.get("doi", ""),
+        journal=rec["journalInfo"]["journal"]["title"], year=str(rec.get("pubYear", "")),
+        pub_types=tuple((rec.get("pubTypeList") or {}).get("pubType", [])),
     )

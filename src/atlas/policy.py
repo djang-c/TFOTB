@@ -23,6 +23,7 @@ class IngestPolicy(BaseModel):
     max_output_tokens: int = Field(default=4096, ge=256)
     seed_entities: tuple[str, ...] = ()
     extra_queries: tuple[str, ...] = ()
+    max_hypotheses_per_run: int = Field(default=10, ge=1, le=100)
     discovery_per_query: int = Field(default=10, ge=1, le=100)
     only_licences: tuple[str, ...] | None = None
 

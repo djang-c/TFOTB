@@ -157,7 +157,11 @@ def run_query(
 
 def _gap(query_id: str, ranked: list[RankedConnection], manifest: CoverageManifest, now: datetime) -> GapResult | None:
     cats = {r.result.category for r in ranked}
-    if cats & {EvidenceCategory.reviewed_mechanistic_lead, EvidenceCategory.symptom_level_lead}:
+    if cats & {
+        EvidenceCategory.reviewed_mechanistic_lead,
+        EvidenceCategory.literature_supported_lead,
+        EvidenceCategory.symptom_level_lead,
+    }:
         return None
     day = now.date()
     if not ranked:

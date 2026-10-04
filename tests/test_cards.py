@@ -242,3 +242,23 @@ def test_simulation_card_cites_source_claims_only_if_they_are_stored():
     assert "[^c:CLAIM:q]" in card.body_markdown and card.claim_ids == ("CLAIM:q",)
     with pytest.raises(CardError, match="not in the store"):
         simulation_report(_sim(), store.claims, source_claim_ids=("CLAIM:nope",), now=NOW)
+
+
+def test_brief_labels_ai_found_claims_with_their_article_and_ai_hypotheses_with_their_basis():
+    store = shared_store()
+    paper = make_claim(
+        "CLAIM:p", "ACCUMULATES_IN_COMPARTMENT", subject_id=Q, object_id="GO:0005770", source_type="published",
+        source_url="https://doi.org/10.1000/real", extraction_method="llm:m@extract-v4",
+    )
+    hyp = make_claim(
+        "CLAIM:HYP-1", "SHARES_PATHOGENIC_PATHWAY_WITH", subject_id=Q, object_id=A, status="inference",
+        source_type="ai_generated", source_url="atlas:ai-hypothesis", derived_from=("CLAIM:q", "CLAIM:a"),
+    )
+    store.add(paper)
+    store.add(hyp)
+    card = evidence_brief(outcome(store), store.claims, now=NOW)
+    lines = {x.split("[^c:")[-1].split("]")[0]: x for x in card.body_markdown.splitlines() if x.startswith("- ") and "[^c:" in x}
+    assert "found by AI in https://doi.org/10.1000/real" in lines["CLAIM:p"]
+    h = lines["CLAIM:HYP-1"]
+    assert "AI hypothesis, not a finding" in h and "built from [^c:CLAIM:q] [^c:CLAIM:a]" in h and "**hypothesis only**" in h
+    assert {"CLAIM:q", "CLAIM:a"} <= set(card.claim_ids)

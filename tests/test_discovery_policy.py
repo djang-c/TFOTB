@@ -18,7 +18,7 @@ def fake(by_term):
 
 def test_query_asks_only_for_open_access_pubmed_papers_newest_first():
     q = build_query('CLN3 "disease"')
-    assert "OPEN_ACCESS:y" in q and "SRC:MED" in q and "sort_date:y" in q and "TITLE:" in q and "ABSTRACT:" in q and q.count('"') == 4
+    assert "OPEN_ACCESS:y" in q and "SRC:MED" in q and "sort_date:y" in q and "TITLE:" in q and "ABSTRACT:" in q and 'CLN3  disease' in q  # the term's own quote marks were removed
 
 
 def test_discovery_dedupes_across_terms_keeps_order_and_skips_records_without_a_pmid():

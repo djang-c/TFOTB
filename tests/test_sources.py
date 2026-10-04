@@ -15,10 +15,19 @@ cation-independent receptor and <italic>LE/Lys</italic> data.</p>
 <back><ref-list><ref><mixed-citation>Do not read this reference</mixed-citation></ref></ref-list></back></article>"""
 
 
-def fake(pmid="1", oa="Y", pmcid="PMC9", xml=XML, hits=True):
+def record(pmid="1", oa="Y", pmcid="PMC9", **kw):
+    base = {
+        "pmid": pmid, "pmcid": pmcid, "isOpenAccess": oa, "license": "cc by", "title": "T", "source": "MED",
+        "pubTypeList": {"pubType": ["research-article", "Journal Article"]},
+        "journalInfo": {"journal": {"title": "Synthetic Journal"}}, "doi": "10.1000/synthetic", "pubYear": "2023",
+    }
+    return {**base, **kw}
+
+
+def fake(pmid="1", oa="Y", pmcid="PMC9", xml=XML, hits=True, **kw):
     def fetch(url: str) -> bytes:
         if "/search?" in url:
-            res = [{"pmid": pmid, "pmcid": pmcid, "isOpenAccess": oa, "license": "cc by", "title": "T"}] if hits else []
+            res = [record(pmid, oa, pmcid, **kw)] if hits else []
             return json.dumps({"resultList": {"result": res}}).encode()
         assert url.endswith(f"/{pmcid}/fullTextXML")
         return xml
@@ -50,3 +59,25 @@ def test_not_found_and_not_open_access_raise_instead_of_guessing():
 def test_xml_without_paragraphs_raises():
     with pytest.raises(SourceError, match="no paragraphs"):
         fetch_full_text("1", fake(xml=b"<article><body></body></article>"))
+
+
+def test_the_citation_comes_from_the_record_never_from_the_model():
+    ft = fetch_full_text("1", fake())
+    assert (ft.doi, ft.journal, ft.year) == ("10.1000/synthetic", "Synthetic Journal", "2023")
+    assert ft.citation_url == "https://doi.org/10.1000/synthetic"
+    assert fetch_full_text("1", fake(doi="")).citation_url == "https://europepmc.org/article/MED/1"
+
+
+@pytest.mark.parametrize(
+    "kw, why",
+    [
+        ({"source": "PPR"}, "not a PubMed-indexed"),
+        ({"pubTypeList": {"pubType": ["Retracted Publication", "Journal Article"]}}, "excluded: retracted publication"),
+        ({"pubTypeList": {"pubType": ["Editorial"]}}, "excluded: editorial"),
+        ({"pubTypeList": {"pubType": ["Dataset"]}}, "not recorded as a journal article"),
+        ({"journalInfo": {}}, "no journal recorded"),
+    ],
+)
+def test_preprints_retractions_editorials_and_journal_less_records_are_rejected(kw, why):
+    with pytest.raises(SourceError, match=why):
+        fetch_full_text("1", fake(**kw))

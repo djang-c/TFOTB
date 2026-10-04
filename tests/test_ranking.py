@@ -92,3 +92,31 @@ def test_gene_data_without_a_shared_gene_does_not_demote_a_symptom_lead():
     pheno = comp("phenotype", score=0.66, score_definition="BMA-Lin")
     assert categorize([pheno, no_shared_gene], {}) is EvidenceCategory.symptom_level_lead
     assert categorize([no_shared_gene], {}) is EvidenceCategory.hypothesis_only
+
+
+def test_unreviewed_observation_from_a_published_source_is_literature_supported_not_hypothesis(mk):
+    c1 = mk(source_type="published")
+    comps = [comp("molecular_mechanisms", supporting_claim_ids=[c1.claim_id])]
+    assert categorize(comps, {c1.claim_id: c1}) is EvidenceCategory.literature_supported_lead
+
+
+def test_uploads_fixtures_and_hypotheses_never_become_literature_supported(mk):
+    for kw in ({"source_type": "lab_reported"}, {"source_type": "synthetic_fixture"},
+               {"source_type": "published", "status": "inference", "pred": "ASSOCIATED_WITH_PHENOTYPE"},
+               {"source_type": "published", "status": "computational_prediction"},
+               {"source_type": "published", "pred": "SHARES_PATHOGENIC_PATHWAY_WITH", "status": "inference"}):
+        c1 = mk(**kw)
+        comps = [comp("molecular_mechanisms", supporting_claim_ids=[c1.claim_id])]
+        assert categorize(comps, {c1.claim_id: c1}) is EvidenceCategory.hypothesis_only, kw
+
+
+def test_one_non_published_claim_among_the_support_keeps_the_connection_hypothesis_only(mk):
+    a, b = mk("CLAIM:a", source_type="published"), mk("CLAIM:b", source_type="lab_reported")
+    comps = [comp("molecular_mechanisms", supporting_claim_ids=["CLAIM:a", "CLAIM:b"])]
+    assert categorize(comps, {"CLAIM:a": a, "CLAIM:b": b}) is EvidenceCategory.hypothesis_only
+
+
+def test_a_contradiction_still_beats_literature_support(mk):
+    c1 = mk(source_type="published")
+    comps = [comp("molecular_mechanisms", supporting_claim_ids=[c1.claim_id], contradicting_claim_ids=["CLAIM:x"])]
+    assert categorize(comps, {c1.claim_id: c1}) is EvidenceCategory.conflicting_evidence

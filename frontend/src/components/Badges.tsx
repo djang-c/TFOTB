@@ -8,6 +8,7 @@ export function SourceBadge({ type }: { type: SourceType }) {
     database_record: ["Database record", "bg-link-soft text-link"],
     lab_reported: ["Lab-reported", "bg-lab text-ink ring-1 ring-[#e0c64a]"],
     synthetic_fixture: ["Synthetic", "bg-synthetic/40 text-ink ring-1 ring-synthetic"],
+    ai_generated: ["AI hypothesis", "text-ev-hypo ring-1 ring-ev-hypo bg-white"],
   };
   const [label, cls] = map[type];
   return <span className={`${base} ${cls}`}>{label}</span>;
@@ -39,6 +40,7 @@ export function StatusMark({ status }: { status: ClaimStatus }) {
 
 const CATEGORY: Record<EvidenceCategory, string> = {
   "reviewed mechanistic lead": "bg-ev-reviewed text-white",
+  "literature-supported lead": "bg-ev-literature text-white",
   "symptom-level lead": "bg-ev-symptom text-white",
   "hypothesis only": "text-ev-hypo ring-1 ring-ev-hypo bg-white",
   "conflicting evidence": "bg-ev-conflict text-white",

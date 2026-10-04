@@ -6,6 +6,7 @@
   "max_output_tokens": 4096,
   "seed_entities": ["MONDO:0008767", "MONDO:0018982"],
   "extra_queries": ["CLN3 disease", "Batten disease", "Niemann-Pick type C"],
+  "max_hypotheses_per_run": 10,
   "discovery_per_query": 10,
   "only_licences": null
 }

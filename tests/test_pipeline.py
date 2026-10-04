@@ -44,7 +44,7 @@ def resolver():
 
 
 def paper(pmid, licence="cc by", text=TEXT):
-    return FullText(pmid, f"PMC{pmid}", "t", licence, text, "https://example.invalid/x")
+    return FullText(pmid, f"PMC{pmid}", "t", licence, text, "https://example.invalid/x", doi="10.1000/x", journal="Synthetic Journal")
 
 
 def source(**by_pmid):
@@ -123,3 +123,10 @@ def test_a_changed_claim_with_the_same_id_is_quarantined_not_overwritten(resolve
     changed = stored.model_copy(update={"source_span": "different text"})
     assert pipeline._store_claim(db, changed, "PMID:1") == "conflict"
     assert db.all(Claim)[0] == stored and "not overwritten" in db.quarantined()[-1]["error"]
+
+
+def test_claims_cite_the_papers_real_doi_link_and_the_run_log_records_journal(resolver):
+    db = AtlasDB()
+    r = run(["1"], resolver, db).runs[0]
+    assert r.citation == "https://doi.org/10.1000/x" and r.journal == "Synthetic Journal"
+    assert db.all(Claim)[0].source_url == "https://doi.org/10.1000/x"

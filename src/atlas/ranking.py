@@ -11,12 +11,14 @@ from atlas.schemas import (
     ConnectionResult,
     EvidenceCategory,
     ReviewState,
+    SourceType,
 )
 
 MECHANISM_CHANNELS = frozenset(
     {"dna_variants", "rna_effects", "molecular_mechanisms", "experimental_findings"}
 )
 BLOCKING_MISMATCHES = frozenset({"effect_direction"})
+CREDIBLE_SOURCES = frozenset({SourceType.published, SourceType.database_record})
 
 
 def independent_support_count(claim_ids: list[str], claims: dict[str, Claim]) -> int:
@@ -42,6 +44,7 @@ def categorize(comps: list[ChannelComparison], claims: dict[str, Claim]) -> Evid
         if any(c.channel_id == "phenotype" for c in avail):
             return EvidenceCategory.symptom_level_lead
         return EvidenceCategory.hypothesis_only
+    literature = False
     for c in mech:
         # simulation artifacts are engineering records, never biological support
         sup = [
@@ -56,7 +59,11 @@ def categorize(comps: list[ChannelComparison], claims: dict[str, Claim]) -> Evid
             for s in sup
         ):
             return EvidenceCategory.reviewed_mechanistic_lead
-    return EvidenceCategory.hypothesis_only
+        # Observed in published or database sources but not expert-reviewed: shown with its own label
+        # (owner decision 2026-10-04: review is a label, not a gate). Uploads and fixtures never qualify.
+        if sup and all(s.status is ClaimStatus.reported_observation and s.source_type in CREDIBLE_SOURCES for s in sup):
+            literature = True
+    return EvidenceCategory.literature_supported_lead if literature else EvidenceCategory.hypothesis_only
 
 
 def build_result(

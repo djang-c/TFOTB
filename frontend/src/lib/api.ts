@@ -23,7 +23,7 @@ export interface Entity {
   review_state: ReviewState;
 }
 
-export type SourceType = "published" | "database_record" | "lab_reported" | "synthetic_fixture";
+export type SourceType = "published" | "database_record" | "lab_reported" | "synthetic_fixture" | "ai_generated";
 export type ReviewState = "unreviewed" | "reviewed" | "disputed";
 export type ClaimStatus = "reported_observation" | "computational_prediction" | "inference";
 
@@ -70,7 +70,7 @@ export interface ChannelComparison {
 }
 
 export type EvidenceCategory =
-  | "reviewed mechanistic lead" | "symptom-level lead" | "hypothesis only"
+  | "reviewed mechanistic lead" | "literature-supported lead" | "symptom-level lead" | "hypothesis only"
   | "conflicting evidence" | "insufficient coverage";
 
 export interface ConnectionResult {

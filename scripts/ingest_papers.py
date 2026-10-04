@@ -3,6 +3,12 @@
   PYTHONPATH=src .venv/bin/python scripts/ingest_papers.py            # discover new papers, ingest them
   PYTHONPATH=src .venv/bin/python scripts/ingest_papers.py --dry-run  # show what it would do, spend nothing
   PYTHONPATH=src .venv/bin/python scripts/ingest_papers.py --pmids 37245481
+  PYTHONPATH=src .venv/bin/python scripts/ingest_papers.py --query "Niemann-Pick type C lysosome"   # research on demand
+  PYTHONPATH=src .venv/bin/python scripts/ingest_papers.py --entity MONDO:0018982
+
+Only credible sources are used: PubMed-indexed journal articles with open-access full text. Preprints,
+retractions, editorials and records without a journal are rejected, and each claim cites the paper's own
+DOI link taken from its record.
 
 What may run unattended is set once in config/ingest_policy.json (live model calls on/off, caps on
 papers per run and text size, which diseases to watch). No per-run approval is needed. A live call
@@ -39,12 +45,14 @@ def _already_done() -> set[str]:
     if not log.exists():
         return set()
     rows = [json.loads(x) for x in log.read_text().splitlines() if x.strip()]
-    return {r["source_id"] for r in rows if r["status"] == "ingested"}
+    return {r["source_id"] for r in rows if r.get("status") == "ingested"}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--pmids", nargs="*", default=[], help="ingest these instead of discovering")
+    ap.add_argument("--query", action="append", default=[], help="research this topic now (repeatable), e.g. --query \"Niemann-Pick type C lysosome\"")
+    ap.add_argument("--entity", action="append", default=[], help="research this ontology ID now (repeatable), e.g. --entity MONDO:0018982")
     ap.add_argument("--policy", type=Path, default=ROOT / "config" / "ingest_policy.json")
     ap.add_argument("--dry-run", action="store_true", help="list the papers it would ingest; fetch and spend nothing")
     ap.add_argument("--offline", action="store_true", help="never make a live model call this run")
@@ -54,7 +62,9 @@ def main() -> int:
     resolver = Resolver.from_raw(ROOT / "data" / "raw", include_extraction_refs=True)
     pmids = list(args.pmids)
     if not pmids:
-        terms = [resolver.label_of(e) for e in policy.seed_entities] + list(policy.extra_queries)
+        on_demand = bool(args.query or args.entity)  # the user asked for specific research: use only that
+        terms = [resolver.label_of(e) for e in (args.entity if on_demand else policy.seed_entities)]
+        terms += args.query if on_demand else list(policy.extra_queries)
         found = discover([t for t in terms if t], per_query=policy.discovery_per_query)
         done = _already_done()
         pmids = [f.pmid for f in found if f"PMID:{f.pmid}" not in done]

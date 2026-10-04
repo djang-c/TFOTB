@@ -38,6 +38,8 @@ class PaperRun:
     statements_quarantined: int = 0
     prompt_version: str = ""
     from_cache: bool = False
+    citation: str = ""  # the paper's DOI link or Europe PMC page, taken from its record
+    journal: str = ""
 
 
 @dataclass
@@ -119,7 +121,7 @@ def ingest_papers(
                 PaperRun(sid, "skipped", f"text is {len(ft.text)} chars, over the {max_chars} cap", ft.license)
             )
             continue
-        ex = extract_claims(client, SourceText(sid, ft.url, ft.text), resolver)
+        ex = extract_claims(client, SourceText(sid, ft.citation_url, ft.text), resolver)
         if ex.status != "extracted":
             report.runs.append(PaperRun(sid, "failed", ex.reason, ft.license))
             continue
@@ -132,6 +134,7 @@ def ingest_papers(
             PaperRun(
                 sid, "ingested", "", ft.license, counts["added"], counts["already"],
                 len(ex.quarantined) + counts["conflict"], ex.prompt_version, ex.from_cache,
+                ft.citation_url, ft.journal,
             )
         )
     return report

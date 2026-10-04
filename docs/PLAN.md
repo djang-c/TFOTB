@@ -4,6 +4,21 @@ Revision: October 3, 2026. This revision replaces the fixed HPO + Reactome + emb
 
 The robotics plan uses MuJoCo for a small simulated liquid-handling workcell, with Gazebo as the alternative if the team already has a ROS 2 stack. This document specifies the work; no simulator or application has been implemented. Earlier claims of validated clinical decisions, guaranteed treatment acceleration, and ready-to-run laboratory scripts are withdrawn; this is a research-support product specification, not a validated clinical system.
 
+## Revision 2026-10-04 (owner decision): automated research, labels instead of review gates
+
+The product exists to remove repetitive research work, so it must run without a human approving each addition. This revision overrides any earlier line in this document that makes human review a condition for finding, storing or displaying evidence.
+
+1. **Research is automated and on demand.** Papers are found by the system (`src/atlas/discovery.py`) from the watched diseases' own ontology names, on a schedule or when a user asks (`scripts/ingest_papers.py --query/--entity`). A human does not have to supply papers. What may run unattended is set once in `config/ingest_policy.json` (live model calls on or off, caps on papers per run and text size, diseases to watch). The caps are the spending control.
+2. **Credible sources only.** A paper is accepted only if its own record shows a PubMed-indexed journal article with open-access full text. Preprints, retractions, editorials, expressions of concern and records without a journal are rejected. Every claim cites the paper's real DOI link, taken from the paper's record and never written by a model. Peer review itself is not independently verified here; PubMed indexing of a journal article is the proxy, and the limitation is stated wherever it matters.
+3. **Nothing needs human review to be displayed.** Every result carries a label that says where it came from, and the label is the protection:
+   - AI-read claim: "found by AI in <article link>; not reviewed by a human".
+   - AI hypothesis: "AI hypothesis, not a finding", with the stored claims it was built from.
+   - Expert-reviewed: only if a person actually reviewed it. Review is an optional upgrade of the label, never a gate.
+4. **The model may make hypotheses** (`src/atlas/hypotheses.py`), always stored as `inference` / `ai_generated` / `unreviewed`. A hypothesis must cite at least two stored claims that are observations from credible sources, may only use entities found in those claims, and uses a hypothesis-only predicate. Hypotheses never count as evidence for another hypothesis and never change an evidence category.
+5. **New evidence category:** "literature-supported lead" = observed claims from published or database sources, not expert-reviewed. It ranks just below "reviewed mechanistic lead". Uploads, fixtures, predictions and hypotheses never qualify.
+6. **Unchanged, because it is what makes unattended runs trustworthy:** the quote must appear verbatim in the paper; types and names must resolve (unresolved stays unresolved); stored claims are immutable and conflicts are quarantined; no combined score and no probability; missing is not zero; no dosing, prescribing or eligibility language; private cases never enter the public store.
+7. **Licences:** this is a hackathon project, not a commercial use; any open-access paper is accepted and its licence is recorded per paper. Revisit before any commercial or redistribution use.
+
 ## Problem statement and challenge alignment
 
 The supplied Hack-Nation Challenge 05 brief asks for an evidence-backed journey from an isolated diagnosis to a meaningful connection, an existing research asset, a collaborator, and a concrete next step. Its primary user is Maria, a patient-group leader; Devon, Priya, and Dr. Osei represent caregiver, therapeutic scouting, and research use cases.
@@ -23,7 +38,7 @@ These are design alignments to the uploaded brief, not claims that the MVP has p
 
 ## Goals
 
-- **Useful discovery:** For a seeded disease, surface at least one expert-reviewed connection, relevant asset, and contact route, or an explicit evidence gap.
+- **Useful discovery:** For a seeded disease, surface at least one connection with a clear evidence label (expert-reviewed where a person has reviewed it, otherwise literature-supported or labelled hypothesis), a relevant asset, and a contact route, or an explicit evidence gap.
 - **Explainable matching:** Every displayed connection exposes contributing evidence channels, missing channels, contradictions, and source-backed claims.
 - **Extensibility:** Add a new evidence-channel implementation without rewriting the graph schema, result contract, or UI.
 - **Bounded personalization:** Demonstrate matching a synthetic individual's phenotype and selected variant annotations to research evidence without publishing case data.
@@ -490,7 +505,7 @@ Prepare the working prototype, source repository, README, dataset reproduction m
 | Question | Owner | Blocking? | Default |
 |---|---|---|---|
 | Which cluster has a complete, defensible route and counterexample? | Science | Yes, before data freeze | Choose evidence completeness over disease count |
-| Who reviews biological claims? | Team lead | Yes for “reviewed” labels | Disclose absence of expert review rather than implying it |
+| Who reviews biological claims? | Team lead | Only for the “reviewed” label; no longer needed to display | Display AI-found claims and AI hypotheses with their labels; disclose the absence of expert review |
 | Which sources permit the planned use and storage? | Data lead | Yes per connector | Use permitted cached records or omit source |
 | What tissue/context rules are appropriate for each comparison? | Science + Data | Yes per numeric channel | Use categorical claims with caveats |
 | Are real individual genomes in scope? | Product | No for this MVP | No; synthetic cases only |

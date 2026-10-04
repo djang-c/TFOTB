@@ -25,7 +25,12 @@ class Found:
 def build_query(term: str) -> str:
     term = term.replace('"', " ").strip()
     # Title or abstract only: a name buried in the full text would pull in unrelated papers.
-    return f'(TITLE:"{term}" OR ABSTRACT:"{term}") AND OPEN_ACCESS:y AND SRC:MED sort_date:y'
+    # Credible sources only: PubMed-indexed journal articles, never retractions or editorials. (The fetch
+    # step re-checks each record's own metadata; this just avoids fetching what would be rejected.)
+    return (
+        f'(TITLE:"{term}" OR ABSTRACT:"{term}") AND OPEN_ACCESS:y AND SRC:MED AND PUB_TYPE:"Journal Article" '
+        'NOT PUB_TYPE:"Retracted Publication" NOT PUB_TYPE:"Retraction of Publication" NOT PUB_TYPE:"Editorial" sort_date:y'
+    )
 
 
 def discover(terms: Iterable[str], *, per_query: int = 10, fetch: Fetch = _get) -> list[Found]:

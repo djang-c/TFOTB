@@ -16,6 +16,7 @@
   --color-link-soft: #eef2fc;
 
   --color-ev-reviewed: #0d7266;   /* reviewed mechanistic lead */
+  --color-ev-literature: #2f6f9f; /* literature-supported lead (published, not expert-reviewed) */
   --color-ev-symptom: #55667a;    /* symptom-level lead */
   --color-ev-hypo: #6a46b0;       /* hypothesis only */
   --color-ev-conflict: #9a5b00;   /* conflicting evidence */

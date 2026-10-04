@@ -25,6 +25,7 @@ from atlas.schemas import (
     ClaimStatus,
     GapResult,
     ReviewState,
+    SourceType,
 )
 
 MAX_CONNECTIONS = 10  # the brief lists the top of the ranking, not everything
@@ -48,12 +49,25 @@ def _cite(claim_ids: list[str]) -> str:
     return " ".join(f"[^c:{i}]" for i in claim_ids)
 
 
-def _claim_line(c: Claim, label_of: Label) -> str:
+def _claim_line(
+    c: Claim, label_of: Label, claims: dict[str, Claim] | None = None, cited: list[str] | None = None
+) -> str:
+    """One claim as a readable line. Says where it came from: an AI reading of a named paper, or an AI
+    hypothesis built from stored claims. Neither has been reviewed by a human unless the state says so."""
     state = f"{c.status.value.replace('_', ' ')}, {c.review_state.value}"
     hedge = " **hypothesis only**" if c.status is ClaimStatus.inference else ""
+    origin = ""
+    if c.source_type is SourceType.ai_generated:
+        origin = "; **AI hypothesis, not a finding**"
+        built = [i for i in c.derived_from if claims and i in claims]
+        if built and cited is not None:
+            cited.extend(built)
+            origin += f"; built from {_cite(built)}"
+    elif (c.extraction_method or "").startswith("llm:") and c.source_url.startswith("http"):
+        origin = f"; found by AI in {c.source_url}"
     return (
         f"- {_name(label_of, c.subject_id)} `{c.predicate}` {_name(label_of, c.object_id)} "
-        f"({state}){hedge} [^c:{c.claim_id}]"
+        f"({state}{origin}){hedge} [^c:{c.claim_id}]"
     )
 
 
@@ -121,7 +135,7 @@ def _known_about_query(query_id: str, claims: dict[str, Claim], label_of: Label,
         return []
     lines = [f"## Known claims about {_name(label_of, query_id)}", ""]
     for i in about:
-        lines.append(_claim_line(claims[i], label_of))
+        lines.append(_claim_line(claims[i], label_of, claims, cited))
         cited.append(i)
     return [*lines, ""]
 
@@ -169,7 +183,7 @@ def _connection_section(
     if path:
         lines += ["", "Supporting claims:"]
         for i in path:
-            lines.append(_claim_line(claims[i], label_of))
+            lines.append(_claim_line(claims[i], label_of, claims, cited))
             cited.append(i)
     lines.append("")
     return lines

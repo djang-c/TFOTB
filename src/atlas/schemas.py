@@ -118,6 +118,7 @@ class SourceType(str, Enum):
     database_record = "database_record"
     lab_reported = "lab_reported"
     synthetic_fixture = "synthetic_fixture"
+    ai_generated = "ai_generated"  # a model-made hypothesis; never counts as literature support
 
 
 class Availability(str, Enum):
@@ -129,6 +130,7 @@ class Availability(str, Enum):
 
 class EvidenceCategory(str, Enum):
     reviewed_mechanistic_lead = "reviewed mechanistic lead"
+    literature_supported_lead = "literature-supported lead"  # observed in published sources; NOT expert-reviewed
     symptom_level_lead = "symptom-level lead"
     hypothesis_only = "hypothesis only"
     conflicting_evidence = "conflicting evidence"
