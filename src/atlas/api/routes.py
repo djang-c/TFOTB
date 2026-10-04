@@ -240,7 +240,7 @@ def connections(request: Request, entity_id: str) -> Any:
     ix = _index(request)
     if ix is not None and not entity_id.startswith("SYN:"):
         out = ix.connections(entity_id)
-        return _wrap_real(results=out["results"], labels=out["labels"], coverage=out["coverage"])
+        return _wrap_real(results=out["results"], labels=out["labels"], hierarchy=out["hierarchy"], coverage=out["coverage"])
     d = _demo(request)
     results = d["connections"].get(entity_id, [])
     cov_ids = {r["coverage_manifest_id"] for r in results}
