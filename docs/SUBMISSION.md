@@ -50,10 +50,19 @@ Do not say "confidence score", "validated", "peer reviewed", "diagnosis", "measu
 
 ---
 
-## 3. Tech video (60 s maximum)
+## 3. Tech video (60 s maximum): the whole app, end to end
+About 150 words at a normal pace. Show screens, not one example: any disease or gene works for the search beats.
 
-| Time | Say | Show | Callout |
-|---|---|---|---|
+| Time | Say | Show |
+|---|---|---|
+| 0:00–0:10 | "TFOTB brings rare-disease evidence into one place. Papers and public ontologies go in, and a searchable, sourced map of diseases, genes and symptoms comes out." | Home page, the search box. |
+| 0:10–0:22 | "GPT-5 mini reads each paper through the OpenAI API and proposes claims. Code checks each one against the paper's text and the ontologies, then stores it with its quote and link." | `src/atlas/extraction.py` docstring, then the `quarantine` table in `src/atlas/db.py` (around line 82). |
+| 0:22–0:33 | "A FastAPI backend serves a React app. Search any disease, gene or symptom and get a dossier: related diseases with the reason for each, patient groups, studies and researchers." | Type a search, open the dossier, scroll the related diseases. |
+| 0:33–0:42 | "The same evidence opens as a 3D graph and as clusters, and symptom search helps when there is no diagnosis yet." | **Graph** tab, **Clusters** tab, then the **Symptoms** page. |
+| 0:42–0:53 | "The 10× case page walks a patient-group leader from disease to a sourced proposal. The simulation tab runs a researcher-defined overnight experiment, checked in MuJoCo." | **10× case** page (click Run), then **Simulation** (Run overnight). |
+| 0:53–1:00 | "Everything exports with its sources, live on Google Cloud Run. TFOTB: every connection, traced to its source." | Click **JSON** on a dossier, then the live URL on screen. |
+
+---|---|---|---|
 | 0:00–0:12 | "TFOTB is a FastAPI backend, a SQLite claim store, a React app built on TanStack Start and Vite, and the OpenAI API for reading papers." | Diagram: Europe PMC papers + MONDO/HPO/HGNC files → OpenAI extraction → code checks → SQLite claim store → FastAPI → React app. | FastAPI · SQLite · TanStack Start (React 19) · OpenAI |
 | 0:12–0:26 | "The model only proposes. Code decides what becomes a claim: the quote must appear word for word, the relation must be on an allowed list, and both names must resolve to an ontology ID. Anything else goes to quarantine." | `src/atlas/extraction.py` (module docstring), `src/atlas/db.py` (claims and quarantine tables). | The model proposes, code decides |
 | 0:26–0:36 | "The graph is drawn with three.js. The searched disease sits in the centre, direct links on the inner shell. Every edge is one stored claim." | `frontend/src/components/KnowledgeGraph.tsx` next to the live graph. | Every edge is one claim |
