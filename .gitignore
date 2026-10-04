@@ -33,3 +33,5 @@ data/raw/*
 .vscode/
 data/store/
 data/store.*/
+# Packaged claim store for the deployed API: review it, then publish deliberately with `git add -f deploy/store`
+deploy/store/

@@ -6,12 +6,28 @@ name: deploy-api
 on:
   push:
     branches: [main]
-    paths: ["src/**", "data/fixtures/**", "data/raw/CHECKSUMS.json", "scripts/fetch_for_deploy.py", "deploy/**", "requirements.lock",
-            ".github/workflows/deploy-api.yml"]
+    paths: ["src/**", "config/**", "data/fixtures/**", "data/raw/CHECKSUMS.json", "scripts/fetch_for_deploy.py",
+            "scripts/load_deploy_store.py", "deploy/**", "requirements.lock", ".github/workflows/deploy-api.yml"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
+  test:
+    # The deploy only runs if the tests and the linter pass on exactly what is being deployed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.lock && pip install --no-deps -e .
+      - run: ruff check .
+      - run: pytest -q   # tests that need the large reference files skip themselves when the files are absent
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     if: ${{ vars.HF_SPACE != '' }}
     steps:
@@ -22,7 +38,9 @@ jobs:
           mkdir space
           cp -r src space/src
           mkdir -p space/data/raw space/scripts && cp -r data/fixtures space/data/fixtures
-          cp data/raw/CHECKSUMS.json space/data/raw/ && cp scripts/fetch_for_deploy.py space/scripts/
+          cp -r config space/config
+          mkdir -p space/deploy_store && touch space/deploy_store/.keep && if [ -d deploy/store ]; then cp -r deploy/store/. space/deploy_store/; fi
+          cp data/raw/CHECKSUMS.json space/data/raw/ && cp scripts/fetch_for_deploy.py scripts/load_deploy_store.py space/scripts/
           cp requirements.lock space/
           cp deploy/api.Dockerfile space/Dockerfile
           cp deploy/hf-space-README.md space/README.md

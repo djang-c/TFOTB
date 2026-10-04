@@ -15,6 +15,11 @@ RUN grep -viE '^(mujoco|glfw|PyOpenGL|ImageIO|imageio-ffmpeg|pytest|ruff|iniconf
 
 COPY --chown=user src ./src
 COPY --chown=user data/fixtures ./data/fixtures
+COPY --chown=user config ./config
+# The packaged claim store (scripts/export_deploy_store.py); the folder may be empty if none was packaged.
+COPY --chown=user deploy_store ./deploy_store
+COPY --chown=user scripts/load_deploy_store.py ./scripts/load_deploy_store.py
+RUN PYTHONPATH=src python scripts/load_deploy_store.py && chown -R user data
 
 # Real-ontology search: fetch the pinned reference files from their publishers at build time and
 # verify them against the recorded SHA-256 (the build fails on any mismatch). ~190 MB.
