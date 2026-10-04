@@ -1,0 +1,27 @@
+{
+  "built_at": "2026-10-04T05:08:08+00:00",
+  "dataset_version": "deploy-2026-10-04",
+  "files": {
+    "action_cards.jsonl": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "assets.jsonl": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "claims.jsonl": {
+      "rows": 39,
+      "sha256": "5b699fb61ba7edb6b549451d9445612a00d72d03898bde76c1a2f5a571fc3181"
+    },
+    "coverage_manifests.jsonl": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "entities.jsonl": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "schema_version": "0.2.0"
+}

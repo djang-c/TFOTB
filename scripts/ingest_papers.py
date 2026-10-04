@@ -12,8 +12,8 @@ DOI link taken from its record.
 
 What may run unattended is set once in config/ingest_policy.json (live model calls on/off, caps on
 papers per run and text size, which diseases to watch). No per-run approval is needed. A live call
-happens only if the policy allows it and the chosen provider's key (LLM_PROVIDER = anthropic or openai;
-default anthropic) is in the environment; otherwise recorded
+happens only if the policy allows it and the chosen provider's key (OpenAI is the only provider;
+OPENAI_API_KEY and OPENAI_MODEL_FAST) is in the environment; otherwise recorded
 responses are replayed and papers without one are reported as skipped.
 
 Stored claims are `unreviewed` and immutable; review is an optional label upgrade, never a gate.
@@ -31,6 +31,7 @@ from atlas.llm.cache import CachedClient
 from atlas.llm.factory import make_client, provider_name
 from atlas.policy import load_policy
 from atlas.research import already_ingested, live_allowed, load_extraction_resolver, run_research
+from atlas.terms import TermStore
 
 ROOT = Path(__file__).resolve().parent.parent
 STORE = ROOT / "data" / "store"
@@ -53,6 +54,8 @@ def main() -> int:
         on_demand = bool(args.query or args.entity)  # the user asked for specific research: use only that
         terms = [resolver.label_of(e) for e in (args.entity if on_demand else policy.seed_entities)]
         terms += args.query if on_demand else list(policy.extra_queries)
+        if not on_demand:  # terms that visitors looked up and that passed verification (atlas.terms) are watched too
+            terms += [row["label"] for row in TermStore(STORE).all()]
         try:
             found = discover([t for t in terms if t], per_query=policy.discovery_per_query)
         except DiscoveryError as exc:

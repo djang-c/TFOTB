@@ -7,7 +7,7 @@ behaviour as UNVERIFIED until one approved call has been made and the result che
 No model name is hard-coded. Set OPENAI_MODEL_FAST and OPENAI_MODEL_REASONING (a model that supports
 structured outputs) and OPENAI_API_KEY. A missing model name is an error, never a guess. The key is read from
 the environment, sent only in the Authorization header, and never logged or echoed in errors.
-The text to analyse is delimited and declared to be data, exactly as in the Anthropic adapter.
+The text to analyse is delimited and declared to be data (see wrap_untrusted).
 """
 
 from __future__ import annotations

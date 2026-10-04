@@ -1,3 +1,5 @@
+> **Note 2026-10-04.** The web app is now a TanStack Start single-page app (`frontend/README.md`), not Next.js; the rest of this file is unchanged.
+
 # 02 — Architecture, Stack & Repo Layout
 
 Implements: PLAN "Technical defaults", "Graph schema and identity". Extends the existing

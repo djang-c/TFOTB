@@ -88,3 +88,12 @@ def test_the_endpoint_serves_the_view_and_an_empty_store_gives_an_empty_labelled
     assert load_papers(store).keys() == PAPERS.keys()
     r = c.get("/api/entities/SYN:disease-a/collaborators").json()
     assert r["items"] == [] and "note" in r and "name alone" in r["note"]
+
+
+def test_author_emails_are_removed_from_affiliations_and_never_returned():
+    from atlas.collaborators import clean_authors, strip_contacts
+
+    assert strip_contacts("Dept of X, Univ Y. Electronic address: jane.doe@univ.edu.") == "Dept of X, Univ Y"
+    assert strip_contacts("Lab, City, USA; a_b@x-y.co.uk") == "Lab, City, USA"
+    assert strip_contacts("a@b.com") is None and strip_contacts(None) is None
+    assert clean_authors([{"name": "N", "affiliation": "Z. n@z.org"}]) == [{"name": "N", "affiliation": "Z"}]

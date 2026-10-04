@@ -42,7 +42,7 @@ Delta table versions give "as of" snapshots, which is what the coverage manifest
 - Who reviews the growing unreviewed pile. With no expert assigned, the weekly job only grows the unreviewed set.
 
 ## Not verified
-- Anthropic adapter and the structured-output call have never run (see `scripts/live_extract_once.py`).
+- The OpenAI adapter and its structured-output call have never run live (see `scripts/live_extract_once.py`).
 - Real extraction quality is unknown: we have seen zero real papers go through it.
 - Databricks plan features and per-run cost are unknown.
 

@@ -30,6 +30,21 @@ NOTE = (
 MAX_ITEMS = 15
 
 
+_EMAIL = re.compile(r"(?:\s*Electronic address:)?\s*[\w.+-]+@[\w-]+(?:\.[\w-]+)+\.?", re.IGNORECASE)
+
+
+def strip_contacts(text: str | None) -> str | None:
+    """Affiliation strings sometimes carry a corresponding author's email. Authorship is not a contact route, so
+    addresses are removed wherever author data is stored or shown."""
+    if not text:
+        return text
+    return _EMAIL.sub("", text).strip(" ;,.") or None
+
+
+def clean_authors(authors: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{**a, "affiliation": strip_contacts(a.get("affiliation"))} for a in authors]
+
+
 def load_papers(store_dir: Path) -> dict[str, dict[str, Any]]:
     """Paper metadata by source ID ("PMID:123"), from the sidecar written during ingest. Latest row wins."""
     path = store_dir / "papers.jsonl"
@@ -42,6 +57,7 @@ def load_papers(store_dir: Path) -> dict[str, dict[str, Any]]:
         except ValueError:
             continue
         if "source_id" in row:
+            row["authors"] = clean_authors(row.get("authors") or [])
             out[row["source_id"]] = row
     return out
 

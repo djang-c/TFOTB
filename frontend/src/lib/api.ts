@@ -1,20 +1,37 @@
-// Typed client for the TFOTB API. Shapes mirror src/atlas/schemas.py (0.2.0) and the stub
-// routes in src/atlas/api/routes.py. Everything served today is SYNTHETIC.
+// Typed client for the TFOTB API (src/atlas/api). Shapes mirror src/atlas/schemas.py and the routes in
+// src/atlas/api/routes.py. Nothing here is bundled data: every screen reads from the running API.
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000/api";
+export const API_BASE = (
+  (import.meta.env["VITE_API_BASE"] as string | undefined) ?? "http://localhost:8000/api"
+).replace(/\/$/, "");
 
 export type EntityType =
-  | "disease" | "gene" | "variant" | "transcript" | "protein" | "phenotype" | "mechanism"
-  | "finding" | "drug" | "study" | "asset" | "organization" | "investigator";
+  | "disease"
+  | "gene"
+  | "variant"
+  | "transcript"
+  | "protein"
+  | "phenotype"
+  | "mechanism"
+  | "finding"
+  | "drug"
+  | "study"
+  | "asset"
+  | "organization"
+  | "investigator"
+  | "term";
+
+export type SourceType =
+  "published" | "database_record" | "lab_reported" | "synthetic_fixture" | "ai_generated";
+export type ReviewState = "unreviewed" | "reviewed" | "disputed";
+export type ClaimStatus = "reported_observation" | "computational_prediction" | "inference";
 
 export interface Entity {
   id: string;
   type: EntityType;
   label: string;
   identity_status: "resolved" | "unresolved" | "ambiguous";
-  candidate_ids: string[];
   synonyms: string[];
-  xrefs: string[];
   attributes: Record<string, unknown>;
   source_url: string;
   source_type: SourceType;
@@ -23,13 +40,8 @@ export interface Entity {
   review_state: ReviewState;
 }
 
-export type SourceType = "published" | "database_record" | "lab_reported" | "synthetic_fixture" | "ai_generated";
-export type ReviewState = "unreviewed" | "reviewed" | "disputed";
-export type ClaimStatus = "reported_observation" | "computational_prediction" | "inference";
-
 export interface Claim {
   claim_id: string;
-  schema_version: string;
   subject_id: string;
   predicate: string;
   object_id: string;
@@ -50,14 +62,13 @@ export interface Claim {
   review_notes: string[];
   derived_from: string[];
   knowledge_level: string;
-  agent_type: string;
+  schema_version: string;
 }
 
 export type Availability = "available" | "missing" | "incompatible" | "failed";
 
 export interface ChannelComparison {
   channel_id: string;
-  candidate_id: string;
   availability: Availability;
   score: number | null;
   score_definition: string | null;
@@ -70,8 +81,12 @@ export interface ChannelComparison {
 }
 
 export type EvidenceCategory =
-  | "reviewed mechanistic lead" | "literature-supported lead" | "symptom-level lead" | "hypothesis only"
-  | "conflicting evidence" | "insufficient coverage";
+  | "reviewed mechanistic lead"
+  | "literature-supported lead"
+  | "symptom-level lead"
+  | "hypothesis only"
+  | "conflicting evidence"
+  | "insufficient coverage";
 
 export interface ConnectionResult {
   candidate_id: string;
@@ -79,8 +94,6 @@ export interface ConnectionResult {
   category: EvidenceCategory;
   compatibility_flags: string[];
   path_claim_ids: string[];
-  coverage_manifest_id: string | null;
-  shared_treatment_inference_allowed: boolean;
   scope_note: string;
 }
 
@@ -96,7 +109,6 @@ export interface SourceCoverage {
 export interface CoverageManifest {
   manifest_id: string;
   query: string;
-  dataset_version: string;
   retrieved_at: string;
   per_source: SourceCoverage[];
   per_channel: { channel_id: string; availability: Availability; note: string | null }[];
@@ -114,7 +126,11 @@ export interface GapResult {
   scope_note: string;
 }
 
-export interface Contact { label: string; url: string; source_url: string; verified_at: string }
+export interface Contact {
+  label: string;
+  url: string;
+  verified_at: string;
+}
 
 export interface AssetResult {
   asset_id: string;
@@ -124,10 +140,8 @@ export interface AssetResult {
   relevance_claim_ids: string[];
   access_conditions: string | null;
   status: string | null;
-  status_checked_at: string | null;
   reuse_limits: string[];
   contact: Contact | null;
-  needs_expert_review: string[];
   ranking_reasons: string[];
 }
 
@@ -143,151 +157,298 @@ export interface ActionCard {
   reuse_limits: string[];
   limitations: string[];
   generated_by: string;
-  cached: boolean;
 }
 
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: EntityType;
+}
+export interface GraphEdge {
+  source: string;
+  target: string;
+  predicate: string;
+  /** null for computed links (symptom similarity): never shown as sourced. */
+  claim_id: string | null;
+  status: ClaimStatus;
+  review_state: ReviewState;
+}
 export interface GraphData {
-  nodes: { id: string; label: string; type: EntityType }[];
-  /** claim_id is null for computed links (symptom similarity): never shown as sourced. */
-  edges: { source: string; target: string; predicate: string; claim_id: string | null; status: ClaimStatus; review_state: ReviewState; score?: number | null }[];
+  nodes: GraphNode[];
+  edges: GraphEdge[];
   truncated: boolean;
   omitted: number;
+}
+
+export interface SearchHit {
+  id: string;
+  label: string;
+  type: EntityType;
+  matched: string | null;
+  match?: string;
+  source_type?: SourceType;
+  added_by_lookup?: boolean;
+}
+
+export interface TermPaper {
+  pmid: string;
+  title: string;
+  journal: string;
+  year: string;
+  doi: string | null;
+  url: string;
+}
+
+export type LookupResult =
+  | { status: "rejected"; reason: string; stored: false }
+  | { status: "known"; query: string; reason: string; results: SearchHit[]; stored: false }
+  | {
+      status: "added";
+      query: string;
+      reason: string;
+      entity_id: string;
+      label: string;
+      kind: string | null;
+      verified_by: string | null;
+      papers: TermPaper[];
+      persisted: boolean;
+      note: string;
+      stored: true;
+      sources_checked: { source: string; status: string; found: number | boolean | null }[];
+    }
+  | {
+      status: "not_verified" | "not_medical" | "unavailable";
+      query: string;
+      reason: string;
+      label: string | null;
+      stored: false;
+      sources_checked: { source: string; status: string; found: number | boolean | null }[];
+    };
+
+export interface Related {
+  entity_id: string;
+  groups: {
+    kind: string;
+    title: string;
+    source: string;
+    total: number;
+    items: {
+      id: string;
+      label: string;
+      type: EntityType;
+      association?: string;
+      source_id?: string;
+      score?: number | null;
+      shared?: string[];
+    }[];
+  }[];
+}
+
+export interface PatientGroups {
+  status: "ok" | "failed" | "no_xref" | "not_a_disease" | "not_available";
+  note?: string;
+  retrieved?: string;
+  pages: { label: string; url: string }[];
+  groups: {
+    name: string;
+    website: string | null;
+    country: string | null;
+    registry_url: string | null;
+  }[];
+}
+
+export interface SymptomSearch {
+  terms: {
+    text: string;
+    status: string;
+    id: string | null;
+    label: string;
+    candidates?: { id: string; label: string }[];
+  }[];
+  candidates: {
+    disease_id: string;
+    label: string;
+    coverage: number;
+    profile_share: number;
+    recorded_symptoms: number;
+    matched_labels: string[];
+    unmatched_labels: string[];
+    recorded_absent: string[];
+    genes: { id: string; label: string; claim_id: string; source: string }[];
+  }[];
+  definition: string;
+  note: string;
+}
+
+export interface Collaborators {
+  items: {
+    name: string;
+    orcid: string | null;
+    affiliation: string | null;
+    match: string;
+    other_papers: number;
+    papers: {
+      source_id: string;
+      title: string;
+      journal: string;
+      year: string;
+      citation: string;
+      claim_ids: string[];
+    }[];
+    also_studies: { entity_id: string; label: string; claim_ids: string[] }[];
+  }[];
+  total: number;
+  bridges: number;
+  papers_considered: number;
+  note: string;
+}
+
+export interface Cluster {
+  diseases: { id: string; label: string }[];
+  shared_features: {
+    feature: string;
+    label: string;
+    diseases: string[];
+    claim_ids: string[];
+    studies: number;
+  }[];
+}
+
+export interface Routes {
+  source: string;
+  target: string;
+  paths: {
+    nodes: { id: string; label: string }[];
+    hops: { a: string; b: string; claim_ids: string[]; hypothesis_only: boolean }[];
+    hypothesis_only: boolean;
+    reviewed_claims: number;
+    shared_feature_stops: { id: string; label: string }[];
+  }[];
+  gap: GapResult | null;
+}
+
+export interface Meta {
+  dataset_version: string;
+  featured?: { id: string; label: string; type: EntityType }[];
+  simulations?: { run_id: string; label: string; spec?: string; overall?: "pass" | "fail" }[];
+  real?: {
+    counts: Record<"disease" | "gene" | "phenotype", number>;
+    names: number;
+    seed: { id: string; label: string; type: EntityType }[];
+    seed_note: string;
+  } | null;
+  store?: {
+    claims: number;
+    papers: number;
+    ai_hypotheses: number;
+    treatment_ideas: number;
+    terms_added: number;
+  };
 }
 
 export interface SimRun {
   run_id: string;
   label: string;
   spec: string;
-  /** T23: the one graph edge for the run (computer prediction, never biological support). */
   graph_link?: Claim | null;
   linked_entity?: { id: string; label: string } | null;
-  scene: { name: string; pos: number[]; size: number[]; collides: boolean }[];
-  trajectory: { scope_label: string; units: string; points: number[][] };
+  trajectory: { scope_label: string; units: string; points: [number, number, number][] };
   report: {
     overall: "pass" | "fail";
     scope_label: string;
     simulator_name: string;
     simulator_version: string;
-    experiment_spec_hash: string;
-    scene_hash: string;
     review_state: string;
     checks: { check_name: string; status: "pass" | "fail" | "not_modeled"; reason: string }[];
     failures: { op_index?: number; check: string; reason: string }[];
-    ledger_before: Record<string, unknown>;
-    ledger_after: Record<string, unknown>;
+    operation_trace: {
+      op_index: number;
+      op: string;
+      status: string;
+      end_mm: [number, number, number];
+    }[];
+    ledger_after: {
+      source_ul: number;
+      tips_available: number;
+      tip_attached: boolean;
+      held_ul: number;
+      wells_ul: Record<string, number>;
+    };
     path_length_mm: number;
   };
 }
 
-type Wrapped<T> = T & { _synthetic: string };
-
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  status: number;
+  constructor(status: number, message: string) {
     super(message);
+    this.status = status;
   }
 }
 
-export async function get<T>(path: string): Promise<Wrapped<T>> {
-  const res = await fetch(`${API_BASE}${path}`);
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, init);
+  } catch {
+    throw new ApiError(0, "The API could not be reached.");
+  }
   if (!res.ok) throw new ApiError(res.status, `${res.status} on ${path}`);
-  return res.json();
+  return (await res.json()) as T;
 }
 
 export const enc = (id: string) => encodeURIComponent(id);
 
-export type MatchKind = "identifier" | "label" | "exact synonym" | "related synonym" | "all words" | "starts with" | "close spelling" | "demo";
-
-/** One search match. `matched` is the label or synonym text that matched; `match` says how. */
-export interface SearchHit {
-  id: string;
-  label: string;
-  type: EntityType;
-  matched: string | null;
-  match?: MatchKind;
-  source_type?: SourceType;
-}
-
-export interface RelatedItem {
-  id: string;
-  label: string;
-  type: EntityType;
-  association?: string;
-  source_id?: string;
-  score?: number | null;
-  shared?: string[];
-}
-
-/** What connects to an entry in the pinned files. Each group names the source it came from. */
-export interface Related {
-  entity_id: string;
-  groups: { kind: string; title: string; source: string; total: number; items: RelatedItem[] }[];
-}
-
-/** The real-ontology layer, present when the pinned files are loaded. */
-export interface RealMeta {
-  counts: Record<"disease" | "gene" | "phenotype", number>;
-  names: number;
-  sources: Record<string, string>;
-  seed: { id: string; label: string; type: EntityType; related: Record<string, number> }[];
-  seed_note: string;
-}
-
-/** Patient groups as listed by GARD (NIH), shown verbatim; never checked or endorsed by us. */
-export interface PatientGroups {
-  status: "ok" | "failed" | "no_xref" | "not_a_disease" | "not_available";
-  note?: string;
-  retrieved?: string;
-  rejected?: number;
-  pages: { label: string; url: string }[];
-  groups: { name: string; website: string | null; country: string | null; registry_url: string | null; kind: string | null }[];
-}
-
-/** Candidate diseases for described symptoms: research hypotheses, never a diagnosis. */
-export interface SymptomSearch {
-  terms: { text: string; status: string; id: string | null; label: string; method: string; candidates?: { id: string; label: string }[] }[];
-  candidates: {
-    disease_id: string; label: string; coverage: number; profile_share: number; recorded_symptoms: number;
-    matched_labels: string[]; unmatched_labels: string[]; recorded_absent: string[];
-    genes: { id: string; label: string; claim_id: string; source: string }[]; label_kind: string;
-  }[];
-  definition: string; note: string; source?: string;
-}
-
-/** Investigators on the papers behind the stored claims, as the papers list them. Authorship is not a contact route. */
-export interface Collaborators {
-  items: {
-    name: string; orcid: string | null; affiliation: string | null; match: string; other_papers: number;
-    papers: { source_id: string; title: string; journal: string; year: string; citation: string; claim_ids: string[] }[];
-    also_studies: { entity_id: string; label: string; claim_ids: string[] }[];
-  }[];
-  total: number; bridges: number; papers_considered: number; note: string; source?: string;
-}
-
-/** A home-page entry point. The API derives these from the dataset; they are never hand-picked. */
-export type Featured = { id: string; label: string; type: EntityType } & (
-  | { reason: "connections"; connections: number; assets: number }
-  | { reason: "gap"; gap_kind: string }
-);
-
 export const api = {
-  meta: () => get<{ dataset_version: string; as_of: string; schema_version: string;
-    entities_by_type: Record<string, number>; claims: number;
-    counts_by_review_state: Record<string, number>; counts_by_source_type: Record<string, number>;
-    featured?: Featured[]; simulations?: { run_id: string; label: string; spec?: string; overall?: "pass" | "fail" }[]; real?: RealMeta | null }>("/meta"),
-  search: (q: string) => get<{ results: SearchHit[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
-  related: (id: string) => get<Related>(`/entities/${enc(id)}/related`),
-  groups: (id: string) => get<PatientGroups>(`/entities/${enc(id)}/groups`),
-  symptoms: (q: string) => get<SymptomSearch>(`/symptoms?q=${enc(q)}`),
-  collaborators: (id: string) => get<Collaborators>(`/entities/${enc(id)}/collaborators`),
-  entities: () => get<{ items: Entity[] }>("/entities"),
-  entity: (id: string) => get<{ entity: Entity; claims: Claim[]; claim_counts_by_predicate: Record<string, number>;
-    reviewed_claims: number; summary: { text: string; claim_ids: string[]; source?: string }[]; summary_method?: string }>(`/entities/${enc(id)}`),
-  connections: (id: string) => get<{ results: ConnectionResult[]; coverage: CoverageManifest | null; labels?: Record<string, string>; hierarchy?: Record<string, string> }>(`/entities/${enc(id)}/connections`),
-  assets: (id: string) => get<{ assets: AssetResult[]; coverage?: SourceCoverage | null; total?: number | null; attribution?: string | null; modifications?: string | null }>(`/entities/${enc(id)}/assets`),
-  graph: (id: string) => get<GraphData>(`/entities/${enc(id)}/graph`),
-  gap: (id: string) => get<{ gap: GapResult | null; coverage: CoverageManifest | null }>(`/entities/${enc(id)}/gap`),
-  actions: (id: string) => get<{ cards: ActionCard[] }>(`/entities/${enc(id)}/actions`),
-  claim: (id: string) => get<{ claim: Claim; subject_label: string | null; object_label: string | null;
-    lineage_siblings: string[]; contradicting_claims: string[] }>(`/claims/${enc(id)}`),
-  simulation: (id: string) => get<SimRun>(`/simulations/${enc(id)}`),
+  health: () => request<{ status: string }>("/health"),
+  ready: () => request<{ ready: boolean; index: string }>("/ready"),
+  meta: () => request<Meta>("/meta"),
+  search: (q: string) =>
+    request<{ results: SearchHit[]; ambiguous?: boolean }>(`/search?q=${enc(q)}`),
+  lookup: (query: string) =>
+    request<LookupResult>("/lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    }),
+  entity: (id: string) =>
+    request<{
+      entity: Entity;
+      claims: Claim[];
+      summary: { text: string; claim_ids: string[]; source?: string }[];
+      summary_method?: string;
+      papers?: TermPaper[];
+      verification?: { by: string; reason: string };
+    }>(`/entities/${enc(id)}`),
+  connections: (id: string) =>
+    request<{
+      results: ConnectionResult[];
+      coverage: CoverageManifest | null;
+      labels?: Record<string, string>;
+      hierarchy?: Record<string, string>;
+    }>(`/entities/${enc(id)}/connections`),
+  related: (id: string) => request<Related>(`/entities/${enc(id)}/related`),
+  assets: (id: string) =>
+    request<{ assets: AssetResult[]; total?: number | null }>(`/entities/${enc(id)}/assets`),
+  groups: (id: string) => request<PatientGroups>(`/entities/${enc(id)}/groups`),
+  collaborators: (id: string) => request<Collaborators>(`/entities/${enc(id)}/collaborators`),
+  graph: (id: string, maxNodes = 40) =>
+    request<GraphData>(`/entities/${enc(id)}/graph?max_nodes=${maxNodes}`),
+  routes: (id: string, to: string) => request<Routes>(`/entities/${enc(id)}/routes?to=${enc(to)}`),
+  gap: (id: string) =>
+    request<{ gap: GapResult | null; coverage: CoverageManifest | null }>(
+      `/entities/${enc(id)}/gap`,
+    ),
+  actions: (id: string) => request<{ cards: ActionCard[] }>(`/entities/${enc(id)}/actions`),
+  claim: (id: string) =>
+    request<{
+      claim: Claim;
+      subject_label: string | null;
+      object_label: string | null;
+      lineage_siblings: string[];
+      contradicting_claims: string[];
+    }>(`/claims/${enc(id)}`),
+  symptoms: (q: string) => request<SymptomSearch>(`/symptoms?q=${enc(q)}`),
+  clusters: () => request<{ clusters: Cluster[]; total: number; note: string }>("/clusters"),
+  simulation: (id: string) => request<SimRun>(`/simulations/${enc(id)}`),
 };

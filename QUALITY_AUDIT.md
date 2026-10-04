@@ -169,3 +169,12 @@ Dependencies are in brackets. P0 = needed for a valid submission.
 - No model call, deployment, push of generated data, or package install was made for the audit. Two live batches of paper reading ran earlier in the session at the owner's request; the dollar cost was not measured.
 - A lockfile edit was made and then reverted because the workspace guard asks for a human decision.
 - `deploy/store/` was generated locally and is git-ignored on purpose: it holds short quotes from papers (one under a non-commercial, no-derivatives licence) and author names.
+
+## Addendum 2026-10-04 (after the audit): what changed
+The audit's open items 1 (frontend), 7 (`anthropic` pin) and part of 5 (publish `deploy/store`) were acted on by the owner's decisions of 2026-10-04 (`docs/DECISIONS.md`):
+- The frontend was replaced by a new design wired to the real API. **Verified (software):** type-check, lint, 46 unit tests, production build, and a headless-Chrome smoke test with 24 checks against the real API (the seed link and its label, evidence drawer with DOI, treatment ideas labelled as hypotheses, symptoms, clusters, simulation, unknown-term lookup both ways, identifier refusal). **Still not verified:** other browsers, phones, accessibility with a screen reader, a deployed URL.
+- OpenAI is the only provider; the Anthropic adapter is gone and no package or lockfile change is needed. The stored claims still came from the earlier model.
+- `deploy/store/` is committed; author emails were found in affiliation strings and are now stripped.
+- New: lookup of unknown terms (`POST /api/lookup`), tested offline (25 tests) and live against NLM MeSH and Europe PMC.
+- Python tests: 495 passing. The audit's other findings (claim error rate not re-sampled, no 10x measurement, no variants or funders, no OpenAI run, no video, no deployment) are unchanged.
+

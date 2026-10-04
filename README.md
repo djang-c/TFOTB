@@ -9,16 +9,17 @@ Hackathon submission (Hack-Nation Challenge 05). An evidence-backed rare-disease
 
 ## What it does
 1. **Finds how rare diseases connect.** For a disease it lists related diseases and says how strong the evidence is. The label is the evidence category: *reviewed mechanistic lead*, *literature-supported lead*, *symptom-level lead*, *hypothesis only*, *conflicting evidence* or *insufficient coverage*. There is no combined score and no probability. Related diseases come from shared symptoms (HPO), shared genes (HPO) and shared features in claims read from papers.
-2. **Works from symptoms when no disease is named.** `/symptoms` turns described symptoms into HPO terms and lists candidate diseases and their linked genes. These are research hypotheses, not diagnoses.
-3. **Reads the literature by itself.** It finds credible papers (PubMed-indexed journal articles with open-access full text; preprints, retractions and editorials are rejected), has an AI model propose claims, and keeps a claim only if its quote appears word for word in the paper, the quote names what the claim is about, and its names resolve to real ontology IDs. Every claim cites the paper's own DOI link.
-4. **Makes hypotheses and says so.** The AI may propose links no paper states. These are always labelled "AI hypothesis, not a finding", must cite stored claims from at least two different papers, and never count as evidence or change an evidence category.
-5. **Shows where everything came from.** Nothing needs human review to be displayed. Each claim says whether it was found by AI in a named article, is an AI hypothesis, or came from a database, and whether anyone reviewed it.
-6. **Separates independent studies from background.** A paper that only cites a fact as already known adds a little weight, shown as its own number, but is not counted as an independent study.
-7. **Shows contradictions.** Opposing effect directions on a shared feature produce the *conflicting evidence* category and name both claims. (No real contradiction has been found in the stored papers yet; the behaviour is tested on synthetic claims.)
-8. **Says when it found nothing.** A gap is dated and limited to the indexed evidence. It never says "no connection exists".
-9. **Shows who works on it.** The collaborator view lists authors of the papers behind the stored claims and who also appears on papers about other diseases. Matches are by ORCID where the record has one, otherwise by name only (labelled unverified). It is not a contact route.
-10. **Groups diseases by mechanism.** `/clusters` groups diseases that share an observed mechanism feature (same compartment and substance). It is an organisation of the evidence under a stated rule, not a validated clustering and not a claim of shared treatment.
-11. **Simulates a workflow check.** A MuJoCo model checks a proposed plate-preparation sequence for resource and motion failures. A pass says nothing about biology.
+2. **Looks up terms nobody has searched for.** A disease, symptom or other medical term the catalogue lacks is checked against NLM MeSH and Europe PMC (no AI, no cost). If it is verifiable it is added to the shared catalogue with the papers found, as a catalogue entry and not as evidence; if not, it stays on the visitor's own device and is labelled unverified. Anything that looks like a personal identifier is refused.
+3. **Works from symptoms when no disease is named.** `/symptoms` turns described symptoms into HPO terms and lists candidate diseases and their linked genes. These are research hypotheses, not diagnoses.
+4. **Reads the literature by itself.** It finds credible papers (PubMed-indexed journal articles with open-access full text; preprints, retractions and editorials are rejected), has an AI model propose claims, and keeps a claim only if its quote appears word for word in the paper, the quote names what the claim is about, and its names resolve to real ontology IDs. Every claim cites the paper's own DOI link.
+5. **Makes hypotheses and says so.** The AI may propose links no paper states. These are always labelled "AI hypothesis, not a finding", must cite stored claims from at least two different papers, and never count as evidence or change an evidence category.
+6. **Shows where everything came from.** Nothing needs human review to be displayed. Each claim says whether it was found by AI in a named article, is an AI hypothesis, or came from a database, and whether anyone reviewed it.
+7. **Separates independent studies from background.** A paper that only cites a fact as already known adds a little weight, shown as its own number, but is not counted as an independent study.
+8. **Shows contradictions.** Opposing effect directions on a shared feature produce the *conflicting evidence* category and name both claims. (No real contradiction has been found in the stored papers yet; the behaviour is tested on synthetic claims.)
+9. **Says when it found nothing.** A gap is dated and limited to the indexed evidence. It never says "no connection exists".
+10. **Shows who works on it.** The collaborator view lists authors of the papers behind the stored claims and who also appears on papers about other diseases. Matches are by ORCID where the record has one, otherwise by name only (labelled unverified). It is not a contact route.
+11. **Groups diseases by mechanism.** `/clusters` groups diseases that share an observed mechanism feature (same compartment and substance). It is an organisation of the evidence under a stated rule, not a validated clustering and not a claim of shared treatment.
+12. **Simulates a workflow check.** A MuJoCo model checks a proposed plate-preparation sequence for resource and motion failures. A pass says nothing about biology.
 
 ## Architecture
 ```
@@ -42,7 +43,10 @@ Hackathon submission (Hack-Nation Challenge 05). An evidence-backed rare-disease
   every footnote -> a claim)    (every edge = one claim)            (authors as listed; HPO-based)
         |
         v
-  FastAPI (src/atlas/api)  ->  Next.js explorer (frontend/)           AI hypotheses (grounded in stored claims)
+  FastAPI (src/atlas/api)  ->  web app (frontend/, React SPA)         AI hypotheses (grounded in stored claims)
+        ^
+        |  POST /lookup: a term nobody has searched before is checked against NLM MeSH and Europe PMC;
+        |  verified -> shared term store (with its papers), not verified -> kept in the visitor's browser only
 ```
 Details: [`docs/implementation/02-architecture.md`](docs/implementation/02-architecture.md). The model proposes, code disposes: no model output is stored unless code verifies it.
 
@@ -56,7 +60,7 @@ Details: [`docs/implementation/02-architecture.md`](docs/implementation/02-archi
 | The simulation fails when it should | `cd robotics && python simulate.py fixtures/blocked_path.json --out ../demo_outputs` (expect: fail) |
 
 ## Quick start (any machine)
-Toolchain is pinned in `mise.toml` (Python 3.12, Node 22, pnpm). Install [mise](https://mise.jdx.dev) once, then:
+Toolchain is pinned in `mise.toml` (Python 3.12, Node 22; the web app uses npm). Install [mise](https://mise.jdx.dev) once, then:
 
 ```bash
 git clone https://github.com/djang-c/TFOTB.git && cd TFOTB
@@ -74,7 +78,7 @@ PYTHONPATH=src python scripts/ingest_papers.py --query "Niemann-Pick type C" # r
 PYTHONPATH=src python scripts/backfill_papers.py && python scripts/backfill_labels.py  # authors and names for the views above
 PYTHONPATH=src python scripts/generate_hypotheses.py                         # AI hypotheses from stored claims
 ```
-What may run unattended, and how many papers per run, is set in [`config/ingest_policy.json`](config/ingest_policy.json). `LLM_PROVIDER` selects `anthropic` (default; used for every claim in this repository) or `openai`. The OpenAI adapter is tested offline only: **no OpenAI model has been run here**, so no stored claim came from one. Without a key nothing is sent and no paid call is made (it can only replay responses you recorded yourself). The API endpoint `POST /api/research` does the same on demand; it is off unless `RESEARCH_ENABLED=true` and `RESEARCH_TOKEN` is set.
+What may run unattended, and how many papers per run, is set in [`config/ingest_policy.json`](config/ingest_policy.json). OpenAI is the only model provider (`OPENAI_API_KEY`, `OPENAI_MODEL_FAST`, `OPENAI_MODEL_REASONING`). The adapter is tested offline only: **no OpenAI model has been run here**, and the claims already in the store were read by an earlier model from another vendor (each claim's `extraction_method` says which). They should be re-read with OpenAI once a key is available. Without a key nothing is sent and no paid call is made (it can only replay responses you recorded yourself). The API endpoint `POST /api/research` does the same on demand; it is off unless `RESEARCH_ENABLED=true` and `RESEARCH_TOKEN` is set.
 
 ### Simulation
 ```bash
@@ -91,7 +95,7 @@ Optional replay video: `MUJOCO_GL=glfw python render_replay.py ../demo_outputs/v
 - **The symptom-similarity and symptom-search numbers are shares of recorded annotations, not probabilities, and have not been validated against any ground truth.**
 - **Small evidence base.** The seed cluster is CLN3 disease and Niemann-Pick type C. Results outside it come mostly from public reference files and are mostly symptom-level.
 - **Not built:** variant-level evidence (no OMIM, ClinVar, transcript or genome-build handling), free-text research-question answering, funders and NIH RePORTER, patient-organisation directories other than GARD, any validated clustering, a measured 10x result, a recorded video. See `QUALITY_AUDIT.md` for the full list.
-- **The frontend was not compiled or run by the audit** (its dependencies were not installed). Run `make lint` and open the pages before relying on any UI behaviour described here.
+- **The web app was replaced on 2026-10-04** by the new design in `frontend/`. It type-checks, lints, builds, passes its unit tests and a headless-Chrome smoke test against the real API (see `frontend/README.md`). It has not been checked on other browsers, on phones, with a screen reader, or deployed.
 - **Licences.** This is a hackathon project, not a commercial use. Any open-access paper may be read; each paper's licence is recorded in the run log. HPO's commercial terms are unresolved (see `data/manifests/source_manifest.md`). Revisit all of this before any commercial use.
 - **The simulation is a geometry and resource check.** No liquids, hardware, calibration or biology are modelled.
 

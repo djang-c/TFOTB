@@ -3,6 +3,7 @@
 these once T03/T04/T09 land. Every response carries the `_synthetic` label.
 """
 
+import re
 import threading
 from functools import lru_cache
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
+from atlas.api import termviews
 from atlas.api.claimstore import load_claims, paper_coverage
 from atlas.api.fixtures import load_fixture
 from atlas.clusters import mechanism_clusters
@@ -125,12 +127,35 @@ STORE_NOTE = ("Not synthetic: claims extracted from papers into the local store 
               "otherwise the ID is shown.")
 
 
+_ID = re.compile(r"\b(?:GO|CHEBI|HGNC|MONDO|HP):\w+")
+
+
+def fill_labels(labels: dict[str, str], results: list[Any], label_of: Any) -> dict[str, str]:
+    """Names for the IDs that appear in the shared-feature text (cell compartments, substances) but have no
+    name in the ontology index: the label sidecar written during ingest supplies them. An ID stays as is when
+    nothing names it."""
+    out = dict(labels)
+    for r in results:
+        for c in r["comparisons"] if isinstance(r, dict) else r.comparisons:
+            matches = c["context_matches"] if isinstance(c, dict) else c.context_matches
+            for m in matches:
+                for i in _ID.findall(m):
+                    if out.get(i, i) == i and (name := label_of(i)):
+                        out[i] = name
+    return out
+
+
 def _wrap(request: Request, **payload: Any) -> dict[str, Any]:
     return {"_synthetic": _demo(request)["_synthetic"], **payload}
 
 
 def _wrap_real(**payload: Any) -> dict[str, Any]:
     return {"_synthetic": REAL_NOTE, **payload}
+
+
+def _term_row(request: Request, entity_id: str) -> dict[str, Any] | None:
+    """A term added by a visitor's lookup (atlas.terms), or None."""
+    return request.app.state.terms.get(entity_id) if termviews.is_term_id(entity_id) else None
 
 
 def _entity(request: Request, entity_id: str) -> dict[str, Any]:
@@ -140,6 +165,9 @@ def _entity(request: Request, entity_id: str) -> dict[str, Any]:
     real = _real_entity(request, entity_id)
     if real is not None:
         return real
+    row = _term_row(request, entity_id)
+    if row is not None:
+        return termviews.entity_of(row)
     raise HTTPException(status_code=404, detail=f"no indexed entity {entity_id}")
 
 
@@ -178,7 +206,20 @@ def meta(request: Request) -> Any:
         simulations=[{"run_id": k, "label": v["label"], "spec": v.get("spec"), "overall": v["report"]["overall"]}
                      for k, v in sorted(d["simulations"]["runs"].items(), key=lambda kv: kv[1]["report"]["overall"] != "pass")],
         real=_real_meta(request),
+        store=_store_meta(request),
     )
+
+
+def _store_meta(request: Request) -> dict[str, Any]:
+    """What has been read from papers and looked up so far (counts only; every claim is unreviewed)."""
+    claims = list(_stored_claims(request).values())
+    return {
+        "claims": len(claims),
+        "papers": len({c.lineage_id for c in claims if c.lineage_id.startswith("STUDY:PMID")}),
+        "ai_hypotheses": sum(c.source_type.value == "ai_generated" for c in claims),
+        "treatment_ideas": sum(c.predicate == "CANDIDATE_THERAPY_FOR" for c in claims),
+        "terms_added": len(request.app.state.terms.all()),
+    }
 
 
 # Owner decision 2026-10-03 (docs/DECISIONS.md, "Seed ID for CLN3 disease"); unreviewed by any expert.
@@ -235,12 +276,13 @@ def search(request: Request, q: str = "") -> Any:
     ]
     for h in hits:
         h.update(match="demo", source_type="synthetic_fixture")
+    added = [termviews.hit_of(r, q) for r in request.app.state.terms.find(q, limit=5)] if t else []
     ix = _index(request)
     if ix is None or not t:
-        return _wrap(request, query=q, results=hits[:20], ambiguous=len(hits) > 1 and bool(t))
+        return _wrap(request, query=q, results=(added + hits)[:20], ambiguous=len(hits) > 1 and bool(t))
     real = ix.search(q)
     wrap = _wrap_real if real["results"] else (lambda **kw: _wrap(request, **kw))  # real hits are not "synthetic"
-    return wrap(query=q, results=(real["results"] + hits)[:20],
+    return wrap(query=q, results=(real["results"] + added + hits)[:20],
                 ambiguous=real["ambiguous"] or (not real["results"] and len(hits) > 1))
 
 
@@ -269,7 +311,7 @@ def related(request: Request, entity_id: str) -> Any:
     """What connects to an entry in the pinned ontologies and HPO files (empty for demo entries)."""
     _entity(request, entity_id)
     ix = _index(request)
-    if ix is None or entity_id.startswith("SYN:"):
+    if ix is None or entity_id.startswith("SYN:") or termviews.is_term_id(entity_id):
         return _wrap(request, entity_id=entity_id, groups=[])
     return _wrap_real(**ix.related(entity_id))
 
@@ -283,6 +325,9 @@ def entities(request: Request, type: str | None = None) -> Any:
 @router.get("/entities/{entity_id}")
 def entity(request: Request, entity_id: str) -> Any:
     e = _entity(request, entity_id)
+    row = _term_row(request, entity_id)
+    if row is not None:
+        return termviews.entity_view(row)
     d = _demo(request)
     if e.get("source_type") == "database_record" and not entity_id.startswith("SYN:"):
         ix = _index(request)
@@ -308,10 +353,13 @@ def entity(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/connections")
 def connections(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)
+    if termviews.is_term_id(entity_id):
+        return {"_synthetic": termviews.NOTE, "results": [], "labels": {}, "hierarchy": {}, "coverage": None}
     ix = _index(request)
     if ix is not None and not entity_id.startswith("SYN:"):
         out = ix.connections(entity_id)
-        return _wrap_real(results=out["results"], labels=out["labels"], hierarchy=out["hierarchy"], coverage=out["coverage"])
+        labels = fill_labels(out["labels"], out["results"], _label_of(request))
+        return _wrap_real(results=out["results"], labels=labels, hierarchy=out["hierarchy"], coverage=out["coverage"])
     d = _demo(request)
     results = d["connections"].get(entity_id, [])
     cov_ids = {r["coverage_manifest_id"] for r in results}
@@ -322,6 +370,8 @@ def connections(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/assets")
 def assets(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)
+    if termviews.is_term_id(entity_id):
+        return {"_synthetic": termviews.NOTE, "assets": [], "coverage": None, "total": 0}
     ix = _index(request)
     if ix is not None and not entity_id.startswith("SYN:"):
         out = ix.assets(entity_id)
@@ -336,7 +386,7 @@ def groups(request: Request, entity_id: str) -> Any:
     """Patient groups listed by GARD (real diseases only; demo entries have none here)."""
     _entity(request, entity_id)
     ix = _index(request)
-    if ix is None or entity_id.startswith("SYN:"):
+    if ix is None or entity_id.startswith("SYN:") or termviews.is_term_id(entity_id):
         return _wrap(request, status="not_available", groups=[], pages=[])
     return _wrap_real(**ix.groups(entity_id))
 
@@ -345,7 +395,7 @@ def groups(request: Request, entity_id: str) -> Any:
 def collaborators(request: Request, entity_id: str) -> Any:
     """Investigators on the papers behind the stored claims, and who also works on other diseases."""
     _entity(request, entity_id)
-    if entity_id.startswith("SYN:"):  # demo entries have no papers behind them
+    if entity_id.startswith("SYN:") or termviews.is_term_id(entity_id):  # no stored claims, so no papers behind them
         return _wrap(request, items=[], total=0, bridges=0, papers_considered=0, note=COLLABORATOR_NOTE)
     s = request.app.state.settings
     papers = load_papers(s.store_path.parent)
@@ -357,6 +407,10 @@ def collaborators(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/graph")
 def graph(request: Request, entity_id: str, max_nodes: int = 40) -> Any:
     _entity(request, entity_id)
+    term = _term_row(request, entity_id)
+    if term is not None:
+        return {"_synthetic": termviews.NOTE, "nodes": [{"id": term["id"], "label": term["label"], "type": term["type"] or "term"}],
+                "edges": [], "truncated": False, "omitted": 0}
     ix = _index(request)
     real = ix is not None and not entity_id.startswith("SYN:")
     base = ix.graph(entity_id, max_nodes=max_nodes) if real else None
@@ -401,6 +455,9 @@ def routes(request: Request, entity_id: str, to: str) -> Any:
 @router.get("/entities/{entity_id}/gap")
 def gap(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)
+    term = _term_row(request, entity_id)
+    if term is not None:
+        return termviews.gap_view(term)
     ix = _index(request)
     if ix is not None and not entity_id.startswith("SYN:"):
         out = ix.connections(entity_id)
@@ -416,6 +473,8 @@ def gap(request: Request, entity_id: str) -> Any:
 @router.get("/entities/{entity_id}/actions")
 def entity_actions(request: Request, entity_id: str) -> Any:
     _entity(request, entity_id)
+    if termviews.is_term_id(entity_id):
+        return {"_synthetic": termviews.NOTE, "cards": []}
     ix = _index(request)
     if ix is not None and not entity_id.startswith("SYN:"):
         return _wrap_real(cards=ix.actions(entity_id))

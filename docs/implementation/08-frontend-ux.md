@@ -1,3 +1,5 @@
+> **Superseded 2026-10-04.** The frontend was rebuilt as a TanStack Start single-page app (React, Vite, Tailwind, three.js) on the real API; see `frontend/README.md` and `docs/DECISIONS.md`. This file describes the earlier Next.js design and is kept for its UX principles.
+
 # 08 — Frontend & UX
 
 Implements: T12 (explorer + evidence inspector), UI parts of T10, T11, T23. PLAN: "React with a

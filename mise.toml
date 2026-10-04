@@ -1,6 +1,5 @@
 # Single source of truth for the toolchain. `mise install` provisions these exact versions.
-# Python deps: requirements.lock. JS deps: frontend/pnpm-lock.yaml.
+# Python deps: requirements.lock. JS deps: frontend/package-lock.json (npm, which ships with Node).
 [tools]
 python = "3.12.15"
 node = "22.23.3"
-pnpm = "12.8.2"

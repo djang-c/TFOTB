@@ -12,11 +12,13 @@ It refuses an empty store, and prints exactly what it wrote. Nothing is uploaded
 
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from atlas.collaborators import clean_authors
 from atlas.db import AtlasDB, export_snapshot
 from atlas.schemas import Claim
 
@@ -40,9 +42,15 @@ def main() -> int:
     now = datetime.now(UTC).isoformat(timespec="seconds")
     manifest = export_snapshot(db, OUT / "snapshot", dataset_version=f"deploy-{now[:10]}", built_at=now)
     db.close()
-    for name in ("papers.jsonl", "ingest_log.jsonl", "labels.json"):
+    for name in ("ingest_log.jsonl", "labels.json", "terms.jsonl"):
         if (SRC / name).exists():
             shutil.copy(SRC / name, OUT / name)
+    papers = SRC / "papers.jsonl"
+    if papers.exists():  # author emails found in affiliation strings are not published
+        rows = [json.loads(x) for x in papers.read_text().splitlines() if x.strip()]
+        (OUT / "papers.jsonl").write_text(
+            "".join(json.dumps({**r, "authors": clean_authors(r.get("authors") or [])}, ensure_ascii=False) + "\n" for r in rows)
+        )
     print(f"wrote {OUT.relative_to(ROOT)}: {n} claims; files", sorted(p.name for p in OUT.rglob("*") if p.is_file()))
     print("snapshot rows:", {k: v["rows"] for k, v in manifest["files"].items()})
     return 0

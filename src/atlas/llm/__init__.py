@@ -1,7 +1,7 @@
 """Provider-agnostic LLM layer (docs/implementation/06-ai-layer.md).
 
 The model proposes, code disposes: services depend on `LLMClient`, never on a vendor SDK.
-Anthropic is the provider for now; an OpenAI adapter is added at deployment (see DECISIONS.md).
+OpenAI is the only provider (owner decision 2026-10-04).
 """
 
 from atlas.llm.base import LLMClient, LLMError, LLMRefusal, LLMResult

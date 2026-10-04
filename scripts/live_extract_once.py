@@ -18,14 +18,13 @@ licence it reports. The text is cached under data/cache/texts (git-ignored), nev
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from collections import Counter
 from pathlib import Path
 
 from atlas.extraction import PROMPT_VERSION, SourceText, extract_claims
-from atlas.llm.anthropic_client import AnthropicClient
 from atlas.llm.cache import CachedClient
+from atlas.llm.factory import has_key, make_client
 from atlas.resolver import Resolver
 from atlas.sources import SourceError, fetch_full_text
 from atlas.store import PublicStore
@@ -58,8 +57,8 @@ def main() -> int:
     if not args.i_approve_sending_this_text:
         print("Refusing: pass --i-approve-sending-this-text to confirm this text may be sent to the provider.")
         return 2
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("Refusing: ANTHROPIC_API_KEY is not in the environment.")
+    if not has_key():
+        print("Refusing: OPENAI_API_KEY is not in the environment.")
         return 2
     if args.pmid:
         try:
@@ -81,7 +80,7 @@ def main() -> int:
         print(f"Refusing: text is {len(text)} chars, over --max-chars {args.max_chars}.")
         return 2
 
-    client = CachedClient(AnthropicClient(max_tokens=args.max_tokens), ROOT / "data" / "cache" / "llm", mode="record")
+    client = CachedClient(make_client(max_tokens=args.max_tokens), ROOT / "data" / "cache" / "llm", mode="record", provider="openai")
     resolver = Resolver.from_raw(ROOT / "data" / "raw", include_extraction_refs=True)
     report = extract_claims(client, SourceText(source_id, url, text), resolver)
 
